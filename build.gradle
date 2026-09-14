@@ -107,7 +107,7 @@ def getLlmVersion() {
 def llmVersion = getLlmVersion()
 
 bootJar {
-    mainClassName = 'com.grw.xiaobai.hybrid.llm.LlmCommandApplication'
+    mainClassName = 'com.grw.xiaobai.hybrid.llm.HybridLlmApplication'
     archiveFileName = "hybridLLM-${llmVersion}.jar"
 }
 
