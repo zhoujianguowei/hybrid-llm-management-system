@@ -25,13 +25,13 @@ import javax.annotation.Resource;
 @EnableAsync
 @EnableOpenApi
 @EnableCaching
-public class LlmCommandApplication implements CommandLineRunner {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LlmCommandApplication.class);
+public class HybridLlmApplication implements CommandLineRunner {
+    private static final Logger LOGGER = LoggerFactory.getLogger(HybridLlmApplication.class);
     @Resource
     private GlobalExceptionHandler.GlobalUncaughtExceptionHandler uncaughtExceptionHandler;
 
     public static void main(String[] args) {
-        SpringApplication.run(LlmCommandApplication.class, args);
+        SpringApplication.run(HybridLlmApplication.class, args);
         LOGGER.info("llm command start success");
     }
 
