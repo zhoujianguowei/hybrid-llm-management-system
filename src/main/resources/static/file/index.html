@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-i18n-title="fm.page_title">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title data-i18n="fm.page_title"></title>
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css" id="bootstrapCss">
+    <link rel="stylesheet" href="vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css">
+    <style>
+        :root { --sidebar-width: 220px; --sidebar-collapsed-width: 60px; --header-height: 56px; --primary-color: #6366f1; --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); --border-color: #e2e8f0; --bg-color: #f8fafc; --card-bg: #ffffff; --text-primary: #334155; --text-secondary: #64748b; --text-muted: #94a3b8; --icon-folder: #f59e0b; --icon-image: #10b981; --icon-video: #3b82f6; --icon-audio: #8b5cf6; --icon-document: #6366f1; --icon-code: #f97316; --icon-archive: #06b6d4; --icon-other: #94a3b8; --hover-bg: rgba(99, 102, 241, 0.08); --shadow-sm: 0 1px 2px rgba(0,0,0,0.04); --shadow-md: 0 4px 10px rgba(0,0,0,0.06); --shadow-lg: 0 10px 30px rgba(0,0,0,0.08); }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; background: var(--bg-color); color: var(--text-primary); font-size: 14px; transition: background 0.3s, color 0.3s; -webkit-font-smoothing: antialiased; }
+        body.theme-dark { --bg-color: #1e293b; --card-bg: #334155; --text-primary: #f1f5f9; --text-secondary: #cbd5e1; --text-muted: #94a3b8; --border-color: #475569; --hover-bg: rgba(99, 102, 241, 0.15); --shadow-sm: 0 1px 2px rgba(0,0,0,0.2); --shadow-md: 0 4px 10px rgba(0,0,0,0.25); }
+        body.theme-ocean { --primary-color: #0ea5e9; --primary-gradient: linear-gradient(135deg, #0ea5e9 0%, #38bdf8 100%); --bg-color: #f0f9ff; --card-bg: #ffffff; --text-primary: #0c4a6e; --text-secondary: #075985; --border-color: #e0f2fe; }
+        body.theme-sunset { --primary-color: #f97316; --primary-gradient: linear-gradient(135deg, #f97316 0%, #fb923c 100%); --bg-color: #fff7ed; --card-bg: #ffffff; --text-primary: #9a3412; --text-secondary: #c2410c; --border-color: #fed7aa; }
+        body.theme-forest { --primary-color: #10b981; --primary-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%); --bg-color: #f0fdf4; --card-bg: #ffffff; --text-primary: #065f46; --text-secondary: #047857; --border-color: #bbf7d0; }
+        .app-container { display: flex; flex-direction: column; height: 100vh; position: relative; }
+        .header { height: var(--header-height); background: var(--primary-gradient); color: white; padding: 0 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; z-index: 100; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .sidebar-toggle { background: rgba(255,255,255,0.15); border: none; color: white; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; }
+        .sidebar-toggle:hover { background: rgba(255,255,255,0.25); }
+        .header h1 { font-size: 18px; font-weight: 600; letter-spacing: -0.5px; }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .user-info { display: flex; align-items: center; gap: 12px; font-size: 14px; cursor: pointer; }
+        .theme-selector { position: relative; }
+        .theme-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; width: 36px; height: 36px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all 0.2s; }
+        .theme-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+        .theme-dropdown { position: absolute; top: calc(100% + 8px); right: 0; background: var(--card-bg); border-radius: 10px; box-shadow: var(--shadow-lg); padding: 8px; display: none; flex-direction: column; gap: 4px; min-width: 150px; z-index: 200; border: 1px solid var(--border-color); }
+        .theme-dropdown.active { display: flex; }
+        .theme-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-primary); font-size: 13px; }
+        .theme-option:hover { background: var(--hover-bg); }
+        .theme-option.active { background: var(--hover-bg); color: var(--primary-color); font-weight: 500; }
+        .theme-option .theme-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-color); }
+        .theme-option .theme-dot.light { background: linear-gradient(135deg, #fafbfc, #ffffff); }
+        .theme-option .theme-dot.dark { background: linear-gradient(135deg, #1f2937, #374151); }
+        .theme-option .theme-dot.ocean { background: linear-gradient(135deg, #f0f9ff, #0891b2); }
+        .theme-option .theme-dot.sunset { background: linear-gradient(135deg, #fff7ed, #ea580c); }
+        .theme-option .theme-dot.forest { background: linear-gradient(135deg, #f0fdf4, #059669); }
+        .btn-logout { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.2s; }
+        .btn-logout:hover { background: rgba(255,255,255,0.25); }
+        .main-container { display: flex; flex: 1; overflow: hidden; }
+        .sidebar { width: var(--sidebar-width); background: var(--card-bg); border-right: 1px solid var(--border-color); display: flex; flex-direction: column; transition: width 0.25s ease-in-out; flex-shrink: 0; overflow: hidden; }
+        .sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+        .sidebar-nav { padding: 15px 0; overflow-y: auto; flex: 1; }
+        .sidebar-item { padding: 12px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; color: var(--text-secondary); transition: all 0.2s; white-space: nowrap; border-radius: 8px; margin: 2px 8px; }
+        .sidebar.collapsed .sidebar-item { justify-content: center; padding: 12px; margin: 2px 4px; }
+        .sidebar-item:hover { background: var(--hover-bg); color: var(--primary-color); }
+        .sidebar-item.active { background: var(--hover-bg); color: var(--primary-color); font-weight: 500; }
+        .sidebar-item .icon { font-size: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        .sidebar-item .label { transition: opacity 0.2s; }
+        .sidebar.collapsed .sidebar-item .label { display: none; }
+        .sidebar-section { padding: 15px 20px 8px; font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .sidebar.collapsed .sidebar-section { display: none; }
+        .sidebar-item.admin-only { display: none; }
+        .sidebar-lock-icon { margin-left: auto; color: #ef4444; font-size: 14px; flex-shrink: 0; }
+        .sidebar-item-locked { opacity: 0.6; }
+        .sidebar-item-locked .sidebar-lock-icon { opacity: 1; }
+        .sidebar.collapsed .sidebar-lock-icon { display: none; }
+        .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+        .toolbar-section { background: var(--card-bg); border-bottom: 1px solid var(--border-color); flex-shrink: 0; z-index: 50; }
+        .breadcrumb-container { padding: 14px 20px; border-bottom: 1px solid var(--border-color); background: var(--card-bg); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .breadcrumb-left { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 14px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .breadcrumb-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .breadcrumb-item { color: var(--primary-color); cursor: pointer; transition: all 0.2s; padding: 2px 6px; border-radius: 4px; }
+        .breadcrumb-item:hover { background: var(--hover-bg); }
+        .breadcrumb-separator { color: var(--text-muted); }
+        .breadcrumb-current { color: var(--text-primary); font-weight: 500; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .toolbar { display: flex; align-items: center; gap: 12px; padding: 14px 20px; flex-wrap: wrap; }
+        .toolbar-group { display: flex; align-items: center; gap: 8px; padding-right: 16px; border-right: 1px solid var(--border-color); }
+        .toolbar-group:last-child { border-right: none; margin-left: auto; }
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; gap: 6px; transition: all 0.2s; white-space: nowrap; font-weight: 500; }
+        .btn-primary { background: var(--primary-gradient); color: white; box-shadow: var(--shadow-sm); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+        .btn-secondary { background: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-secondary:hover { background: var(--hover-bg); color: var(--primary-color); border-color: var(--primary-color); }
+        .filter-checkbox { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+        .filter-checkbox input { width: 16px; height: 16px; cursor: pointer; }
+        .sort-info { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-secondary); font-size: 13px; }
+        .sort-info #currentSortField { font-weight: 500; color: var(--text-primary); }
+        .sort-toggle { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: var(--hover-bg); border: none; border-radius: 4px; cursor: pointer; color: var(--primary-color); transition: all 0.2s; }
+        .sort-toggle:hover { background: var(--primary-color); color: white; }
+        .search-box { position: relative; display: flex; align-items: center; }
+        .search-box input { width: 220px; padding: 8px 12px 8px 36px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; color: var(--text-primary); background: var(--card-bg); outline: none; transition: all 0.2s; }
+        .search-box input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--hover-bg); }
+        .search-box input::placeholder { color: var(--text-muted); }
+        .search-box .search-icon { position: absolute; left: 12px; color: var(--text-muted); font-size: 14px; pointer-events: none; }
+        .search-box .clear-btn { position: absolute; right: 8px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 14px; display: none; padding: 4px; border-radius: 4px; transition: all 0.2s; }
+        .search-box .clear-btn:hover { color: var(--text-primary); background: var(--hover-bg); }
+        .search-box.has-text .clear-btn { display: block; }
+        .file-table-container { flex: 1; overflow: auto; padding: 0; min-height: 0; }
+        .file-table { width: 100%; background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow-sm); border-collapse: collapse; overflow: hidden; table-layout: fixed; }
+        .file-table thead { position: sticky; top: 0; z-index: 10; background: var(--bg-color); }
+        .file-table th { background: var(--bg-color); padding: 16px 20px; text-align: left; font-weight: 600; color: var(--text-secondary); font-size: 13px; border-bottom: 1px solid var(--border-color); white-space: nowrap; cursor: pointer; user-select: none; transition: all 0.2s; position: relative; }
+        .file-table th:hover { background: var(--hover-bg); }
+        .file-table th .sort-icon { margin-left: 4px; opacity: 0.25; font-size: 15px; transition: all 0.2s; }
+        .file-table th:hover .sort-icon { opacity: 0.5; }
+        .file-table th.sorted .sort-icon { opacity: 1; color: var(--primary-color); transform: scale(1.2); text-shadow: 0 0 4px rgba(99, 102, 241, 0.4); }
+        .file-table th.resizable { border-right: 1px solid var(--border-color); }
+        .file-table th .resize-handle { position: absolute; right: -6px; top: 0; bottom: 0; width: 12px; cursor: col-resize; opacity: 0; transition: opacity 0.15s ease; z-index: 10; }
+        .file-table th .resize-handle:hover { opacity: 1 !important; }
+        .file-table th.resizable:hover .resize-handle, .file-table th.resizing .resize-handle { opacity: 1; }
+        .file-table th.resizing { background: var(--hover-bg); }
+        .file-table.resizing { user-select: none; -webkit-user-select: none; }
+        .file-table td { padding: 10px 20px; border-bottom: 1px solid var(--border-color); font-size: 14px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-table tbody tr:first-child td { padding-top: 20px; }
+        .file-table tbody tr:last-child td { padding-bottom: 20px; }
+        .file-table tbody tr { transition: background 0.2s; }
+        .file-table tbody tr:hover { background: var(--hover-bg); }
+        .file-name { display: flex; align-items: center; gap: 12px; cursor: pointer; color: var(--primary-color); width: 100%; overflow: hidden; padding: 4px 0; }
+        .file-name .icon-wrapper { flex-shrink: 0; width: 40px; display: flex; align-items: center; justify-content: center; }
+        .file-name .name-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        .file-name:hover { opacity: 0.8; }
+        .file-icon { font-size: 22px; display: flex; align-items: center; justify-content: center; }
+        .type-directory .file-icon { font-size: 32px; }
+        .type-directory .icon-wrapper { background: linear-gradient(135deg, rgba(255, 213, 79, 0.15) 0%, rgba(255, 179, 0, 0.08) 100%); border-radius: 12px; width: 50px; height: 50px; padding: 6px; }
+        .type-file .icon-wrapper { background: rgba(99, 102, 241, 0.05); border-radius: 8px; width: 40px; height: 40px; }
+        .type-image .file-icon { color: var(--icon-image); }
+        .type-video .file-icon { color: var(--icon-video); }
+        .type-audio .file-icon { color: var(--icon-audio); }
+        .type-pdf .file-icon { color: var(--icon-document); }
+        .type-text .file-icon { color: var(--icon-code); }
+        .type-archive .file-icon { color: var(--icon-archive); }
+        .type-other .file-icon { color: var(--icon-other); }
+        .size-text { color: var(--text-secondary); font-size: 13px; white-space: nowrap; }
+        .view-toggle { display: flex; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; overflow: hidden; }
+        .view-toggle-btn { padding: 8px 12px; border: none; background: transparent; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 13px; transition: all 0.2s; }
+        .view-toggle-btn:hover { color: var(--primary-color); }
+        .view-toggle-btn.active { background: var(--hover-bg); color: var(--primary-color); }
+        .view-toggle-btn:first-child { border-right: 1px solid var(--border-color); }
+        .file-grid { display: none; flex: 1; overflow-y: auto; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; padding: 16px; align-content: start; user-select: none; -webkit-user-select: none; }
+        .file-grid.active { display: grid; }
+        .file-card { background: var(--card-bg); border: 1px solid transparent; border-radius: 8px; padding: 0; text-align: center; cursor: pointer; transition: all 0.15s; display: flex; flex-direction: column; position: relative; box-shadow: none; outline: 1px solid var(--border-color); }
+        .file-card:hover { background: var(--hover-bg); border-color: var(--primary-color); outline-color: var(--primary-color); }
+        .file-card.selected { background: rgba(99, 102, 241, 0.12); border-color: var(--primary-color); outline-color: var(--primary-color); }
+        .file-card .card-icon-area { display: flex; align-items: center; justify-content: center; padding: 14px 12px 8px; }
+        .file-card .card-icon-area .icon-wrapper { display: flex; align-items: center; justify-content: center; }
+        .file-card.type-directory .card-icon-area .icon-wrapper { width: 64px; height: 64px; }
+        .file-card.type-file .card-icon-area .icon-wrapper { width: 48px; height: 48px; }
+        .file-card .card-info { padding: 0 10px 10px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .file-card .card-name { font-size: 12px; color: var(--text-primary); line-height: 1.4; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-all; }
+        .file-card .card-meta { font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 1px; }
+        .file-card .card-actions { display: none; position: absolute; top: 4px; right: 4px; gap: 2px; z-index: 5; }
+        .file-card:hover .card-actions { display: flex; }
+        .file-card .card-action-btn { width: 28px; height: 28px; border: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; transition: all 0.2s; background: var(--card-bg); color: var(--text-secondary); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
+        .file-card .card-action-btn:hover { color: white; }
+        .file-card .card-action-btn.download:hover { background: var(--primary-color); }
+        .file-card .card-action-btn.delete:hover { background: #ef4444; }
+  
+        .file-view-wrapper { flex: 1; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; z-index: 5; }
+        .empty-state .icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        .time-text { color: var(--text-muted); font-size: 13px; white-space: nowrap; }
+        .action-btn { padding: 6px 12px; border: 1px solid var(--primary-color); background: var(--card-bg); color: var(--primary-color); border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 6px; transition: all 0.2s; font-weight: 500; }
+        .action-btn:hover { background: var(--primary-color); color: white; }
+        .action-btn-download { border-color: var(--primary-color); color: var(--primary-color); }
+        .action-btn-download:hover { background: var(--primary-color); color: white; }
+        .action-btn-delete { border-color: #ef4444; color: #ef4444; }
+        .action-btn-delete:hover { background: #ef4444; color: white; }
+        .preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 1000; align-items: center; justify-content: center; }
+        .preview-modal.active { display: flex; }
+        .preview-modal.fullscreen { background: var(--bg-color); }
+        .preview-content { max-width: 90%; max-height: 90%; position: relative; display: flex; align-items: center; justify-content: center; }
+        .preview-modal.fullscreen .preview-content { max-width: 100%; max-height: 100vh; width: 100%; height: 100%; }
+        .preview-close { position: fixed; top: 20px; right: 20px; color: white; font-size: 24px; cursor: pointer; background: rgba(255,255,255,0.15); border: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; z-index: 1001; }
+        .preview-close:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+        .preview-close:hover { background: rgba(255,255,255,0.2); }
+        .preview-fullscreen-btn { position: fixed; top: 20px; right: 80px; color: white; font-size: 20px; cursor: pointer; background: rgba(255,255,255,0.15); border: none; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: all 0.2s; z-index: 1001; }
+        .preview-fullscreen-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+        .preview-media { max-width: 100%; max-height: 85vh; border-radius: 8px; }
+        .preview-modal.fullscreen .preview-media { max-width: 100%; max-height: 100vh; border-radius: 0; }
+        .preview-image { max-width: 90vw; max-height: 85vh; object-fit: contain; }
+        .preview-modal.fullscreen .preview-image { max-width: 100%; max-height: 100vh; }
+        .preview-text { background: var(--bg-color); padding: 20px; border-radius: 8px; max-width: 90vw; min-height: 200px; max-height: 85vh; overflow: auto; white-space: pre-wrap; word-wrap: break-word; font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.6; color: var(--text-primary); border: 1px solid var(--border-color); }
+        .preview-modal.fullscreen .preview-text { border-radius: 0; max-width: 100%; max-height: 100vh; height: 100vh; border: none; }
+        .preview-pdf { width: 90vw; height: 85vh; min-height: 400px; max-height: 100vh; border: none; border-radius: 8px; }
+        .preview-modal.fullscreen .preview-pdf { width: 100%; height: 100vh; border-radius: 0; }
+        .confirm-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .confirm-modal.active { display: flex; animation: modalFadeIn 0.2s ease; }
+        .confirm-dialog { animation: modalSlideUp 0.25s ease; }
+        .confirm-dialog { background: var(--card-bg); padding: 28px 32px; border-radius: 16px; max-width: 420px; text-align: center; box-shadow: var(--shadow-lg); }
+        .confirm-dialog h3 { margin-bottom: 12px; color: var(--text-primary); font-size: 18px; }
+        .confirm-dialog p { color: var(--text-secondary); margin-bottom: 24px; font-size: 14px; line-height: 1.6; }
+        .confirm-dialog .warning-icon { font-size: 48px; color: #ef4444; margin-bottom: 16px; display: block; }
+        .confirm-dialog .directory-warning { color: #ef4444; font-weight: 600; font-size: 16px; margin-top: 8px; padding: 12px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .confirm-dialog .directory-warning i { margin-right: 8px; }
+        .confirm-dialog .btn-group { display: flex; gap: 12px; justify-content: center; }
+        .confirm-dialog .btn { padding: 10px 28px; }
+        .confirm-dialog .btn-confirm { background: var(--primary-gradient); color: white; }
+        .confirm-dialog .btn-confirm.delete-directory { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .confirm-dialog .btn-confirm.delete-directory:hover { background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%); }
+        .btn-cancel { background: var(--bg-color); color: var(--text-secondary); border: 1px solid var(--border-color); }
+        .btn-confirm { background: var(--primary-gradient); color: white; }
+        .task-panel { position: absolute; bottom: 20px; right: 20px; width: 520px; height: auto; min-height: 260px; max-height: 560px; background: var(--card-bg); border-radius: 16px; box-shadow: var(--shadow-lg); overflow: hidden; display: none; z-index: 500; border: 1px solid var(--border-color); }
+        .task-panel.active { display: flex; flex-direction: column; }
+        .task-header { background: var(--primary-gradient); color: white; padding: 14px 18px; font-weight: 600; font-size: 14px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .task-close { background: none; border: none; color: white; font-size: 20px; cursor: pointer; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: background 0.2s; }
+        .task-close:hover { background: rgba(255,255,255,0.2); }
+        .task-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; overflow-x: hidden; contain: strict; -webkit-overflow-scrolling: touch; transform: translateZ(0); will-change: scroll-position; overscroll-behavior: contain; scrollbar-gutter: stable; }
+        .task-list-empty { padding: 20px; text-align: center; color: #999; }
+        .task-notice { background: rgba(245, 158, 11, 0.08); border-bottom: 1px solid rgba(245, 158, 11, 0.2); padding: 8px 14px; font-size: 12px; color: #b45309; display: flex; align-items: flex-start; gap: 6px; flex-shrink: 0; }
+        .task-notice i { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+        .task-item { padding: 14px 16px; border-bottom: 1px solid var(--border-color); contain: content; }
+        .task-item:last-child { border-bottom: none; }
+        .task-item:hover { background: var(--hover-bg); }
+        .task-name { font-size: 13px; color: var(--text-primary); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .task-status { font-size: 12px; color: var(--primary-color); }
+        .toolbar-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: #ef4444; color: white; font-size: 10px; font-weight: 700; margin-left: 4px; vertical-align: top; }
+        .task-status.completed { color: var(--icon-image); }
+        .task-status.failed { color: #ef4444; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid var(--primary-color); border-radius: 50%; border-top-color: transparent; animation: spin 0.8s linear infinite; margin-right: 6px; will-change: transform; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes deleteProgressIndeterminate { 0% { left: -30%; } 100% { left: 100%; } }
+        .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 1500; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner { width: 48px; height: 48px; border: 4px solid var(--border-color); border-top-color: var(--primary-color); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .loading-text { color: var(--text-secondary); font-size: 14px; }
+        @media (max-width: 1280px) { .file-name { max-width: 200px; } }
+        @media (max-width: 1080px) { :root { --sidebar-width: 180px; } .toolbar-group { padding-right: 10px; } .file-table th, .file-table td { padding: 12px 14px; } }
+        @media (max-width: 720px) { :root { --sidebar-width: 160px; --sidebar-collapsed-width: 0px; } .header { padding: 0 15px; } .header h1 { font-size: 16px; } .sidebar { position: absolute; z-index: 90; height: calc(100% - var(--header-height)); box-shadow: 2px 0 12px rgba(0,0,0,0.1); } .sidebar.collapsed { width: 0; border-right: none; opacity: 0; } .toolbar { padding: 10px 15px; gap: 8px; } .btn { padding: 6px 12px; font-size: 12px; } .breadcrumb-container { padding: 10px 15px; } }
+        @media (min-width: 2560px) { :root { --sidebar-width: 280px; } body { font-size: 15px; } .header h1 { font-size: 22px; } .file-table th { font-size: 14px; padding: 16px 20px; } .file-table td { font-size: 15px; padding: 16px 20px; } .toolbar { padding: 16px 30px; } .btn { padding: 10px 18px; font-size: 14px; } }
+        @media (min-width: 3840px) { :root { --sidebar-width: 360px; } body { font-size: 16px; } .header h1 { font-size: 26px; } .file-table th, .file-table td { padding: 18px 24px; } }
+        .upload-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+        .upload-modal.active { display: flex; }
+        .upload-dialog { background: var(--card-bg); border-radius: 16px; width: 600px; max-width: 90%; height: 80vh; min-height: 400px; max-height: 85vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
+        .upload-header { background: var(--primary-gradient); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .upload-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+        .upload-close { background: none; border: none; color: white; font-size: 22px; cursor: pointer; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+        .upload-close:hover { background: rgba(255,255,255,0.2); }
+        .upload-body { padding: 20px; overflow: hidden; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        .upload-target-path { margin-bottom: 16px; }
+        .upload-target-path label { display: block; font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; font-weight: 500; }
+        .upload-target-path input { width: 100%; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 13px; background: var(--bg-color); color: var(--text-primary); }
+        .upload-target-path input:focus { border-color: var(--primary-color); outline: none; }
+        .upload-file-area { border: 2px dashed var(--border-color); border-radius: 12px; padding: 36px 20px; text-align: center; cursor: pointer; position: relative; background: var(--bg-color); }
+        .upload-file-area:hover { border-color: var(--primary-color); background: var(--hover-bg); }
+        .upload-file-area.dragover { border-color: var(--primary-color); background: var(--hover-bg); }
+        .upload-file-area input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+        .upload-hint { color: var(--text-muted); font-size: 13px; }
+        .upload-file-section { margin-bottom: 16px; }
+        .upload-file-section.hidden { display: none; }
+        .upload-tab-bar { display: flex; border-bottom: 1px solid var(--border-color); margin-top: 16px; flex-shrink: 0; }
+        .upload-tab { flex: 1; padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); cursor: pointer; }
+        .upload-tab:hover { color: var(--primary-color); background: var(--hover-bg); }
+        .upload-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); transition: none; }
+        .upload-tab-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--hover-bg); color: var(--primary-color); font-size: 10px; font-weight: 600; margin-left: 4px; vertical-align: middle; }
+        .upload-list { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+        .upload-list-empty { padding: 20px; text-align: center; color: #999; font-size: 13px; }
+        .upload-list-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--bg-color); border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border-color); }
+        .upload-list-item:last-child { margin-bottom: 0; }
+        .upload-list-item .item-icon { font-size: 20px; flex-shrink: 0; width: 28px; text-align: center; }
+        .upload-list-item .item-body { flex: 1; min-width: 0; }
+        .upload-list-item .item-name { font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .upload-list-item .item-info-row { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+        .upload-list-item .item-progress { margin-top: 6px; }
+        .upload-list-item .item-progress .progress-bar { height: 4px; background: var(--border-color); border-radius: 3px; overflow: hidden; }
+        .upload-list-item .item-progress .progress-fill { height: 100%; background: var(--primary-gradient); border-radius: 3px; }
+        .upload-list-item .item-status { font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+        .upload-list-item .item-status.uploading { color: var(--primary-color); }
+        .upload-list-item .item-status.done { color: #52c41a; }
+        .upload-list-item .item-status.error { color: #ff4d4f; }
+        .upload-list-item .item-status.cancelled { color: #999; }
+        .upload-list-item .item-actions { flex-shrink: 0; display: flex; gap: 4px; }
+        .upload-list-item .item-actions .btn-action { background: none; border: 1px solid var(--border-color); border-radius: 6px; padding: 4px 10px; font-size: 12px; color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; gap: 4px; }
+        .upload-list-item .item-actions .btn-action:hover { border-color: var(--primary-color); color: var(--primary-color); }
+        .btn-task-delete { background: transparent; border: none; color: var(--text-muted); padding: 4px 8px; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; }
+        .btn-task-delete i { font-size: 1rem; }
+        .btn-task-delete:hover { background-color: rgba(239, 68, 68, 0.1); color: #ef4444; }
+        .upload-footer { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+        .overwrite-checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+        .overwrite-checkbox input { cursor: pointer; }
+        .footer-buttons { display: flex; gap: 8px; }
+    .app-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1200; align-items: center; justify-content: center; }
+    .app-modal.active { display: flex; animation: modalFadeIn 0.2s ease; }
+    @keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal-dialog { background: var(--card-bg); border-radius: 16px; width: 420px; max-width: 90%; margin: 1.75rem auto; box-shadow: var(--shadow-lg); overflow: hidden; pointer-events: auto; animation: modalSlideUp 0.25s ease; }
+    @keyframes modalSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .create-folder-dialog { width: 400px; }
+    .create-folder-dialog .modal-header { background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); }
+    .create-folder-dialog .input-wrap { position: relative; display: flex; align-items: center; }
+    .create-folder-dialog .input-icon { position: absolute; left: 12px; font-size: 16px; color: var(--text-muted); pointer-events: none; }
+    .create-folder-dialog .form-control.with-icon { padding-left: 36px; height: 42px; font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s; }
+    .create-folder-dialog .form-control.with-icon:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--hover-bg); }
+    .create-folder-dialog .form-hint { margin: 8px 2px 0; font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+    .modal-dialog-centered { display: flex; align-items: center; min-height: calc(100% - 3.5rem); margin: 0 auto; }
+    .modal-lg { max-width: 600px; }
+    .modal-content { background: var(--card-bg); border-radius: 16px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; border: none; }
+    .modal-header { background: var(--primary-gradient); color: white; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; border-radius: 16px 16px 0 0; border-bottom: none; }
+    .modal-header h3, .modal-header h5 { margin: 0; font-size: 18px; font-weight: 600; }
+    .modal-title { color: white; }
+    .modal-close { background: none; border: none; color: white; font-size: 24px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; }
+    .modal-close:hover { background: rgba(255,255,255,0.2); }
+    .modal-body { padding: 24px; overflow-y: auto; }
+    .modal-body.p-0 { padding: 0; height: auto; min-height: 400px; max-height: 60vh; overflow-y: auto; }
+    .file-browser-modal.show { display: flex; align-items: center; justify-content: center; }
+    .file-browser-modal .modal-dialog { width: auto; background: transparent; }
+    .file-browser-modal .modal-dialog.modal-lg { max-width: 800px; }
+    .file-browser-modal .modal-dialog-centered { min-height: 0; }
+    .file-browser-modal .modal-body { padding: 0; height: auto; min-height: 150px; max-height: 60vh; overflow-y: auto; }
+    .file-browser-modal .modal-content { height: auto !important; }
+    .file-browser-modal .modal-footer { border-top: 1px solid var(--border-color); }
+    .modal-footer { padding: 18px 24px; display: flex; justify-content: flex-end; gap: 12px; border-top: 1px solid var(--border-color); }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 13px; font-weight: 500; }
+    .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--bg-color); color: var(--text-primary); outline: none; }
+    .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--hover-bg); }
+    .perm-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1100; align-items: center; justify-content: center; }
+    .perm-modal.active { display: flex; }
+    #permPathEditModal { z-index: 1300; }
+    #permHelpModal { z-index: 1500; }
+    .perm-dialog { background: var(--card-bg); border-radius: 16px; width: 60vw; max-width: 95vw; height: 70vh; min-height: 400px; max-height: 95vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color); }
+    .perm-header { background: var(--primary-gradient); color: white; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+    .perm-header h3 { margin: 0; font-size: 17px; font-weight: 600; }
+    .perm-body { padding: 20px; overflow-y: auto; flex: 1; min-height: 0; }
+    .perm-tabs { display: flex; border-bottom: 1px solid var(--border-color); margin-bottom: 16px; }
+    .perm-tab { flex: 1; padding: 10px 16px; text-align: center; font-size: 13px; font-weight: 500; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); cursor: pointer; }
+    .perm-tab:hover { color: var(--primary-color); background: var(--hover-bg); }
+    .perm-tab.active { color: var(--primary-color); border-bottom-color: var(--primary-color); }
+    .perm-section { margin-bottom: 20px; }
+    .perm-section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border-color); }
+    .perm-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .perm-row label { width: 80px; font-size: 13px; color: var(--text-secondary); flex-shrink: 0; }
+    .perm-row select { flex: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: var(--bg-color); color: var(--text-primary); }
+    .perm-users-tag { display: inline-flex; align-items: center; gap: 4px; background: var(--hover-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 2px 8px; font-size: 12px; color: var(--text-primary); margin: 2px; }
+    .perm-users-tag .remove-user { cursor: pointer; color: #ef4444; font-size: 14px; margin-left: 2px; }
+    .perm-users-container { display: flex; flex-wrap: wrap; gap: 4px; min-height: 30px; padding: 6px 8px; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); align-items: center; flex: 1; }
+    .perm-users-container .add-user-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px dashed var(--border-color); background: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .perm-users-container .add-user-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+    .perm-path-list { min-height: 300px; max-height: 60vh; overflow-y: auto; }
+    .perm-path-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; margin-bottom: 6px; }
+    .perm-path-item .path-text { font-size: 13px; color: var(--text-primary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .perm-path-item .path-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; }
+    .perm-tree .perm-tree-node { position: relative; }
+    .perm-tree .perm-tree-row { display: flex; align-items: center; gap: 4px; padding: 4px 12px; cursor: default; border-radius: 6px; font-size: 13px; }
+    .perm-tree .perm-tree-row:hover { background: var(--hover-bg); }
+    .perm-tree .perm-tree-toggle { width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-secondary); font-size: 12px; flex-shrink: 0; border-radius: 4px; }
+    .perm-tree .perm-tree-toggle:hover { background: var(--border-color); color: var(--primary-color); }
+    .perm-tree .perm-tree-toggle-empty { cursor: default; visibility: hidden; }
+    .perm-tree .perm-tree-path { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 12px; }
+    .perm-tree .perm-tree-path i { margin-right: 4px; }
+    .perm-tree .perm-tree-children { border-left: 1px dashed var(--border-color); margin-left: 26px; }
+    .perm-tree .path-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; opacity: 0; transition: opacity 0.15s; }
+    .perm-tree .perm-tree-row:hover .path-actions { opacity: 1; }
+    .perm-tree .action-btn { padding: 2px 8px; font-size: 11px; border: 1px solid var(--border-color); border-radius: 4px; background: var(--bg-color); color: var(--text-secondary); cursor: pointer; }
+    .perm-tree .action-btn:hover { border-color: var(--primary-color); color: var(--primary-color); }
+    .perm-tree .action-btn-delete:hover { border-color: #ef4444; color: #ef4444; }
+    .perm-add-path { display: flex; gap: 8px; margin-top: 10px; }
+    .perm-add-path input { flex: 1; padding: 6px 10px; border: 1px solid var(--border-color); border-radius: 6px; font-size: 13px; background: var(--bg-color); color: var(--text-primary); }
+    .perm-add-path input:focus { border-color: var(--primary-color); outline: none; }
+    .perm-footer { padding: 14px 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--border-color); flex-shrink: 0; }
+    .perm-icon { display: inline-flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 4px; font-size: 11px; margin-left: 6px; vertical-align: middle; color: var(--text-secondary); }
+    .perm-icon.locked { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
+    .perm-icon.partial { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
+    .perm-icon.full { background: rgba(16, 185, 129, 0.12); color: #10b981; }
+    .perm-icon.na { background: rgba(148, 163, 184, 0.12); color: #94a3b8; }
+    .perm-text { font-size: 11px; color: var(--text-muted); margin-left: 4px; }
+    .perm-toolbar-btn { padding: 6px 12px; border: 1px solid var(--primary-color); background: var(--card-bg); color: var(--primary-color); border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.2s; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .perm-toolbar-btn:hover { background: var(--primary-color); color: white; }
+    .user-select-dropdown { position: absolute; z-index: 1400; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: var(--shadow-lg); height: auto; min-height: 40px; max-height: 180px; overflow-y: auto; min-width: 160px; }
+    .user-select-item { padding: 8px 12px; font-size: 13px; color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+    .user-select-item:hover { background: var(--hover-bg); }
+    .user-select-item.selected { color: var(--primary-color); font-weight: 500; }
+    .user-select-item .check-icon { visibility: hidden; }
+    .user-select-item.selected .check-icon { visibility: visible; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <div class="header-left"><button class="sidebar-toggle" onclick="toggleSidebar()" data-i18n="fm.toggle_sidebar" data-i18n-attr="title" title=""><i class="bi bi-list"></i></button><h1 data-i18n="fm.page_title"></h1></div>
+            <div class="header-right"><div class="lang-selector"><button class="lang-btn" onclick="toggleLangDropdown()"><i class="bi bi-translate"></i><span id="langCurrentLabel">中文</span><i class="bi bi-chevron-down"></i></button><div class="lang-dropdown" id="langDropdown"><div class="lang-option" data-lang="zh" onclick="selectLang('zh')"><span class="lang-dot zh"></span><span>中文</span></div><div class="lang-option" data-lang="en" onclick="selectLang('en')"><span class="lang-dot en"></span><span>English</span></div></div></div><div class="theme-selector"><button class="theme-btn" onclick="toggleThemeDropdown()" data-i18n="theme.switch" data-i18n-attr="title" title=""><i class="bi bi-palette"></i></button><div class="theme-dropdown" id="themeDropdown"><div class="theme-option active" data-theme="light" onclick="setTheme('light')"><span class="theme-dot light"></span><span data-i18n="theme.light"></span></div><div class="theme-option" data-theme="dark" onclick="setTheme('dark')"><span class="theme-dot dark"></span><span data-i18n="theme.dark"></span></div><div class="theme-option" data-theme="ocean" onclick="setTheme('ocean')"><span class="theme-dot ocean"></span><span data-i18n="theme.ocean"></span></div><div class="theme-option" data-theme="sunset" onclick="setTheme('sunset')"><span class="theme-dot sunset"></span><span data-i18n="theme.sunset"></span></div><div class="theme-option" data-theme="forest" onclick="setTheme('forest')"><span class="theme-dot forest"></span><span data-i18n="theme.forest"></span></div>  </div></div><a class="help-link-btn" href="/command/static/file/instruct/main.html" target="_blank" data-i18n="login.help_text" data-i18n-attr="title" title=""><i class="bi bi-question-circle"></i></a><div class="user-info" onclick="showUserSettings()"><i class="bi bi-person-circle" style="font-size: 24px; margin-right: 8px;"></i><span id="currentUser"></span></div><button class="btn-logout" onclick="logout()" data-i18n="user.logout"></button></div>
+        </div>
+        <div class="main-container">
+          <div class="sidebar" id="sidebar">
+                <div class="sidebar-section" data-i18n="fm.quick_access"></div>
+                <div class="sidebar-item admin-only" id="userManagementLink" onclick="goToUserManagement()"><span class="icon"><i class="bi bi-people" style="font-size:18px"></i></span><span class="label" data-i18n="fm.user_management"></span></div>
+                <div class="sidebar-item" onclick="navigateToChat()"><span class="icon"><i class="bi bi-chat-dots-fill"></i></span><span class="label" data-i18n="fm.ai_chat"></span></div>
+
+                <div class="sidebar-item active" onclick="showRoot()"><span class="icon"><svg viewBox="0 0 64 64" width="20" height="20"><defs><linearGradient id="rootFolderGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFD54F"/><stop offset="100%" style="stop-color:#FFB300"/></linearGradient><linearGradient id="rootFolderTabGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFE082"/><stop offset="100%" style="stop-color:#FFD54F"/></linearGradient></defs><g><path d="M4 16 L24 16 L28 20 L60 20 L60 52 L4 52 Z" fill="url(#rootFolderGrad)"/><path d="M4 16 L24 16 L28 12 L56 12 L56 20 L60 20 Z" fill="url(#rootFolderTabGrad)"/></g></svg></span><span class="label" data-i18n="fm.my_computer"></span></div>
+                <div class="sidebar-section" data-i18n="fm.disks"></div>
+                <div id="rootList"></div>
+            </div>
+            <div class="content-area">
+                <div class="toolbar-section">
+                    <div class="breadcrumb-container">
+                        <div class="breadcrumb-left"><div class="breadcrumb" id="breadcrumb"><span class="breadcrumb-current" data-i18n="fm.my_computer"></span></div></div>
+                        <div class="breadcrumb-right">
+                            <button class="perm-toolbar-btn admin-only" style="display:none" onclick="openPermissionModal()"><i class="bi bi-shield-lock"></i><span data-i18n="fm.permission_settings"></span></button>
+                        </div>
+                    </div>
+                    <div class="toolbar">
+                        <div class="toolbar-group"><button class="btn btn-secondary" onclick="goUp()"><i class="bi bi-arrow-up"></i> <span data-i18n="fm.go_up"></span></button><button class="btn btn-secondary" onclick="refresh()"><i class="bi bi-arrow-clockwise"></i> <span data-i18n="fm.refresh"></span></button><button class="btn btn-secondary" onclick="showCreateFolderModal()" id="createFolderBtn" style="display:none"><i class="bi bi-folder-plus"></i> <span data-i18n="fm.create_folder"></span></button></div>
+                        <div class="toolbar-group"><label class="filter-checkbox"><input type="checkbox" id="showHidden" onchange="applyFilters()"><span data-i18n="fm.show_hidden"></span></label></div>
+                        <div class="toolbar-group"><div class="sort-info"><span id="currentSortField" data-i18n="fm.sort_name"></span><button class="sort-toggle" id="sortOrderBtn" onclick="toggleSortOrder()" title="" data-i18n="fm.toggle_sort" data-i18n-attr="title"><i class="bi bi-sort-down"></i></button></div></div>
+                        <div class="toolbar-group"><div class="search-box" id="searchBox"><i class="bi bi-search search-icon"></i><input type="text" id="searchInput" data-i18n="fm.search_placeholder" data-i18n-attr="placeholder" placeholder="" oninput="handleSearch()" onkeydown="handleSearchKeydown(event)"><button class="clear-btn" onclick="clearSearch()"><i class="bi bi-x-lg"></i></button></div></div>
+                        <div class="toolbar-group"><div class="view-toggle"><button class="view-toggle-btn active" id="viewListBtn" onclick="setView('list')"><i class="bi bi-list-ul"></i> <span data-i18n="fm.view_list"></span></button><button class="view-toggle-btn" id="viewGridBtn" onclick="setView('grid')"><i class="bi bi-grid-fill"></i> <span data-i18n="fm.view_grid"></span></button></div></div>
+<div class="toolbar-group"><button class="btn btn-primary" onclick="showUploadModal()" id="uploadToolbarBtn"><i class="bi bi-upload"></i> <span data-i18n="fm.upload"></span> <span class="toolbar-badge" id="uploadToolbarBadge" style="display:none">0</span></button></div>
+                           <div class="toolbar-group"><button class="btn btn-secondary" onclick="showTasks()"><i class="bi bi-list-task"></i> <span data-i18n="fm.download_tasks"></span></button></div>
+                     </div>
+                </div>
+                <div class="file-view-wrapper">
+                    <div class="file-table-container view-list" id="tableViewContainer">
+                        <table class="file-table" id="fileTable">
+                            <thead><tr><th id="col-name" onclick="sortBy('name')" data-sort="name" style="width:450px" class="resizable"><span data-i18n="fm.sort_name"></span> <span class="sort-icon bi bi-arrow-up-down" id="sort-name"></span><div class="resize-handle" data-column="col-name"></div></th><th id="col-size" style="width:120px" onclick="sortBy('size')" data-sort="size" class="resizable"><span data-i18n="fm.sort_size"></span> <span class="sort-icon bi bi-arrow-up-down" id="sort-size"></span><div class="resize-handle" data-column="col-size"></div></th><th id="col-time" style="width:160px" onclick="sortBy('time')" data-sort="time" class="resizable"><span data-i18n="fm.sort_time"></span> <span class="sort-icon bi bi-arrow-up-down" id="sort-time"></span><div class="resize-handle" data-column="col-time"></div></th><th id="col-action" style="width:150px"><span data-i18n="user.action"></span></th></tr></thead>
+                            <tbody id="fileList"></tbody>
+                        </table>
+                    </div>
+                    <div class="file-grid" id="fileGrid"></div>
+                    <div class="empty-state" id="emptyState" style="display:none"><div class="icon"><i class="bi bi-folder-x" style="font-size:64px"></i></div><p data-i18n="fm.dir_empty"></p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="preview-modal" id="previewModal"><button class="preview-fullscreen-btn" id="previewFullscreenBtn" onclick="togglePreviewFullscreen()" title="" data-i18n="fm.preview_fullscreen" data-i18n-attr="title"><i class="bi bi-fullscreen"></i></button><button class="preview-close" onclick="closePreview()"><i class="bi bi-x-lg"></i></button><div class="preview-content" id="previewContent"></div></div>
+    <div class="confirm-modal" id="confirmModal"><div class="confirm-dialog"><h3><i class="bi bi-exclamation-triangle-fill"></i> <span data-i18n="fm.confirm_download_title"></span></h3><p id="confirmMsg" data-i18n="fm.confirm_download_msg"></p><div class="btn-group"><button class="btn btn-cancel" onclick="closeConfirm()" data-i18n="common.cancel"></button><button class="btn btn-confirm" id="confirmBtn" onclick="confirmDownload()" data-i18n="common.confirm"></button></div></div></div>
+    <div class="confirm-modal" id="deleteConfirmModal"><div class="confirm-dialog"><span class="warning-icon"><i class="bi bi-exclamation-triangle-fill"></i></span><h3 data-i18n="fm.confirm_delete_title"></h3><p id="deleteConfirmMsg" data-i18n="fm.confirm_delete_file" ></p><div id="directoryWarning" class="directory-warning" style="display:none"><i class="bi bi-folder-x"></i> <span data-i18n="fm.delete_dir_warning"></span></div><div class="btn-group"><button class="btn btn-cancel" onclick="closeDeleteConfirm()" data-i18n="common.cancel"></button><button class="btn btn-confirm" id="deleteConfirmBtn" onclick="confirmDelete()" data-i18n="common.delete"></button></div></div></div>
+    <div class="app-modal" id="deleteProgressModal"><div class="modal-dialog"><div class="modal-header"><h3><i class="bi bi-trash3-fill"></i> <span data-i18n="fm.processing"></span></h3></div><div class="modal-body"><div style="text-align:center;padding:20px 0;"><div style="height:8px;background:var(--border-color);border-radius:4px;overflow:hidden;"><div id="deleteProgressFill" style="height:100%;width:30%;background:var(--primary-gradient);border-radius:4px;position:relative;animation:deleteProgressIndeterminate 1.5s ease-in-out infinite;"></div></div></div></div></div></div>
+    <div class="app-modal" id="createFolderModal"><div class="modal-dialog create-folder-dialog"><div class="modal-header"><h3><i class="bi bi-folder-plus"></i> <span data-i18n="fm.create_folder_title"></span></h3><button class="modal-close" type="button" onclick="closeCreateFolderModal()" aria-label="Close"><i class="bi bi-x-lg"></i></button></div><div class="modal-body"><div class="form-group"><label id="createFolderLabel" for="createFolderName" data-i18n="fm.folder_name_label"></label><div class="input-wrap"><i class="bi bi-folder2 input-icon"></i><input type="text" class="form-control with-icon" id="createFolderName" placeholder="" onkeydown="handleCreateFolderKeydown(event)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></div><p class="form-hint" data-i18n="fm.folder_name_hint"></p></div></div><div class="modal-footer"><button class="btn btn-cancel" type="button" onclick="closeCreateFolderModal()" data-i18n="common.cancel"></button><button class="btn btn-primary" type="button" onclick="createFolder()" data-i18n="fm.create_folder"></button></div></div></div>
+    <div class="task-panel" id="taskPanel"><div class="task-header"><span><i class="bi bi-download"></i> <span data-i18n="fm.task_panel_title"></span></span><button class="task-close" onclick="hideTasks()"><i class="bi bi-x-lg"></i></button></div><div class="task-notice"><i class="bi bi-exclamation-triangle-fill"></i><span data-i18n="fm.task_notice"></span></div><div class="task-list" id="taskList"></div></div>
+    <div class="loading-overlay" id="loadingOverlay"><div class="loading-spinner"></div><div class="loading-text" id="loadingText" data-i18n="common.loading"></div></div>
+    <div class="toast" id="toast"></div>
+    <div class="upload-modal" id="uploadModal">
+        <div class="upload-dialog">
+            <div class="upload-header"><h3><i class="bi bi-upload"></i> <span data-i18n="fm.upload_title"></span></h3><button class="upload-close" onclick="closeUploadModal()"><i class="bi bi-x-lg"></i></button></div>
+            <div class="upload-body">
+                <div class="upload-file-section" id="uploadFileSection">
+                    <div class="upload-target-path"><label data-i18n="fm.target_dir"></label><input type="text" id="uploadTargetPath" readonly></div>
+                    <div class="upload-file-area" id="uploadFileArea"><input type="file" id="fileInput" multiple onchange="handleFileSelect(event)"><div class="upload-hint"><i class="bi bi-cloud-arrow-up" style="font-size:28px;display:block;margin-bottom:8px;color:var(--primary-color)"></i><span data-i18n="fm.upload_hint"></span></div></div>
+                </div>
+                <div class="upload-tab-bar">
+                    <button class="upload-tab active" data-tab="active" onclick="switchUploadListTab('active')"><i class="bi bi-arrow-up-circle"></i> <span data-i18n="fm.upload_active"></span> <span class="upload-tab-badge" id="activeTabCount">0</span></button>
+                    <button class="upload-tab" data-tab="completed" onclick="switchUploadListTab('completed')"><i class="bi bi-check-circle"></i> <span data-i18n="fm.upload_completed"></span> <span class="upload-tab-badge" id="completedTabCount">0</span></button>
+                </div>
+                <div class="upload-list" id="uploadListProgressing"><div style="padding:20px;text-align:center;color:#999;font-size:13px;" data-i18n="fm.upload_no_active"></div></div>
+                <div class="upload-list" id="uploadListCompleted" style="display:none"><div style="padding:20px;text-align:center;color:#999;font-size:13px;" data-i18n="fm.upload_no_completed"></div></div>
+            </div>
+        </div>
+    </div>
+<link rel="stylesheet" href="user_share.css">
+    <link rel="stylesheet" href="common/common.css">
+    <link rel="stylesheet" href="common/common-dialog.css">
+    <link rel="stylesheet" href="model/modals.css">
+    <script src="common/messages.js"></script>
+    <script src="common/i18n.js"></script>
+    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js" onerror="window.__bootstrapLoadFailed=true"></script>
+    <script src="common/common-dialog.js"></script>
+    <script src="common/common-api.js"></script>
+    <script src="common/common.js"></script>
+    <script src="common/common-file-browser.js"></script>
+    <script src="user_share.js"></script>
+    <div class="app-modal" id="forceChangePasswordModal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 data-i18n="fm.force_pw_title"></h3>
+                <button class="modal-close" onclick="closeForceChangePasswordModal()"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="forcePasswordForm">
+                    <div class="form-group"><label><span data-i18n="fm.new_password"></span> <span style="color:#ef4444">*</span></label><input type="password" class="form-control" id="forceNewPassword" oninput="validateForcePassword()" required></div>
+                    <div class="form-group"><label><span data-i18n="fm.confirm_password"></span> <span style="color:#ef4444">*</span></label><input type="password" class="form-control" id="forceConfirmPassword" oninput="validateForcePassword()" required></div>
+                    <div class="error-msg" id="forcePasswordError" style="display:none; font-size:12px; margin-top:4px;"></div>
+                    <div class="error-msg" id="forceConfirmError" style="display:none; font-size:12px; margin-top:4px;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="saveForcePassword()" data-i18n="common.save"></button>
+            </div>
+        </div>
+    </div>
+    <div class="perm-modal" id="permissionModal">
+        <div class="perm-dialog">
+            <div class="perm-header"><h3><i class="bi bi-shield-lock"></i> <span data-i18n="fm.perm_title"></span></h3><button class="modal-close" onclick="closePermissionModal()"><i class="bi bi-x-lg"></i></button></div>
+            <div class="perm-body">
+                <div class="perm-tabs">
+                    <button class="perm-tab active" data-permtab="path" onclick="switchPermTab('path')"><i class="bi bi-folder2"></i> <span data-i18n="fm.perm_path_rules"></span></button>
+                </div>
+                <div id="permPathTab">
+                    <div class="perm-path-list" id="permPathList"></div>
+                    <div class="perm-add-path"><button class="btn btn-primary" onclick="openPermPathBrowser()"><i class="bi bi-folder2-open"></i> <span data-i18n="fm.browser_select_path"></span></button></div>
+                </div>
+            </div>
+            <div class="perm-footer"><button class="btn btn-cancel" onclick="closePermissionModal()" data-i18n="common.close"></button></div>
+        </div>
+    </div>
+    <div class="perm-modal" id="permPathEditModal">
+        <div class="perm-dialog" style="width:60vw; max-width:92%;">
+            <div class="perm-header"><h3><i class="bi bi-shield-lock"></i> <span data-i18n="fm.perm_edit_title"></span></h3><div style="display:flex;align-items:center;gap:8px;"><button class="modal-close" style="font-size:16px;width:28px;height:28px;" onclick="showPermHelpDialog()" data-i18n="fm.perm_config_help" data-i18n-attr="title" title=""><i class="bi bi-question-circle"></i></button><button class="modal-close" onclick="closePermPathEdit()"><i class="bi bi-x-lg"></i></button></div></div>
+            <div class="perm-body">
+                <div class="form-group"><label data-i18n="fm.perm_path"></label><input type="text" class="form-control" id="permEditPath" readonly></div>
+                <div class="perm-section"><div class="perm-section-title" data-i18n="fm.perm_config"></div>
+                    <div class="perm-row"><label data-i18n="fm.perm_read"></label><select id="permEditReadRole" onchange="onPermEditRoleChange('read')"><option value="admin">admin</option><option value="user">user</option><option value="guest">guest</option></select><div class="perm-users-container" id="permEditReadUsers"></div></div>
+                    <div class="perm-row"><label data-i18n="fm.perm_execute"></label><select id="permEditExecuteRole" onchange="onPermEditRoleChange('execute')"><option value="admin">admin</option><option value="user">user</option><option value="guest">guest</option></select><div class="perm-users-container" id="permEditExecuteUsers"></div></div>
+                    <div class="perm-row"><label data-i18n="fm.perm_download"></label><select id="permEditDownloadRole" onchange="onPermEditRoleChange('download')"><option value="admin">admin</option><option value="user">user</option><option value="guest">guest</option></select><div class="perm-users-container" id="permEditDownloadUsers"></div></div>
+                    <div class="perm-row"><label data-i18n="fm.perm_upload"></label><select id="permEditUploadRole" onchange="onPermEditRoleChange('upload')"><option value="admin">admin</option><option value="user">user</option><option value="guest">guest</option></select><div class="perm-users-container" id="permEditUploadUsers"></div></div>
+                    <div class="perm-row"><label data-i18n="fm.perm_delete"></label><select id="permEditDeleteRole" onchange="onPermEditRoleChange('delete')"><option value="admin">admin</option><option value="user">user</option><option value="guest">guest</option></select><div class="perm-users-container" id="permEditDeleteUsers"></div></div>
+                    <div class="perm-row" style="align-items:center;"><label data-i18n="fm.perm_protected"></label><div style="display:flex;align-items:center;gap:8px;"><input type="checkbox" id="permEditIsProtected" style="width:18px;height:18px;cursor:pointer;"><span style="font-size:12px;color:var(--text-muted);" data-i18n="fm.perm_protected_hint"></span></div></div>
+                </div>
+            </div>
+            <div class="perm-footer"><button class="btn btn-cancel" onclick="closePermPathEdit()" data-i18n="common.cancel"></button><button class="btn btn-primary" onclick="savePermPathEdit()" data-i18n="common.save"></button></div>
+        </div>
+    </div>
+    <div class="perm-modal" id="permHelpModal">
+        <div class="perm-dialog" style="width:640px; max-width:92vw; height:auto; max-height:85vh;">
+            <div class="perm-header"><h3><i class="bi bi-info-circle"></i> <span data-i18n="fm.perm_help_title"></span></h3><button class="modal-close" onclick="closePermHelpDialog()"><i class="bi bi-x-lg"></i></button></div>
+            <div class="perm-body" style="max-height:70vh; overflow-y:auto;">
+                <div style="font-size:13px; line-height:1.8; color:var(--text-primary);">
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-book"></i> <span data-i18n="fm.perm_help_basic"></span></h4>
+                        <p style="margin-bottom:8px;" data-i18n="fm.perm_help_basic_desc"></p>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-shield-check"></i> <span data-i18n="fm.perm_help_types"></span></h4>
+                        <div style="background:var(--bg-color); border-radius:8px; padding:12px 16px; margin-bottom:8px;">
+                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                                <thead><tr style="border-bottom:1px solid var(--border-color);"><th style="text-align:left; padding:4px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_type_perm"></th><th style="text-align:left; padding:4px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_type_desc"></th><th style="text-align:left; padding:4px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_type_target"></th></tr></thead>
+                                <tbody>
+                                    <tr><td style="padding:6px 8px; font-weight:500;" data-i18n="fm.perm_read"></td><td style="padding:6px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_read_desc"></td><td style="padding:6px 8px; color:var(--text-muted);" data-i18n="fm.perm_help_file_dir"></td></tr>
+                                    <tr><td style="padding:6px 8px; font-weight:500;" data-i18n="fm.perm_execute"></td><td style="padding:6px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_exec_desc"></td><td style="padding:6px 8px; color:var(--text-muted);" data-i18n="fm.perm_help_dir_only"></td></tr>
+                                    <tr><td style="padding:6px 8px; font-weight:500;" data-i18n="fm.perm_download"></td><td style="padding:6px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_dl_desc"></td><td style="padding:6px 8px; color:var(--text-muted);" data-i18n="fm.perm_help_file_dir"></td></tr>
+                                    <tr><td style="padding:6px 8px; font-weight:500;" data-i18n="fm.perm_upload"></td><td style="padding:6px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_ul_desc"></td><td style="padding:6px 8px; color:var(--text-muted);" data-i18n="fm.perm_help_dir_only"></td></tr>
+                                    <tr><td style="padding:6px 8px; font-weight:500;" data-i18n="fm.perm_delete"></td><td style="padding:6px 8px; color:var(--text-secondary);" data-i18n="fm.perm_help_del_desc"></td><td style="padding:6px 8px; color:var(--text-muted);" data-i18n="fm.perm_help_file_dir"></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:6px; margin-bottom:0;"><i class="bi bi-info-circle"></i> <span data-i18n="fm.perm_help_read_note"></span></p>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-people"></i> <span data-i18n="fm.perm_help_roles"></span></h4>
+                        <p style="margin-bottom:8px;" data-i18n="fm.perm_help_roles_desc"></p>
+                        <div style="background:var(--bg-color); border-radius:8px; padding:12px 16px; margin-bottom:8px;">
+                            <p style="margin-bottom:6px;"><strong data-i18n="fm.perm_help_role_meaning"></strong><span data-i18n="fm.perm_help_role_meaning_desc"></span></p>
+                            <ul style="margin-left:20px; margin-bottom:0;">
+                                <li><span data-i18n="fm.perm_help_role_admin"></span> <strong>admin</strong><span data-i18n="fm.perm_help_role_admin_desc"></span></li>
+                                <li><span data-i18n="fm.perm_help_role_admin"></span> <strong>user</strong><span data-i18n="fm.perm_help_role_user_desc"></span></li>
+                                <li><span data-i18n="fm.perm_help_role_admin"></span> <strong>guest</strong><span data-i18n="fm.perm_help_role_guest_desc"></span></li>
+                            </ul>
+                        </div>
+                        <p style="margin-bottom:8px;"><strong data-i18n="fm.perm_help_constraint"></strong><span data-i18n="fm.perm_help_constraint_desc"></span></p>
+                        <ul style="margin-left:20px; margin-bottom:0;">
+                            <li data-i18n="fm.perm_help_constraint_ex1"></li>
+                            <li data-i18n="fm.perm_help_constraint_ex2"></li>
+                            <li data-i18n="fm.perm_help_constraint_ex3"></li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-arrow-up-circle"></i> <span data-i18n="fm.perm_help_cascade"></span></h4>
+                        <p style="margin-bottom:6px;" data-i18n="fm.perm_help_cascade_desc"></p>
+                        <ul style="margin-left:20px; margin-bottom:0;">
+                            <li data-i18n="fm.perm_help_cascade_del"></li>
+                            <li data-i18n="fm.perm_help_cascade_ul"></li>
+                            <li data-i18n="fm.perm_help_cascade_dl"></li>
+                            <li data-i18n="fm.perm_help_cascade_exec"></li>
+                        </ul>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-person-plus"></i> <span data-i18n="fm.perm_help_extra_user"></span></h4>
+                        <p style="margin-bottom:6px;" data-i18n="fm.perm_help_extra_user_desc"></p>
+                        <p style="margin-bottom:0;"><strong data-i18n="fm.perm_help_extra_user_sub"></strong><span data-i18n="fm.perm_help_extra_user_sub_desc"></span></p>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-arrow-down-circle"></i> <span data-i18n="fm.perm_help_cascade_rm"></span></h4>
+                        <p style="margin-bottom:0;" data-i18n="fm.perm_help_cascade_rm_desc"></p>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-shield-lock"></i> <span data-i18n="fm.perm_help_protected"></span></h4>
+                        <p style="margin-bottom:4px;" data-i18n="fm.perm_help_protected_desc"></p>
+                    </div>
+                    <div style="margin-bottom:18px;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-tree"></i> <span data-i18n="fm.perm_help_inherit"></span></h4>
+                        <p style="margin-bottom:6px;" data-i18n="fm.perm_help_inherit_desc"></p>
+                        <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:8px; padding:10px 14px; font-size:12px; color:#92400e; margin-bottom:8px;">
+                            <strong style="color:#d97706;"><i class="bi bi-exclamation-triangle"></i> <span data-i18n="fm.perm_help_read_no_inherit"></span></strong><span data-i18n="fm.perm_help_read_no_inherit_desc"></span>
+                        </div>
+                        <div style="background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25); border-radius:8px; padding:10px 14px; font-size:12px; color:#92400e; margin-bottom:0;">
+                            <strong style="color:#d97706;"><i class="bi bi-exclamation-triangle"></i> <span data-i18n="fm.perm_help_dir_check"></span></strong><span data-i18n="fm.perm_help_dir_check_desc"></span>
+                        </div>
+                    </div>
+                    <div style="margin-bottom:0;">
+                        <h4 style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--primary-color);"><i class="bi bi-signpost-split"></i> <span data-i18n="fm.perm_help_exec_pierce"></span></h4>
+                        <p style="margin-bottom:4px;" data-i18n="fm.perm_help_exec_pierce_desc"></p>
+                        <div style="background:var(--bg-color); border-radius:8px; padding:10px 14px; font-size:12px; margin-bottom:0;">
+                            <strong data-i18n="fm.perm_help_example"></strong><code style="background:var(--hover-bg); padding:1px 5px; border-radius:3px;">/data</code><span data-i18n="fm.perm_help_example_desc"></span><code style="background:var(--hover-bg); padding:1px 5px; border-radius:3px;">/data/shared</code><span data-i18n="fm.perm_help_example_desc2"></span><code style="background:var(--hover-bg); padding:1px 5px; border-radius:3px;">/data</code><span data-i18n="fm.perm_help_example_desc3"></span><code style="background:var(--hover-bg); padding:1px 5px; border-radius:3px;">shared</code><span data-i18n="fm.perm_help_example_desc4"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="perm-footer"><button class="btn btn-primary" onclick="closePermHelpDialog()" data-i18n="fm.perm_i_understand"></button></div>
+        </div>
+    </div>
+    <div class="modal fade file-browser-modal" id="fileBrowserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title" id="fileBrowserTitle"><i class="bi bi-folder2-open"></i> <span data-i18n="fm.browser_select_path"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
+                <div class="modal-body p-0">
+                    <div class="file-browser-breadcrumb" id="fileBrowserBreadcrumb"></div>
+                    <div class="file-browser-path-input"><input type="text" id="fileBrowserCurrentPath" data-i18n="fm.browser_current_path" data-i18n-attr="placeholder" placeholder="" readonly></div>
+                    <div class="file-browser-filter"><span class="filter-icon"><i class="bi bi-search"></i></span><input type="text" id="fileBrowserFilter" data-i18n="fm.browser_filter_placeholder" data-i18n-attr="placeholder" placeholder="" oninput="filterFileList()"></div>
+                    <div id="fileBrowserContent"><div class="file-browser-loading"><i class="bi bi-arrow-repeat spinner"></i> <span data-i18n="common.loading"></span></div></div>
+                </div>
+                <div class="file-browser-selected-path" id="fileBrowserSelectedPath" data-i18n="fm.browser_unselected"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="common.cancel"></button>
+                    <button type="button" class="btn btn-primary" id="fileBrowserConfirmBtn" disabled><i class="bi bi-check-circle"></i> <span data-i18n="fm.browser_confirm"></span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="upload.js"></script>
+    <script src="file_permission.js"></script>
+    <script>
+        window.onLangChange = function() {
+            if (typeof updateLangUI === 'function') updateLangUI();
+            applyI18n();
+            updateSortIndicators();
+        };
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof updateLangUI === 'function') updateLangUI();
+        });
+          let sessionId = localStorage.getItem('sessionId'), currentPath = '', isRootView = true, pendingDownload = null, taskPollingInterval = null, currentSort = {field:'name',asc:true}, allFiles = [], homePath = '', currentDirPerm = 0, pathPermMap = {};
+        if (!sessionId) { window.location.href = STATIC_BASE + '/login.html'; }
+        function escapeJs(s) { return String(s).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+        function getSessionParam() { return 'sessionId=' + encodeURIComponent(sessionId); }
+        async function api(path, options) {
+            try {
+                return await commonApi(path, options);
+            } catch (e) {
+                if (e.message === 'User blocked') showBlockedCurrentUserModal();
+                throw e;
+            }
+          }
+          async function apiWithTimeout(path, options, timeoutMs = 60000) {
+              const controller = new AbortController();
+              const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+              try {
+                  options = options || {};
+                  options.signal = controller.signal;
+                  return await commonApi(path, options);
+              } finally {
+                  clearTimeout(timeoutId);
+              }
+          }
+        function navigateToChat() { window.open(STATIC_BASE + '/openwebui/chat.html', '_blank'); }
+        function showLoading(text) { document.getElementById('loadingText').textContent = text || t('common.loading'); document.getElementById('loadingOverlay').classList.add('active'); }
+        function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+        async function init() {
+            await fetchCurrentUser();
+            var currentSystem = 'linux';
+            try {
+                var sysResp = await fetch(API_BASE + '/system/platform', { headers: {'X-Session-Id': localStorage.getItem('sessionId')} });
+                var sysData = await sysResp.json();
+                if (sysData && sysData.data) currentSystem = sysData.data;
+            } catch(e) {}
+            const lastPath = currentUserData && currentUserData.userContext && currentUserData.userContext.fileManagerContext && currentUserData.userContext.fileManagerContext.lastVisitedFileDir ? currentUserData.userContext.fileManagerContext.lastVisitedFileDir.path : null;
+            try {
+                const result = await api('/file/roots');
+                if (result.success) { renderRootList(result.data); }
+                homePath = currentSystem === 'mac' ? '/Users/hahaha' : (currentSystem === 'linux' ? '/home' : 'C:');
+            } catch (err) { console.error('Init error:', err); }
+            await checkUserPermission();
+            await loadUploadTasks();
+            if (lastPath) {
+                await navigateTo(lastPath);
+            } else {
+                await showRoot();
+            }
+            setupUploadDragDrop();
+        }
+        function renderRootList(roots) {
+            const container = document.getElementById('rootList');
+            const folderIcon = '<svg viewBox="0 0 64 64" width="20" height="20"><defs><linearGradient id="sfGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFD54F"/><stop offset="100%" style="stop-color:#FFB300"/></linearGradient><linearGradient id="sfTabGrad" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FFE082"/><stop offset="100%" style="stop-color:#FFD54F"/></linearGradient></defs><g><path d="M4 16 L24 16 L28 20 L60 20 L60 52 L4 52 Z" fill="url(#sfGrad)"/><path d="M4 16 L24 16 L28 12 L56 12 L56 20 L60 20 Z" fill="url(#sfTabGrad)"/></g></svg>';
+            container.innerHTML = roots.map(root => { var perm = root.filePermission || 0; var lockIcon = hasExecutePermission(perm) ? '' : '<span class="sidebar-lock-icon" title="" data-i18n="fm.toast_no_exec" data-i18n-attr="title"><i class="bi bi-lock-fill"></i></span>'; var protectedIcon = isPathProtected(perm) ? '<span class="sidebar-lock-icon" title="" data-i18n="fm.protected_path" data-i18n-attr="title"><i class="bi bi-shield-lock-fill"></i></span>' : ''; return '<div class="sidebar-item' + (!hasExecutePermission(perm) ? ' sidebar-item-locked' : '') + '" onclick="navigateToRoot(\'' + escapeJs(root.path) + '\', ' + perm + ')"><span class="icon">' + folderIcon + '</span><span class="label">' + escapeHtml(root.path) + '</span>' + protectedIcon + lockIcon + '</div>'; }).join('');
+        }
+        function navigateToRoot(path, perm) {
+            if (!hasExecutePermission(perm)) {
+                showToast(t('fm.toast_no_exec'), 'error');
+                return;
+            }
+            currentDirPerm = perm;
+            navigateTo(path, perm);
+        }
+        async function showRoot() {
+            isRootView = true; currentPath = '';
+            document.getElementById('breadcrumb').innerHTML = '<span class="breadcrumb-current">' + t('fm.my_computer') + '</span>';
+            try {
+                const result = await api('/file/roots');
+                if (result.success) { renderRoots(result.data); } else { showToast(t('fm.toast_root_fail') + ': ' + result.msg, 'error'); }
+            } catch (err) { console.error('Root directories error:', err); showToast(t('fm.toast_root_fail'), 'error'); }
+        }
+             function renderRoots(roots) {
+            const tbody = document.getElementById('fileList'), emptyState = document.getElementById('emptyState');
+            if (!roots || roots.length === 0) { tbody.innerHTML = ''; emptyState.style.display = 'block'; return; }
+            emptyState.style.display = 'none';
+            allFiles = roots.map(function(r) { r = Object.assign({}, r); r.name = r.path || r.name || ''; return r; });
+            applySorting();
+            updateUploadButtonVisibility(0);
+            updateCreateFolderButtonVisibility(0);
+        }
+        async function navigateTo(path, perm) {
+            currentPath = path; isRootView = false;
+            currentDirPerm = perm !== undefined && perm !== null ? perm : (pathPermMap[path] || 0);
+            updateBreadcrumb(path);
+            try {
+                const result = await api('/file/list?path=' + encodeURIComponent(path));
+                if (result.success) {
+                    allFiles = result.data;
+                    applySorting();
+                    if (currentDirPerm === 0) {
+                        try {
+                            const permResult = await api('/file/permission/check?path=' + encodeURIComponent(path));
+                            if (permResult.success) currentDirPerm = permResult.data || 0;
+                        } catch (e) { /* ignore */ }
+                    }
+                    pathPermMap[path] = currentDirPerm;
+                    if (Object.keys(pathPermMap).length > 200) { var keys = Object.keys(pathPermMap); for (var ki = 0; ki < 50; ki++) delete pathPermMap[keys[ki]]; }
+                    updateUploadButtonVisibility(currentDirPerm);
+                    updateCreateFolderButtonVisibility(currentDirPerm);
+                    return true;
+                }
+                else if (result.code === 404) { await showRoot(); return false; }
+                else if (result.code === 403) { showToast(t('fm.toast_no_access'), 'error'); await showRoot(); return false; }
+                else { showToast(t('fm.toast_list_fail') + ': ' + (result.msg || ''), 'error'); return false; }
+            } catch (err) { console.error('Navigate error:', err); showToast(t('fm.toast_net_error'), 'error'); return false; }
+        }
+        function navigateToHome() { if (homePath) { navigateTo(homePath); } else { showToast(t('fm.toast_no_home'), 'error'); } }
+        function updateBreadcrumb(path) {
+            if (!path) {
+                document.getElementById('breadcrumb').innerHTML = '<span class="breadcrumb-current" data-i18n="fm.my_computer"></span>';
+                return;
+            }
+            const isWindowsPath = path.includes('\\');
+            const separator = isWindowsPath ? '\\' : '/';
+            const normalizedPath = isWindowsPath ? path.replace(/\\/g, '/') : path;
+            const parts = normalizedPath.split('/').filter(p => p);
+
+            let html = '<span class="breadcrumb-item" onclick="showRoot()" data-i18n="fm.my_computer"></span>', current = '';
+
+            parts.forEach((part, index) => {
+                if (index === 0 && part.match(/^[A-Za-z]:$/)) {
+                    current = part + '\\';
+                    var perm = pathPermMap[current] || 0;
+                    html += '<span class="breadcrumb-separator">\\</span><span class="breadcrumb-item" onclick="navigateTo(\'' + escapeJs(current) + '\',' + perm + ')" title="' + part + '">' + part + '</span>';
+                } else {
+                    if (isWindowsPath) {
+                        current = current ? current + part : part;
+                        if (index < parts.length - 1) {
+                            current += '\\';
+                            perm = pathPermMap[current] || 0;
+                            html += '<span class="breadcrumb-separator">\\</span><span class="breadcrumb-item" onclick="navigateTo(\'' + escapeJs(current) + '\',' + perm + ')" title="' + part + '">' + part + '</span>';
+                        } else {
+                            html += '<span class="breadcrumb-separator">\\</span><span class="breadcrumb-current" title="' + part + '">' + part + '</span>';
+                        }
+                    } else {
+                        current += '/' + part;
+                        if (index === parts.length - 1) {
+                            html += '<span class="breadcrumb-separator">/</span><span class="breadcrumb-current" title="' + part + '">' + part + '</span>';
+                        } else {
+                            perm = pathPermMap[current] || 0;
+                            html += '<span class="breadcrumb-separator">/</span><span class="breadcrumb-item" onclick="navigateTo(\'' + escapeJs(current) + '\',' + perm + ')" title="' + part + '">' + part + '</span>';
+                        }
+                    }
+                }
+            });
+            document.getElementById('breadcrumb').innerHTML = html;
+        }
+        function applyFilters() { renderFiles(); }
+        function applySorting() { renderFiles(); updateSortIndicators(); }
+        function sortBy(field) {
+            if (currentSort.field === field) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.field = field;
+                currentSort.asc = true;
+            }
+            renderFiles();
+            updateSortIndicators();
+        }
+        function toggleSortOrder() {
+            currentSort.asc = !currentSort.asc;
+            renderFiles();
+            updateSortIndicators();
+        }
+        function updateSortIndicators() {
+            const fieldNames = {name: '', size: '', time: ''};
+            document.getElementById('currentSortField').textContent = fieldNames[currentSort.field] || currentSort.field;
+            const sortIcon = document.querySelector('#sortOrderBtn i');
+            sortIcon.className = 'bi ' + (currentSort.asc ? 'bi-sort-up' : 'bi-sort-down');
+            
+            ['name', 'size', 'time'].forEach(field => {
+                const th = document.getElementById('col-' + field);
+                const icon = document.getElementById('sort-' + field);
+                if (th) {
+                    th.classList.toggle('sorted', field === currentSort.field);
+                }
+                if (icon) {
+                    icon.className = 'sort-icon bi ' + (field === currentSort.field ? (currentSort.asc ? 'bi-sort-up' : 'bi-sort-down') : 'bi-arrow-up-down');
+                }
+            });
+        }
+        function renderFiles() {
+            const showHidden = document.getElementById('showHidden').checked;
+            const searchText = document.getElementById('searchInput').value.trim();
+            let files = allFiles.filter(f => showHidden || !f.name.startsWith('.'));
+            if (searchText) {
+                const searchPattern = searchText.replace(/\*/g, '.*').replace(/\?/g, '.');
+                try {
+                    const regex = new RegExp(searchPattern, 'i');
+                    files = files.filter(f => regex.test(f.name));
+                } catch (e) {
+                    console.warn('Invalid search pattern:', searchText);
+                }
+            }
+            files.sort((a, b) => {
+                if (a.isDirectory && !b.isDirectory) return -1;
+                if (!a.isDirectory && b.isDirectory) return 1;
+                let valA, valB;
+                switch (currentSort.field) {
+                    case 'name': valA = a.name.toLowerCase(); valB = b.name.toLowerCase(); break;
+                    case 'size': valA = a.size || 0; valB = b.size || 0; break;
+                    case 'time': valA = a.lastModified || 0; valB = b.lastModified || 0; break;
+                }
+                if (valA < valB) return currentSort.asc ? -1 : 1;
+                if (valA > valB) return currentSort.asc ? 1 : -1;
+                return 0;
+            });
+            const emptyState = document.getElementById('emptyState');
+            if (files.length === 0) {
+                document.getElementById('fileList').innerHTML = '';
+                document.getElementById('fileGrid').innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            emptyState.style.display = 'none';
+            if (currentView === 'grid') {
+                renderGridView(files);
+            } else {
+                renderListView(files);
+            }
+        }
+        function renderListView(files) {
+            const tbody = document.getElementById('fileList');
+            tbody.innerHTML = files.map(file => {
+                const path = file.path;
+                const encodedPath = encodeURIComponent(path);
+                const mimeType = file.mimeType || '';
+                const isDir = file.isDirectory;
+                const size = file.size || 0;
+                const typeClass = isDir ? 'type-directory' : 'type-file';
+                return '<tr class="' + typeClass + ' type-' + file.type + '"><td><div class="file-name" data-path="' + encodedPath + '" data-mime="' + mimeType + '" data-isdir="' + isDir + '" onclick="handleFileClick(this)"><div class="icon-wrapper"><span class="file-icon">' + getFileIcon(file.type, isDir) + '</span></div><span class="name-text" title="' + file.name + '">' + file.name + '</span></div></td><td class="size-text">' + (isDir ? '-' : formatSize(size)) + '</td><td class="time-text">' + new Date(file.lastModified).toLocaleString(getLang() === 'zh' ? 'zh-CN' : 'en-US') + '</td><td><button class="action-btn action-btn-download" data-path="' + encodedPath + '" data-isdir="' + isDir + '" data-size="' + size + '" onclick="handleDownloadClick(this)"><span data-i18n="fm.perm_download"></span></button><button class="action-btn action-btn-delete" data-path="' + encodedPath + '" data-isdir="' + isDir + '" onclick="handleDeleteClick(this)"><span data-i18n="fm.perm_delete"></span></button></td></tr>';
+            }).join('');
+            if (typeof applyI18n === 'function') applyI18n();
+        }
+        function renderGridView(files) {
+            const grid = document.getElementById('fileGrid');
+            grid.innerHTML = files.map(file => {
+                const path = file.path;
+                const encodedPath = encodeURIComponent(path);
+                const mimeType = file.mimeType || '';
+                const isDir = file.isDirectory;
+                const size = file.size || 0;
+                const typeClass = isDir ? 'type-directory' : 'type-file';
+                const sizeText = isDir ? '' : formatSize(size);
+                const timeText = new Date(file.lastModified).toLocaleString(getLang() === 'zh' ? 'zh-CN' : 'en-US');
+                return '<div class="file-card ' + typeClass + ' type-' + file.type + '" data-path="' + encodedPath + '" data-mime="' + mimeType + '" data-isdir="' + isDir + '" data-size="' + size + '" onclick="handleGridClick(this)"><div class="card-actions"><button class="card-action-btn download" onclick="event.stopPropagation();handleGridActionBtn(event,\'download\')"><i class="bi bi-download"></i></button><button class="card-action-btn delete" onclick="event.stopPropagation();handleGridActionBtn(event,\'delete\')"><i class="bi bi-trash3"></i></button></div><div class="card-icon-area"><div class="icon-wrapper"><span class="file-icon">' + getFileIcon(file.type, isDir) + '</span></div></div><div class="card-info"><div class="card-name" title="' + file.name + '">' + file.name + '</div><div class="card-meta"><span>' + sizeText + '</span><span>' + timeText + '</span></div></div></div>';
+            }).join('');
+            if (typeof applyI18n === 'function') applyI18n();
+        }
+        function handleGridActionBtn(event, action) {
+            const card = event.target.closest('.file-card');
+            const path = decodeURIComponent(card.dataset.path);
+            const isDir = card.dataset.isdir === 'true';
+            const size = parseInt(card.dataset.size) || 0;
+            if (action === 'download') {
+                handleDownload(path, isDir, size);
+            } else if (action === 'delete') {
+                const name = path.split('/').pop() || path.split('\\').pop();
+                pendingDelete = {path, isDir};
+                const msg = t(isDir ? 'fm.confirm_delete_dir' : 'fm.confirm_delete_file', {name: name});
+                document.getElementById('deleteConfirmMsg').textContent = msg;
+                document.getElementById('directoryWarning').style.display = isDir ? 'block' : 'none';
+                document.getElementById('deleteConfirmBtn').classList.toggle('delete-directory', isDir);
+                document.getElementById('deleteConfirmModal').classList.add('active');
+            }
+        }
+        function handleGridClick(element) {
+            const path = decodeURIComponent(element.dataset.path);
+            const mimeType = element.dataset.mime;
+            const isDir = element.dataset.isdir === 'true';
+            const perm = parseInt(element.dataset.perm) || 0;
+            if (isDir && !hasExecutePermission(perm)) {
+                showToast(t('fm.toast_no_access'), 'error');
+                return;
+            }
+            if (isDir) {
+                currentDirPerm = perm;
+                navigateTo(path, perm);
+            } else {
+                if (!isPreviewable(mimeType)) {
+                    showAlert(t('fm.toast_no_access'));
+                } else {
+                    previewFile(path, mimeType);
+                }
+            }
+        }
+        let currentView = localStorage.getItem('fileManagerView') || 'list';
+        function setView(view) {
+            currentView = view;
+            localStorage.setItem('fileManagerView', view);
+            document.getElementById('viewListBtn').classList.toggle('active', view === 'list');
+            document.getElementById('viewGridBtn').classList.toggle('active', view === 'grid');
+            const tableContainer = document.getElementById('tableViewContainer');
+            const grid = document.getElementById('fileGrid');
+            if (view === 'grid') {
+                tableContainer.style.display = 'none';
+                grid.classList.add('active');
+            } else {
+                tableContainer.style.display = 'block';
+                grid.classList.remove('active');
+            }
+            renderFiles();
+        }
+        setTimeout(() => setView(currentView), 150);
+        function handleSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBox = document.getElementById('searchBox');
+            if (searchInput.value.trim()) {
+                searchBox.classList.add('has-text');
+            } else {
+                searchBox.classList.remove('has-text');
+            }
+            renderFiles();
+        }
+        function clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const searchBox = document.getElementById('searchBox');
+            searchInput.value = '';
+            searchBox.classList.remove('has-text');
+            renderFiles();
+        }
+        function handleSearchKeydown(event) {
+            if (event.key === 'Escape') {
+                clearSearch();
+            }
+        }
+        function getFileIcon(type, isDirectory) {
+            if (type === 'directory' || isDirectory) {
+                return '<svg viewBox="0 0 64 64" style="width:100%;height:100%;display:block;"><rect x="4" y="12" width="52" height="8" rx="2" fill="#FFE082"/><rect x="4" y="20" width="56" height="32" rx="2" fill="#FFD54F"/></svg>';
+            }
+            return {image:'<i class="bi bi-images"></i>',video:'<i class="bi bi-camera-video"></i>',audio:'<i class="bi bi-music-note-beamed"></i>',pdf:'<i class="bi bi-file-earmark-pdf-fill"></i>',text:'<i class="bi bi-file-text-fill"></i>',code:'<i class="bi bi-file-code-fill"></i>',archive:'<i class="bi bi-file-zip-fill"></i>',document:'<i class="bi bi-file-earmark-word-fill"></i>',spreadsheet:'<i class="bi bi-file-earmark-excel-fill"></i>',presentation:'<i class="bi bi-file-earmark-ppt-fill"></i>',other:'<i class="bi bi-file-earmark-fill"></i>'}[type] || '<i class="bi bi-file-earmark-fill"></i>';
+        }
+        function formatSize(bytes) { if (bytes < 1024) return bytes + ' B'; if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'; if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + ' MB'; return (bytes / 1024 / 1024 / 1024).toFixed(2) + ' GB'; }
+        function goUp() {
+            if (isRootView) return;
+            if (!currentPath) { showRoot(); return; }
+            var sep = currentPath.includes('\\') ? '\\' : '/';
+            var parent = currentPath.substring(0, currentPath.lastIndexOf(sep));
+            if (parent) {
+                if (parent.match(/^[A-Za-z]:$/)) {
+                    parent = parent + '\\';
+                }
+                navigateTo(parent, pathPermMap[parent]);
+            } else {
+                showRoot();
+            }
+        }
+        function refresh() { if (isRootView) { showRoot(); } else { navigateTo(currentPath, currentDirPerm); } }
+        function directDownload(path) {
+            var url = API_BASE + '/file/download/file?path=' + encodeURIComponent(path) + '&' + getSessionParam();
+            var a = document.createElement('a');
+            a.href = url;
+            a.target = '_blank';
+            a.click();
+        }
+        async function executeDirectoryDownload(path) {
+            try {
+                const result = await api('/file/create/download_task', {method:'POST', body:'path=' + encodeURIComponent(path)});
+                if (result.success) { showToast(t('fm.toast_dl_task_created'), 'success'); await updateTasks(); }
+                else { showToast(t('fm.toast_dl_task_fail') + ': ' + (result.msg || ''), 'error'); }
+            } catch (err) { console.error('Download error:', err); showToast(t('fm.toast_dl_task_fail') + ': ' + (err.message || ''), 'error'); }
+        }
+        function handleFileClick(element) {
+            const path = decodeURIComponent(element.dataset.path);
+            const mimeType = element.dataset.mime;
+            const isDir = element.dataset.isdir === 'true';
+            const perm = parseInt(element.dataset.perm) || 0;
+            if (isDir && !hasExecutePermission(perm)) {
+                showToast(t('fm.toast_no_access'), 'error');
+                return;
+            }
+            if (isDir) {
+                currentDirPerm = perm;
+                navigateTo(path, perm);
+            } else {
+                if (!isPreviewable(mimeType)) {
+                    showAlert(t('fm.toast_no_access'));
+                } else {
+                    previewFile(path, mimeType);
+                }
+            }
+        }
+        function handleDownloadClick(element) {
+            const path = decodeURIComponent(element.dataset.path);
+            const isDir = element.dataset.isdir === 'true';
+            const size = parseInt(element.dataset.size) || 0;
+            handleDownload(path, isDir, size);
+        }
+        let pendingDelete = null;
+        function handleDeleteClick(element) {
+            const path = decodeURIComponent(element.dataset.path);
+            const isDir = element.dataset.isdir === 'true';
+            const name = path.split('/').pop();
+            pendingDelete = {path, isDir};
+            const msg = t(isDir ? 'fm.confirm_delete_dir' : 'fm.confirm_delete_file', {name: name});
+            document.getElementById('deleteConfirmMsg').textContent = msg;
+            const directoryWarning = document.getElementById('directoryWarning');
+            const confirmBtn = document.getElementById('deleteConfirmBtn');
+            if (isDir) {
+                directoryWarning.style.display = 'block';
+                confirmBtn.classList.add('delete-directory');
+            } else {
+                directoryWarning.style.display = 'none';
+                confirmBtn.classList.remove('delete-directory');
+            }
+            document.getElementById('deleteConfirmModal').classList.add('active');
+        }
+        function closeDeleteConfirm() {
+            document.getElementById('deleteConfirmModal').classList.remove('active');
+            document.getElementById('directoryWarning').style.display = 'none';
+            document.getElementById('deleteConfirmBtn').classList.remove('delete-directory');
+            pendingDelete = null;
+        }
+        function showCreateFolderModal() {
+            var input = document.getElementById('createFolderName');
+            input.value = '';
+            input.placeholder = t('fm.folder_name_placeholder');
+            document.getElementById('createFolderModal').classList.add('active');
+            requestAnimationFrame(function() {
+                setTimeout(function() { input.focus(); }, 50);
+            });
+        }
+        function closeCreateFolderModal() {
+            document.getElementById('createFolderModal').classList.remove('active');
+            document.getElementById('createFolderName').value = '';
+        }
+        function handleCreateFolderKeydown(event) {
+            if (event.key === 'Enter') {
+                createFolder();
+            } else if (event.key === 'Escape') {
+                closeCreateFolderModal();
+            }
+        }
+        async function createFolder() {
+            var name = document.getElementById('createFolderName').value.trim();
+            if (!name) {
+                showToast(t('fm.folder_name_required'), 'error');
+                return;
+            }
+            var invalidChars = /[/\\:*?"<>|]/;
+            if (invalidChars.test(name)) {
+                showToast(t('fm.folder_name_invalid'), 'error');
+                return;
+            }
+            try {
+                var result = await api('/file/create/folder', {method: 'POST', body: 'path=' + encodeURIComponent(currentPath) + '&name=' + encodeURIComponent(name)});
+                if (result.success) {
+                    closeCreateFolderModal();
+                    refresh();
+                } else {
+                    showToast(result.msg || t('fm.create_folder_failed'), 'error');
+                }
+            } catch (err) {
+                console.error('Create folder error:', err);
+                showToast(t('fm.create_folder_failed'), 'error');
+            }
+        }
+        function closeConfirm() {
+            document.getElementById('confirmModal').classList.remove('active');
+            pendingDownload = null;
+        }
+        function isPreviewable(mimeType) {
+            if (!mimeType) return false;
+            if (mimeType.startsWith('image/') || mimeType.startsWith('audio/')) return true;
+            if (mimeType.startsWith('video/') || mimeType === 'video/x-matroska') return true;
+            if (mimeType.startsWith('text/') || mimeType === 'application/json' || mimeType === 'application/javascript' || mimeType === 'application/xml' || mimeType === 'text/markdown') return true;
+            if (mimeType === 'application/pdf') return true;
+            return false;
+        }
+        function previewFile(path, mimeType) {
+            const modal = document.getElementById('previewModal'), content = document.getElementById('previewContent');
+            const fullscreenBtn = document.getElementById('previewFullscreenBtn');
+            const encodedPath = encodeURIComponent(path);
+            const previewUrl = API_BASE + '/file/preview?path=' + encodedPath + '&' + getSessionParam();
+            fullscreenBtn.style.display = 'flex';
+            if (mimeType.startsWith('image/')) {
+                content.innerHTML = '<img src="' + previewUrl + '" class="preview-image" onclick="closePreview()" onerror="showImageError()">';
+            } else if (mimeType.startsWith('video/')) {
+                content.innerHTML = '';
+                const video = document.createElement('video');
+                video.controls = true;
+                video.className = 'preview-media';
+                video.preload = 'metadata';
+                video.autoplay = true;
+                video.id = 'previewVideoElement';
+                video.appendChild(document.createTextNode(''));
+                video.dataset.errorHandled = 'false';
+                video.onerror = function() {
+                    if (video.dataset.errorHandled === 'false') {
+                        video.dataset.errorHandled = 'true';
+                        showVideoError(mimeType);
+                    }
+                };
+                video.src = previewUrl;
+                content.appendChild(video);
+                modal.classList.add('active');
+                video.play().catch(function() {});
+                return;
+            } else if (mimeType.startsWith('audio/')) {
+                content.innerHTML = '<audio controls autoplay id="previewAudioElement" style="width:100%;max-width:500px" onerror="showAudioError()"><source src="' + previewUrl + '" type="' + mimeType + '" data-i18n="fm.toast_audio_nosupport"></audio>';
+            } else if (mimeType === 'application/pdf') {
+                content.innerHTML = '<embed src="' + previewUrl + '#toolbar=0&navpanes=0" type="application/pdf" class="preview-pdf" onerror="showPdfError()">';
+            } else if (mimeType.startsWith('text/') || mimeType === 'application/json' || mimeType === 'application/javascript' || mimeType === 'application/xml' || mimeType === 'text/markdown') {
+                fetchTextPreview(previewUrl);
+                return;
+            }
+            modal.classList.add('active');
+        }
+        async function fetchTextPreview(url) {
+            const modal = document.getElementById('previewModal');
+            const content = document.getElementById('previewContent');
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('');
+                const text = await response.text();
+                const encoded = escapeHtml(text);
+                content.innerHTML = '<pre class="preview-text">' + encoded + '</pre>';
+                modal.classList.add('active');
+            } catch (err) {
+                showAlert(t('fm.toast_text_fail') + ': ' + (err.message || ''));
+            }
+        }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        function showPdfError() { showAlert(t('fm.toast_pdf_fail')); closePreview(); }
+        function showImageError() { showAlert(t('fm.toast_image_fail')); closePreview(); }
+        function showVideoError(mimeType) {
+            let msg = t('fm.toast_video_fail');
+            if (mimeType === 'video/x-matroska') {
+                msg += t('fm.toast_video_mkv');
+            }
+            showAlert(msg); closePreview();
+        }
+        function showAudioError() { showAlert(t('fm.toast_audio_fail')); closePreview(); }
+        function closePreview() {
+            exitPreviewFullscreen();
+            const video = document.getElementById('previewVideoElement');
+            if (video) {
+                video.dataset.errorHandled = 'true';
+                video.pause();
+                video.src = '';
+                video.onerror = null;
+                video.load();
+                video.removeAttribute('id');
+            }
+            const audio = document.getElementById('previewAudioElement');
+            if (audio) {
+                audio.pause();
+                audio.src = '';
+                audio.onerror = null;
+                audio.load();
+                audio.removeAttribute('id');
+            }
+            document.getElementById('previewContent').innerHTML = '';
+            document.getElementById('previewModal').classList.remove('active');
+        }
+        function togglePreviewFullscreen() {
+            const modal = document.getElementById('previewModal');
+            const btn = document.getElementById('previewFullscreenBtn');
+            const isFullscreen = modal.classList.contains('fullscreen');
+            
+            const video = document.getElementById('previewVideoElement');
+            
+            if (video) {
+                if (isFullscreen) {
+                    if (document.exitFullscreen) document.exitFullscreen().catch(err => {});
+                } else {
+                    if (video.requestFullscreen) {
+                        video.requestFullscreen().catch(err => {});
+                    }
+                }
+            } else {
+                modal.classList.toggle('fullscreen');
+                if (modal.classList.contains('fullscreen')) {
+                    btn.innerHTML = '<i class="bi bi-fullscreen-exit"></i>';
+                    btn.title = '';
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen().catch(err => {});
+                    }
+                } else {
+                    btn.innerHTML = '<i class="bi bi-fullscreen"></i>';
+                    btn.title = '';
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(err => {});
+                    }
+                }
+            }
+        }
+        function exitPreviewFullscreen() {
+            const modal = document.getElementById('previewModal');
+            const btn = document.getElementById('previewFullscreenBtn');
+            if (modal.classList.contains('fullscreen')) {
+                modal.classList.remove('fullscreen');
+                btn.innerHTML = '<i class="bi bi-fullscreen"></i>';
+                btn.title = '';
+            }
+            if (document.exitFullscreen && document.fullscreenElement) {
+                document.exitFullscreen().catch(err => {});
+            }
+        }
+        function goToUserManagement() { window.open(STATIC_BASE + '/user.html', '_blank'); }
+        function showAlert(msg) { showToast(msg, 'error', 3000); }
+        let downloadTaskTimer = null;
+        async function showTasks() {
+            document.getElementById('taskPanel').classList.add('active');
+            startTaskTimer();
+            await updateTasks();
+        }
+        function hideTasks() {
+            document.getElementById('taskPanel').classList.remove('active');
+            stopTaskTimer();
+        }
+        function startTaskTimer() {
+            stopTaskTimer();
+            downloadTaskTimer = setInterval(updateTasks, 10000);
+        }
+        function stopTaskTimer() {
+            if (downloadTaskTimer) { clearInterval(downloadTaskTimer); downloadTaskTimer = null; }
+        }
+        let lastTaskUpdateTime = 0;
+        let lastTaskDataHash = '';
+        async function updateTasks() {
+            const now = Date.now();
+            if (now - lastTaskUpdateTime < 500) return;
+            lastTaskUpdateTime = now;
+            try {
+                const result = await api('/file/task/list');
+                if (result.success) {
+                    checkTaskCompletion(result.data);
+                    const dataStr = JSON.stringify(result.data || []);
+                    if (dataStr !== lastTaskDataHash) {
+                        lastTaskDataHash = dataStr;
+                        renderTasks(result.data);
+                    }
+                } else { showToast(t('fm.toast_task_list_fail') + ': ' + (result.msg || ''), 'error'); }
+            } catch (err) { console.error('Task list error:', err); showToast(t('fm.toast_task_list_fail'), 'error'); }
+        }
+        let previousTaskStatus = {};
+        let firstTaskCheck = true;
+        function checkTaskCompletion(tasks) {
+            if (!tasks) return;
+            cleanOldCompletedTasks();
+            const completedTasks = getCompletedTasks();
+            
+            tasks.forEach(task => {
+                const taskId = task.taskId;
+                const currentStatus = task.status;
+                const previousStatus = previousTaskStatus[taskId];
+
+                if (firstTaskCheck) {
+                    if (currentStatus === 'COMPLETED') {
+                        completedTasks[taskId] = Date.now();
+                        saveCompletedTasks(completedTasks);
+                    }
+                } else if (currentStatus === 'COMPLETED' && previousStatus !== 'COMPLETED' && !completedTasks[taskId]) {
+                    completedTasks[taskId] = Date.now();
+                    saveCompletedTasks(completedTasks);
+                }
+
+                previousTaskStatus[taskId] = currentStatus;
+            });
+            firstTaskCheck = false;
+        }
+        function getCompletedTasks() {
+            const data = localStorage.getItem('completedTasks');
+            return data ? JSON.parse(data) : {};
+        }
+        function saveCompletedTasks(tasks) {
+            localStorage.setItem('completedTasks', JSON.stringify(tasks));
+        }
+        function cleanOldCompletedTasks() {
+            const tasks = getCompletedTasks();
+            const now = Date.now();
+            const oneDay = 24 * 60 * 60 * 1000;
+            const newTasks = {};
+            for (const taskId in tasks) {
+                if (now - tasks[taskId] < oneDay) {
+                    newTasks[taskId] = tasks[taskId];
+                }
+            }
+            saveCompletedTasks(newTasks);
+        }
+        function renderTasks(tasks) {
+            const container = document.getElementById('taskList');
+            const limit = Math.min(tasks.length, 100);
+            const existing = new Map();
+            for (const node of container.querySelectorAll('.task-item')) {
+                if (node.dataset.taskId) existing.set(node.dataset.taskId, node);
+            }
+            let html = '';
+            for (let i = 0; i < limit; i++) {
+                const task = tasks[i];
+                let statusHtml = '';
+                if (task.status === 'PENDING' || task.status === 'PROCESSING') { statusHtml = '<span class="loading"></span> <span data-i18n="fm.processing"></span>'; }
+                      else if (task.status === 'COMPLETED') { statusHtml = '<a href="' + API_BASE + '/file/download/directory?taskId=' + task.taskId + '&' + getSessionParam() + '" target="_blank" class="task-status completed" data-i18n="fm.click_download"></a>'; }
+                else { statusHtml = '<span class="task-status failed">' + t('fm.unknown_error') + ': ' + (task.errorMessage || '') + '</span>'; }
+                const fileNameEsc = String(task.fileName || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]);
+                html += '<div class="task-item" data-task-id="' + task.taskId + '"><div class="task-name" title="' + fileNameEsc + '">' + fileNameEsc + '</div><div class="task-status">' + statusHtml + '</div></div>';
+                existing.delete(task.taskId);
+            }
+            if (tasks.length === 0) {
+                if (!container.firstElementChild || !container.firstElementChild.classList.contains('task-list-empty')) {
+                    container.innerHTML = '<div class="task-list-empty" data-i18n="fm.no_tasks"></div>';
+                }
+                return;
+            }
+            container.innerHTML = html;
+            if (typeof applyI18n === 'function') applyI18n();
+        }
+
+        let currentUserRole = 'guest';
+        async function checkUserPermission() {
+            try {
+                const result = await api('/file/user/current');
+                if (result.success && result.data) {
+                    currentUser = result.data;
+                    currentUserData = result.data;
+                    currentUserRole = currentUser.role;
+                    document.getElementById('currentUser').textContent = currentUser.nickname || currentUser.username;
+                    const isAdmin = currentUser.role === 'admin';
+                    document.querySelectorAll('.admin-only').forEach(item => {
+                        item.style.display = isAdmin ? 'flex' : 'none';
+                    });
+                    if (currentUser.forceChangePassword === true) {
+                        window.location.href = STATIC_BASE + '/changePassword.html?sessionId=' + sessionId;
+                    }
+                }
+            } catch (err) { console.error('Check user permission error:', err); }
+        }
+        let isForcePasswordChanged = false;
+        function showForceChangePasswordModal() {
+            isForcePasswordChanged = false;
+            document.getElementById('forcePasswordForm').reset();
+            document.getElementById('forcePasswordError').style.display = 'none';
+            document.getElementById('forceConfirmError').style.display = 'none';
+            document.getElementById('forceChangePasswordModal').classList.add('active');
+        }
+        function closeForceChangePasswordModal() {
+            if (!isForcePasswordChanged) {
+                return;
+            }
+            document.getElementById('forceChangePasswordModal').classList.remove('active');
+        }
+        function validateForcePassword() {
+            const newPassword = document.getElementById('forceNewPassword').value;
+            const confirmPassword = document.getElementById('forceConfirmPassword').value;
+            const passwordError = document.getElementById('forcePasswordError');
+            const confirmError = document.getElementById('forceConfirmError');
+
+            if (newPassword.length === 0) {
+                passwordError.textContent = '';
+                passwordError.style.display = 'none';
+            } else if (newPassword.length < 8) {
+                passwordError.textContent = '';
+                passwordError.style.display = 'block';
+            } else if (!/^[a-zA-Z0-9]{8,}$/.test(newPassword)) {
+                passwordError.textContent = '';
+                passwordError.style.display = 'block';
+            } else {
+                passwordError.textContent = '';
+                passwordError.style.display = 'block';
+                passwordError.style.color = '#52c41a';
+                setTimeout(() => {
+                    passwordError.style.color = '#ef4444';
+                    passwordError.style.display = 'none';
+                }, 1500);
+            }
+
+            if (newPassword.length > 0 && confirmPassword.length === 0) {
+                confirmError.textContent = '';
+                confirmError.style.display = 'none';
+            } else if (newPassword.length > 0 && confirmPassword.length > 0 && newPassword !== confirmPassword) {
+                confirmError.textContent = '';
+                confirmError.style.display = 'block';
+                confirmError.style.color = '#ef4444';
+            } else if (newPassword.length > 0 && confirmPassword.length > 0 && newPassword === confirmPassword) {
+                confirmError.textContent = '';
+                confirmError.style.display = 'block';
+                confirmError.style.color = '#52c41a';
+                setTimeout(() => {
+                    confirmError.style.color = '#ef4444';
+                    confirmError.style.display = 'none';
+                }, 1500);
+            } else {
+                confirmError.style.display = 'none';
+            }
+        }
+        async function saveForcePassword() {
+            const newPassword = document.getElementById('forceNewPassword').value;
+            const confirmPassword = document.getElementById('forceConfirmPassword').value;
+
+            if (!newPassword || !confirmPassword) { showToast(t('fm.toast_password_required'), 'error'); return; }
+            if (newPassword.length < 8) { showToast(t('fm.toast_password_short'), 'error'); return; }
+            if (newPassword !== confirmPassword) { showToast(t('fm.toast_password_mismatch'), 'error'); return; }
+
+            try {
+                const params = new URLSearchParams({ newPassword: newPassword, confirmPassword: confirmPassword });
+                const result = await api('/file/user/change-password', { method: 'POST', body: params });
+                if (result.success) {
+                    document.getElementById('forceChangePasswordModal').classList.remove('active');
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    localStorage.removeItem('sessionId');
+                    window.location.href = STATIC_BASE + '/login.html';
+                } else {
+                    showToast(result.msg || t('fm.toast_password_change_fail'), 'error');
+                }
+            } catch (err) { console.error('Save force password error:', err); showToast(t('fm.toast_net_error'), 'error'); }
+        }
+
+        let currentTheme = localStorage.getItem('fileManagerTheme') || 'light';
+        let sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+        document.addEventListener('fullscreenchange', () => {
+            const modal = document.getElementById('previewModal');
+            const btn = document.getElementById('previewFullscreenBtn');
+            if (!document.fullscreenElement) {
+                modal.classList.remove('fullscreen');
+                btn.innerHTML = '<i class="bi bi-fullscreen"></i>';
+                btn.title = '';
+            }
+        });
+        setTimeout(() => {
+            setTheme(currentTheme);
+            if (sidebarCollapsed) {
+                document.getElementById('sidebar').classList.add('collapsed');
+            }
+        }, 100);
+        
+        let colWidths = JSON.parse(localStorage.getItem('fileManagerColWidths')) || {'col-name': 450, 'col-type': 130, 'col-size': 120, 'col-time': 160};
+        let resizingCol = null, startX = 0, startWidth = 0;
+        function initColumnResizing() {
+            const handles = document.querySelectorAll('.resize-handle');
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resizingCol = handle.dataset.column;
+                    startX = e.clientX;
+                    startWidth = document.getElementById(resizingCol).offsetWidth;
+                    document.getElementById(resizingCol).classList.add('resizing');
+                    document.getElementById('fileTable').classList.add('resizing');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    document.addEventListener('mousemove', handleResize);
+                    document.addEventListener('mouseup', stopResize);
+                });
+            });
+        }
+        function handleResize(e) {
+            if (!resizingCol) return;
+            const diff = e.clientX - startX;
+            const col = document.getElementById(resizingCol);
+            const minWidth = col.id === 'col-name' ? 200 : 80;
+            const newWidth = Math.max(minWidth, Math.min(1000, startWidth + diff));
+            col.style.width = newWidth + 'px';
+        }
+        function stopResize() {
+            if (resizingCol) {
+                const col = document.getElementById(resizingCol);
+                col.classList.remove('resizing');
+                colWidths[resizingCol] = col.offsetWidth;
+                localStorage.setItem('fileManagerColWidths', JSON.stringify(colWidths));
+                resizingCol = null;
+            }
+            document.getElementById('fileTable').classList.remove('resizing');
+            document.body.style.cursor = '';
+            document.body.style.userSelect = '';
+            document.removeEventListener('mousemove', handleResize);
+            document.removeEventListener('mouseup', stopResize);
+        }
+        function applyColWidths() {
+            Object.keys(colWidths).forEach(colId => {
+                const col = document.getElementById(colId);
+                if (col) col.style.width = colWidths[colId] + 'px';
+            });
+        }
+setTimeout(() => { initColumnResizing(); applyColWidths(); }, 100);
+        
+      // === Override checkUserPermission to show admin-only permission button ===
+        const origCheckUserPermission = checkUserPermission;
+        checkUserPermission = async function() {
+            await origCheckUserPermission();
+            const isAdmin = currentUserRole === 'admin';
+            document.querySelectorAll('.admin-only').forEach(item => {
+                item.style.display = isAdmin ? 'flex' : 'none';
+            });
+        };
+
+        // === Override renderListView to show permission icons ===
+        const origRenderListView = renderListView;
+        renderListView = function(files) {
+            const tbody = document.getElementById('fileList');
+            tbody.innerHTML = files.map(file => {
+                const path = file.path;
+                const encodedPath = encodeURIComponent(path);
+                const mimeType = file.mimeType || '';
+                const isDir = file.isDirectory;
+                const size = file.size || 0;
+                const typeClass = isDir ? 'type-directory' : 'type-file';
+                const canDownload = hasDownloadPermission(file.filePermission);
+                const perm = file.filePermission || 0;
+                const isItemProtected = (perm & 0x0400) !== 0;
+                const canDelete = !isItemProtected && hasDeletePermission(perm);
+                var actions = '';
+                if (canDownload) actions += '<button class="action-btn action-btn-download" data-path="' + encodedPath + '" data-isdir="' + isDir + '" data-size="' + size + '" onclick="handleDownloadClick(this)"><span data-i18n="fm.perm_download"></span></button>';
+                if (canDelete) actions += '<button class="action-btn action-btn-delete" data-path="' + encodedPath + '" data-isdir="' + isDir + '" onclick="handleDeleteClick(this)"><span data-i18n="fm.perm_delete"></span></button>';
+                return '<tr class="' + typeClass + ' type-' + file.type + '"><td><div class="file-name" data-path="' + encodedPath + '" data-mime="' + mimeType + '" data-isdir="' + isDir + '" data-perm="' + perm + '" onclick="handleFileClick(this)"><div class="icon-wrapper"><span class="file-icon">' + getFileIcon(file.type, isDir) + '</span></div><span class="name-text" title="' + file.name + '">' + file.name + '</span></div></td><td class="size-text">' + (isDir ? '-' : formatSize(size)) + '</td><td class="time-text">' + new Date(file.lastModified).toLocaleString(getLang() === 'zh' ? 'zh-CN' : 'en-US') + '</td><td>' + actions + '</td></tr>';
+            }).join('');
+            if (typeof applyI18n === 'function') applyI18n();
+        };
+
+        // === Override renderGridView to show permission icons ===
+        const origRenderGridView = renderGridView;
+        renderGridView = function(files) {
+            const grid = document.getElementById('fileGrid');
+            grid.innerHTML = files.map(file => {
+                const path = file.path;
+                const encodedPath = encodeURIComponent(path);
+                const mimeType = file.mimeType || '';
+                const isDir = file.isDirectory;
+                const size = file.size || 0;
+                const typeClass = isDir ? 'type-directory' : 'type-file';
+                const sizeText = isDir ? '' : formatSize(size);
+                const timeText = new Date(file.lastModified).toLocaleString(getLang() === 'zh' ? 'zh-CN' : 'en-US');
+                const perm = file.filePermission || 0;
+                const canDownload = hasDownloadPermission(perm);
+                const isItemProtected = (perm & 0x0400) !== 0;
+                const canDelete = !isItemProtected && hasDeletePermission(perm);
+                var cardActions = '';
+                if (canDownload) cardActions += '<button class="card-action-btn download" onclick="event.stopPropagation();handleGridActionBtn(event,\'download\')"><i class="bi bi-download"></i></button>';
+                if (canDelete) cardActions += '<button class="card-action-btn delete" onclick="event.stopPropagation();handleGridActionBtn(event,\'delete\')"><i class="bi bi-trash3"></i></button>';
+                return '<div class="file-card ' + typeClass + ' type-' + file.type + '" data-path="' + encodedPath + '" data-mime="' + mimeType + '" data-isdir="' + isDir + '" data-size="' + size + '" data-perm="' + (file.filePermission || 0) + '" onclick="handleGridClick(this)"><div class="card-actions">' + cardActions + '</div><div class="card-icon-area"><div class="icon-wrapper"><span class="file-icon">' + getFileIcon(file.type, isDir) + '</span></div></div><div class="card-info"><div class="card-name" title="' + file.name + '">' + file.name + '</div><div class="card-meta"><span>' + sizeText + '</span><span>' + timeText + '</span></div></div></div>';
+            }).join('');
+            if (typeof applyI18n === 'function') applyI18n();
+        };
+
+       // === Enhanced handlers ===
+        async function handleDownload(path, isDirectory, size) {
+            if (isDirectory) {
+                try {
+                    const result = await api('/file/create/download_task', { method: 'POST', body: 'path=' + encodeURIComponent(path) });
+                    if (result.success) { showToast(t('fm.toast_dl_task_created'), 'success'); }
+                    else { showToast(t('fm.toast_dl_task_fail') + ': ' + (result.msg || ''), 'error'); }
+                } catch (err) { console.error('Download error:', err); showToast(t('fm.toast_dl_task_fail') + ': ' + (err.message || ''), 'error'); }
+            } else if (size > 1024 * 1024 * 1024) {
+                pendingDownload = path;
+                document.getElementById('confirmMsg').textContent = t('fm.confirm_download_msg');
+                document.getElementById('confirmModal').classList.add('active');
+            } else {
+                directDownload(path);
+            }
+        }
+
+     function confirmDownload() {
+            document.getElementById('confirmModal').classList.remove('active');
+            if (pendingDownload) {
+                directDownload(pendingDownload);
+                pendingDownload = null;
+            }
+        }
+
+        async function confirmDelete() {
+            document.getElementById('deleteConfirmModal').classList.remove('active');
+            if (!pendingDelete) return;
+            const { path } = pendingDelete;
+            pendingDelete = null;
+            await executeDelete(path);
+        }
+        async function executeDelete(path) {
+            document.getElementById('deleteProgressModal').classList.add('active');
+            try {
+                const result = await apiWithTimeout('/file/delete', { method: 'POST', body: 'path=' + encodeURIComponent(path) }, 60000);
+                closeDeleteProgressModal();
+                if (result.success) {
+                    // 本地移除已删除项并立即重绘，避免重新拉取列表导致页面闪烁
+                    const index = allFiles.findIndex(f => f.path === path);
+                    if (index !== -1) {
+                        allFiles.splice(index, 1);
+                        renderFiles();
+                    } else if (isRootView) {
+                        showRoot();
+                    } else {
+                        navigateTo(currentPath, currentDirPerm);
+                    }
+                } else {
+                    showToast(result.msg || t('fm.toast_delete_fail'), 'error');
+                }
+            } catch (err) {
+                closeDeleteProgressModal();
+                console.error('Delete error:', err);
+                if (err.name === 'AbortError') {
+                    showToast(t('fm.delete_timeout'), 'error');
+                } else {
+                    showToast(err.message || t('fm.toast_delete_fail'), 'error');
+                }
+            }
+        }
+        function closeDeleteProgressModal() {
+            document.getElementById('deleteProgressModal').classList.remove('active');
+        }
+
+        checkUserPermission();
+        init();
+    </script>
+</body>
+</html>

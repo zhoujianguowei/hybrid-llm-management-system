@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="fm.ai_chat"></title>
+    <link rel="icon" type="image/svg+xml" href="../favicon.svg">
+    <link rel="stylesheet" href="../vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="../vendor/highlight.js/styles/github.min.css">
+    <link rel="stylesheet" href="../vendor/katex.min.css">
+    <script src="../vendor/katex.min.js"></script>
+    <link rel="stylesheet" href="../common/common.css">
+    <link rel="stylesheet" href="chat.css">
+    <style>
+        .katex-block {
+            text-align: center;
+            margin: 12px 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+        .katex-block .katex-display {
+            margin: 0 !important;
+        }
+        .message-content .katex, .message-content .katex-display {
+            font-size: 1em;
+        }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .think-level-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 14px;
+            padding: 6px 0;
+        }
+        .think-level-options .form-check {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<div class="toast" id="toast"></div>
+<div class="app-container">
+    <div class="header">
+        <div class="header-left"><h1 data-i18n="fm.ai_chat"></h1></div>
+        <div class="header-right">
+            <div class="lang-selector">
+                <button class="lang-btn" id="langBtn" onclick="toggleLangDropdown()" title=""><i class="bi bi-translate"></i><span id="currentLangLabel">中文</span><i class="bi bi-chevron-down"></i></button>
+                <div class="lang-dropdown" id="langDropdown">
+                    <div class="lang-option" data-lang="zh" onclick="selectLang('zh')"><span class="lang-dot zh"></span><span>中文</span></div>
+                    <div class="lang-option" data-lang="en" onclick="selectLang('en')"><span class="lang-dot en"></span><span>English</span></div>
+                </div>
+            </div>
+            <div class="theme-selector">
+                <button class="theme-btn" onclick="toggleThemeDropdown()"><i class="bi bi-palette"></i></button>
+                <div class="theme-dropdown" id="themeDropdown">
+                    <div class="theme-option active" data-theme="light" onclick="setTheme('light')"><span class="theme-dot light"></span><span data-i18n="theme.light"></span></div>
+                    <div class="theme-option" data-theme="dark" onclick="setTheme('dark')"><span class="theme-dot dark"></span><span data-i18n="theme.dark"></span></div>
+                    <div class="theme-option" data-theme="ocean" onclick="setTheme('ocean')"><span class="theme-dot ocean"></span><span data-i18n="theme.ocean"></span></div>
+                    <div class="theme-option" data-theme="sunset" onclick="setTheme('sunset')"><span class="theme-dot sunset"></span><span data-i18n="theme.sunset"></span></div>
+                    <div class="theme-option" data-theme="forest" onclick="setTheme('forest')"><span class="theme-dot forest"></span><span data-i18n="theme.forest"></span></div>
+                </div>
+            </div>
+            <a class="help-link-btn" href="/command/static/file/instruct/main.html" target="_blank"><i class="bi bi-question-circle"></i></a>
+            <div class="user-info" onclick="showUserSettings()">
+                <i class="bi bi-person-circle" style="font-size: 24px; margin-right: 8px;"></i>
+                <span id="currentUser"></span>
+            </div>
+            <button class="btn-logout" onclick="logout()" data-i18n="user.logout"></button>
+        </div>
+    </div>
+    <div class="chat-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="pinned-container" id="pinnedContainer" style="display:none">
+                <div class="pinned-header" onclick="togglePinnedSection()">
+                    <div class="pinned-header-left">
+                        <i class="bi bi-pin-angle-fill"></i>
+                        <span data-i18n="chat.pinned"></span>
+                        <span class="pinned-count-badge" id="pinnedCountBadge">0</span>
+                    </div>
+                    <div class="pinned-header-right">
+                        <i class="bi bi-chevron-down pinned-chevron" id="pinnedChevron"></i>
+                    </div>
+                </div>
+                <div class="pinned-list" id="pinnedList"></div>
+                <div class="pinned-load-more" id="pinnedLoadMore" style="display:none">
+                    <button class="btn-load-more" onclick="loadMorePinnedSessions()" data-i18n="chat.load_more"></button>
+                </div>
+            </div>
+            <div class="conversation-list" id="conversationList"></div>
+            <div class="load-more-container" id="loadMoreContainer" style="display:none">
+                <button class="btn-load-more" onclick="loadMoreSessions()" data-i18n="chat.load_more"></button>
+            </div>
+        </aside>
+
+        <main class="chat-main">
+            <header class="chat-header">
+                <button class="btn-sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div class="model-selector" id="modelSelector">
+                    <div class="model-selector-current" id="modelSelectorCurrent" onclick="toggleModelDropdown()">
+                        <i class="bi bi-cpu"></i>
+                        <span class="model-name" id="modelSelectorName" data-i18n="chat.loading_text"></span>
+                        <i class="bi bi-chevron-down model-chevron"></i>
+                    </div>
+                    <div class="model-dropdown" id="modelDropdown">
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="header-stats" id="headerStats" style="display:none">
+                        <span class="stat-item"><i class="bi bi-cpu-fill"></i> <span id="tokenStats"></span></span>
+                    </div>
+                    <div id="contextUsage"
+                         style="display:none; flex-direction:row; align-items:center; gap:10px; min-width:200px;"
+                         title="" data-i18n="chat.usage" data-i18n-attr="title">
+                        <span id="contextPromptSpeed"
+                              style="font-size:10px; color:var(--text-muted); white-space:nowrap; flex-shrink:0;"></span>
+                        <span id="contextPredictedSpeed"
+                              style="font-size:10px; color:var(--text-muted); white-space:nowrap; flex-shrink:0;"></span>
+                        <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+                            <span id="contextUsageText"
+                                  style="font-size:11px; color:var(--text-muted); white-space:nowrap;"></span>
+                            <div style="flex:1; height:4px; background:var(--border-color); border-radius:2px; overflow:hidden; min-width:60px;">
+                                 <div id="contextUsageFill" style="height:100%; border-radius:2px;"></div>
+                             </div>
+                         </div>
+                     </div>
+                      <button class="btn-config" onclick="showApiConfigModal()">
+                         <i class="bi bi-gear-fill"></i>
+                     </button>
+                      <button class="btn-user-config" onclick="showChatSettings()">
+                          <i class="bi bi-person-gear"></i>
+                      </button>
+                      <button class="btn-user-config btn-runtime-toggle" id="btnRuntimeToggle" onclick="toggleRuntimeSidebar()">
+                          <i class="bi bi-sliders"></i>
+                      </button>
+                </div>
+            </header>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h1 data-i18n="chat.welcome_title"></h1>
+                    <p data-i18n="chat.welcome_desc"></p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <div class="media-preview" id="mediaPreview" style="display:none"></div>
+                <div class="input-row">
+                    <button class="btn-new-chat-input" onclick="newChat()" title="" data-i18n="chat.new_chat" data-i18n-attr="title">
+                        <i class="bi bi-plus-lg"></i><span data-i18n="chat.new_chat"></span>
+                    </button>
+                    <div class="input-wrapper">
+                        <input type="file" id="mediaInput" accept="image/jpeg,image/jpg,image/png" multiple
+                               style="display:none" onchange="handleMediaSelect(event)">
+                        <input type="file" id="textInput" accept=".txt,.md,.csv,.log,.tex,.rst,.html,.htm,.css,.scss,.less,.xml,.json,.yaml,.yml,.vue,.svg,.java,.kt,.kts,.scala,.groovy,.gradle,.properties,.js,.ts,.jsx,.tsx,.py,.c,.cpp,.cc,.cxx,.h,.hpp,.go,.rs,.rb,.php,.swift,.sh,.bash,.bat,.sql,.r,.pl,.lua,.hs,.ex,.exs,.clj,.fs,.fsx,.toml,.ini,.cfg,.conf,.dart,.pot,.po,.v,.sv,.asm,.s" multiple style="display:none"
+                               onchange="handleTextFileSelect(event)">
+                        <input type="file" id="folderInput" webkitdirectory style="display:none"
+                               onchange="handleFolderSelect(event)">
+
+                        <div class="input-main-row">
+                            <textarea id="messageInput" placeholder="" data-i18n="chat.input_placeholder" data-i18n-attr="placeholder"
+                                       onkeydown="handleKeyPress(event)" onpaste="handlePasteImage(event)"
+                                       oninput="autoResizeInput()" rows="1"></textarea>
+                            <button class="btn-send" onclick="sendMessage()">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                            <button class="btn-stop" id="btnStop" onclick="stopGeneration()" style="display:none">
+                                <i class="bi bi-stop-fill"></i>
+                            </button>
+                        </div>
+                        <div class="input-bottom-bar">
+                            <div class="attach-button-group" style="position:relative;display:inline-flex;">
+                                <button class="btn-attach" id="btnAttachMedia" onclick="handleAttachClick(event)">
+                                    <i class="bi bi-plus-lg"></i>
+                                </button>
+                                <div class="attach-dropdown" id="attachDropdown"></div>
+                            </div>
+                            <div id="thinkControlContainer" class="think-control-container"></div>
+                            <button id="btnAttachReasoning" class="btn-attach-reasoning tip" onclick="toggleAttachReasoning()"
+                                    data-i18n="chat.attach_reasoning_title" data-i18n-attr="data-tip">
+                                <i class="bi bi-chat-quote"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <aside class="runtime-sidebar collapsed" id="runtimeSidebar">
+            <div class="runtime-sidebar-header">
+                <span class="runtime-sidebar-title"><span data-i18n="chat.runtime_settings"></span></span>
+            </div>
+            <div class="runtime-sidebar-body">
+                <div class="runtime-param-group">
+                    <div class="param-card">
+                        <div class="param-label"><i class="bi bi-text-left"></i><span data-i18n="config.system_prompt_label"></span></div>
+                        <textarea id="runtimeSystemPrompt" class="form-control" rows="3" maxlength="2000"
+                                  placeholder="" data-i18n="config.system_prompt_placeholder" data-i18n-attr="placeholder"
+                                  oninput="onRuntimePromptInput()"></textarea>
+                    </div>
+                </div>
+                <div class="runtime-param-group">
+                    <div class="param-card">
+                        <div class="param-label"><i class="bi bi-thermometer-half"></i><span data-i18n="chat.runtime_temperature"></span>
+                            <span class="param-value" id="runtimeTemperatureValue"></span></div>
+                        <input type="range" class="form-range" id="runtimeTemperatureRange" min="0" max="2" step="0.01" value="0.8"
+                               oninput="onRuntimeParamInput('temperature')">
+                    </div>
+                </div>
+                <div class="runtime-param-group">
+                    <div class="param-card">
+                        <div class="param-label"><i class="bi bi-percent"></i><span data-i18n="chat.runtime_top_p"></span>
+                            <span class="param-value" id="runtimeTopPValue"></span></div>
+                        <input type="range" class="form-range" id="runtimeTopPRange" min="0" max="1" step="0.01" value="1"
+                               oninput="onRuntimeParamInput('topP')">
+                    </div>
+                </div>
+                <div class="runtime-param-group">
+                    <div class="param-card">
+                        <div class="param-label"><i class="bi bi-hash"></i><span data-i18n="chat.runtime_max_tokens"></span><span class="param-value" id="runtimeMaxTokensValue"></span></div>
+                        <input type="range" class="form-range" id="runtimeMaxTokensRange" min="0" max="32768" step="1" value="0"
+                               oninput="onRuntimeParamInput('maxTokens')">
+                    </div>
+                </div>
+                <div class="runtime-param-group">
+                    <div class="param-card">
+                        <div class="param-label"><i class="bi bi-plus-circle"></i><span data-i18n="chat.runtime_presence_penalty"></span>
+                            <span class="param-value" id="runtimePresencePenaltyValue"></span></div>
+                        <input type="range" class="form-range" id="runtimePresencePenaltyRange" min="-2" max="2" step="0.01" value="0"
+                               oninput="onRuntimeParamInput('presencePenalty')">
+                    </div>
+                </div>
+                <div class="runtime-param-group">
+                    <div class="param-card">
+                        <div class="param-label"><i class="bi bi-plus-circle"></i><span data-i18n="chat.runtime_frequency_penalty"></span>
+                            <span class="param-value" id="runtimeFrequencyPenaltyValue"></span></div>
+                        <input type="range" class="form-range" id="runtimeFrequencyPenaltyRange" min="-2" max="2" step="0.01" value="0"
+                               oninput="onRuntimeParamInput('frequencyPenalty')">
+                    </div>
+                </div>
+                <div class="runtime-sidebar-footer">
+                    <button class="btn btn-secondary btn-sm" onclick="resetRuntimeDefaults()">
+                        <i class="bi bi-arrow-counterclockwise"></i><span data-i18n="chat.runtime_reset_defaults"></span>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<div id="textPreviewModal" class="modal">
+    <div class="modal-dialog text-preview-dialog">
+        <div class="modal-header">
+            <h3 id="textPreviewTitle"><i class="bi bi-file-earmark-text"></i> <span data-i18n="chat.text_preview"></span></h3>
+            <button class="modal-close" onclick="closeTextPreviewModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body text-preview-body">
+            <pre id="textPreviewContent" class="text-preview-content"></pre>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeTextPreviewModal()" data-i18n="perm.close"></button>
+        </div>
+    </div>
+</div>
+
+<div id="folderFilterModal" class="modal">
+    <div class="modal-dialog folder-modal-dialog">
+        <div class="modal-header folder-modal-header">
+            <h3><i class="bi bi-folder"></i><span data-i18n="browser.select_file"></span> </h3>
+            <span id="folderFileCount" class="folder-file-count-badge"></span>
+            <button class="modal-close" onclick="closeFolderFilterModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="folder-ext-filter-bar">
+            <div class="folder-ext-trigger" id="folderExtTrigger" onclick="toggleExtDropdown()">
+                <i class="bi bi-funnel-fill"></i> <span data-i18n="chat.file_type"></span>: <b data-i18n="monitor.all"></b> <span class="folder-ext-badge">0</span> <i
+                    class="bi bi-chevron-down"></i>
+            </div>
+            <div class="folder-ext-dropdown" id="folderExtDropdown">
+                <div class="folder-ext-search-box">
+                    <i class="bi bi-search"></i>
+                     <input type="text" id="folderExtSearch" data-i18n="chat.search_ext" data-i18n-attr="placeholder"
+                           oninput="filterExtBySearch(this.value)">
+                </div>
+                <div class="folder-ext-dropdown-list" id="folderExtDropdownList"></div>
+                <div class="folder-ext-dropdown-footer">
+                     <button class="btn btn-sm" onclick="toggleAllFilterExts(true)" data-i18n="chat.select_all"></button>
+                     <button class="btn btn-sm" onclick="toggleAllFilterExts(false)" data-i18n="chat.deselect_all"></button>
+                </div>
+            </div>
+        </div>
+        <div class="folder-file-toolbar">
+            <button class="btn btn-sm" onclick="toggleAllFolderFiles(true)"><i class="bi bi-check2-square"></i></button>
+            <button class="btn btn-sm" onclick="toggleAllFolderFiles(false)"><i class="bi bi-square"></i></button>
+            <span class="folder-toolbar-sep"></span>
+            <button class="btn btn-sm" onclick="expandAllFolderNodes()" title="" data-i18n="monitor.all" data-i18n-attr="title"><i
+                    class="bi bi-arrows-expand"></i></button>
+            <button class="btn btn-sm" onclick="collapseAllFolderNodes()" title="" data-i18n="monitor.all" data-i18n-attr="title"><i
+                    class="bi bi-arrows-collapse"></i></button>
+        </div>
+        <div class="folder-file-tree" id="folderFileTree"></div>
+        <div class="modal-footer folder-modal-footer">
+            <button class="btn btn-primary" id="folderUploadBtn" onclick="confirmFolderUpload()"> (0)</button>
+            <button class="btn btn-secondary" onclick="closeFolderFilterModal()" data-i18n="reboot.cancel"></button>
+        </div>
+    </div>
+</div>
+
+<div id="systemConfigModal" class="modal">
+    <div class="modal-dialog" id="systemConfigDialog" style="width:620px;">
+        <div class="modal-header">
+            <h3><i class="bi bi-gear-fill"></i> <span data-i18n="chat.system_config"></span></h3>
+            <button class="modal-close" onclick="closeSystemConfigModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="config-tabs">
+            <div class="config-tab active" data-tab="openapi" onclick="switchConfigTab('openapi')"><i
+                    class="bi bi-cloud"></i><span data-i18n="chat.openapi_tab"></span>
+            </div>
+            <div class="config-tab" data-tab="model" onclick="switchConfigTab('model')"><i class="bi bi-cpu"></i><span data-i18n="chat.model_tab"></span>
+            </div>
+            <div class="config-tab" data-tab="session" onclick="switchConfigTab('session')"><i
+                    class="bi bi-chat-dots"></i><span data-i18n="chat.session_tab"></span>
+            </div>
+        </div>
+        <div class="modal-body">
+            <div class="config-tab-content" id="tabOpenapi">
+                <div id="apiConfigList"></div>
+            </div>
+            <div class="config-tab-content" id="tabModel" style="display:none">
+                <div id="modelFuncConfigList"></div>
+            </div>
+            <div class="config-tab-content" id="tabSession" style="display:none">
+                <div id="sessionConfigList"></div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" id="btnAddConfig" onclick="showNewConfigForm()">
+                <i class="bi bi-plus-lg"></i><span data-i18n="chat.add_config"></span></button>
+            <button class="btn btn-primary" id="btnAddModelFunc" style="display:none" onclick="showNewModelFuncForm()">
+                <i class="bi bi-plus-lg"></i><span data-i18n="model.add_model_config"></span></button>
+            <button class="btn btn-secondary" onclick="closeSystemConfigModal()" data-i18n="perm.close"></button>
+        </div>
+    </div>
+</div>
+
+<div id="configFormModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="configFormTitle" data-i18n="config.add_api"></h3>
+            <button class="modal-close" onclick="closeConfigFormModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="configForm">
+                <input type="hidden" id="configId">
+                <div class="form-group">
+                     <label data-i18n="chat.api_url"></label>
+                    <input type="text" class="form-control" id="configBaseUrl" placeholder="http://localhost:11434"
+                           required>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="chat.api_key_optional"></label>
+                    <input type="password" class="form-control" id="configApiKey" autocomplete="new-password">
+                </div>
+            </form>
+            <div id="configTestResult" style="display:none" class="config-test-result"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="saveConfig()" data-i18n="user.save_user"></button>
+            <button class="btn btn-outline" id="btnTestConfig" onclick="testConfigForm()">
+                <i class="bi bi-plug"></i></button>
+            <button class="btn btn-secondary" onclick="closeConfigFormModal()" data-i18n="reboot.cancel"></button>
+        </div>
+    </div>
+</div>
+
+<div id="sessionConfigFormModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="sessionConfigFormTitle" data-i18n="config.add_session"></h3>
+            <button class="modal-close" onclick="closeSessionConfigFormModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="sessionConfigForm">
+                <input type="hidden" id="sessionConfigId">
+                <div class="form-group">
+                     <label data-i18n="fm.sort_type"></label>
+                    <select class="form-control" id="sessionConfigRole" required>
+                        <option value="guest" data-i18n="config.guest"></option>
+                        <option value="user" data-i18n="config.user"></option>
+                        <option value="admin" data-i18n="config.admin"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.attachment_size_limit"></label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="number" class="form-control" id="sessionConfigMaxSize" min="1" placeholder="10"
+                               required style="flex:1;">
+                        <span style="color:var(--text-secondary);font-size:13px;font-weight:500;white-space:nowrap;" data-i18n="config.unit_mb"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.max_attachments"></label>
+                    <input type="number" class="form-control" id="sessionConfigMaxAttachments" min="1" placeholder="10"
+                           required>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.text_size_limit"></label>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <input type="number" class="form-control" id="sessionConfigMaxTextSize" min="1" placeholder="10240"
+                               required style="flex:1;">
+                        <span style="color:var(--text-secondary);font-size:13px;font-weight:500;white-space:nowrap;" data-i18n="config.unit_kb"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.max_text_attachments"></label>
+                    <input type="number" class="form-control" id="sessionConfigMaxTextAttachments" min="1"
+                           placeholder="10" required>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.max_messages"></label>
+                    <input type="number" class="form-control" id="sessionConfigMaxMessages" min="1" placeholder="100"
+                           required>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.pinned_limit"></label>
+                    <input type="number" class="form-control" id="sessionConfigPinnedLimit" min="1" placeholder="5"
+                           required>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="saveSessionConfig()" data-i18n="user.save_user"></button>
+            <button class="btn btn-secondary" onclick="closeSessionConfigFormModal()" data-i18n="reboot.cancel"></button>
+        </div>
+    </div>
+</div>
+
+<div id="modelFuncFormModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 id="modelFuncFormTitle" data-i18n="model.add_model_config"></h3>
+            <button class="modal-close" onclick="closeModelFuncFormModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="modelFuncForm">
+                <input type="hidden" id="modelFuncId">
+                <div class="form-group">
+                     <label data-i18n="config.match_type"></label>
+                    <select class="form-control" id="modelFuncType" required>
+                         <option value="exact" data-i18n="fm.sort_name"></option>
+                        <option value="regex" data-i18n="config.regex_match"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                     <label><span style="color:#ef4444">*</span><span data-i18n="model.model_name"></span>
+                         <span class="form-help-icon" onclick="toggleRegexHelp()" title=""><i
+                                class="bi bi-question-circle"></i></span>
+                    </label>
+                    <input type="text" class="form-control" id="modelFuncRegex"
+                           data-i18n="chat.model_name_placeholder" data-i18n-attr="placeholder" required>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.function"></label>
+                    <div style="display:flex;gap:16px;margin-top:6px">
+                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer">
+                           <input type="checkbox" id="modelFuncImage" value="1" data-i18n="fm.type_image">
+                            <span data-i18n="config.image"></span>
+                        </label>
+                        <label class="form-check-inline" style="cursor:not-allowed;opacity:0.6" data-i18n="config.media_not_supported" data-i18n-attr="title">
+                            <input type="checkbox" id="modelFuncVideo" value="2" tabindex="-1" onclick="event.preventDefault()" onkeydown="event.preventDefault()">
+                            <span data-i18n="config.video"></span>
+                        </label>
+                        <label class="form-check-inline" style="cursor:not-allowed;opacity:0.6" data-i18n="config.media_not_supported" data-i18n-attr="title">
+                            <input type="checkbox" id="modelFuncAudio" value="4" tabindex="-1" onclick="event.preventDefault()" onkeydown="event.preventDefault()">
+                            <span data-i18n="config.audio"></span>
+                        </label>
+
+                    </div>
+                </div>
+                <div class="form-group">
+                     <label data-i18n="config.thinking"></label>
+                    <div style="display:flex;flex-direction:column;gap:8px;margin-top:6px">
+                        <div style="display:flex;gap:8px;align-items:center">
+                            <select class="form-control" id="thinkModeSelect" style="flex:1"
+                                    onchange="onThinkModeChange()">
+                                <option value="" data-i18n="chat.model_no_support2"></option>
+                                <option value="single" data-i18n="config.think_mode_single"></option>
+                                <option value="multi" data-i18n="config.think_mode_multi"></option>
+                                <option value="hybrid" data-i18n="config.think_mode_hybrid"></option>
+                                <option value="thinking_mode" data-i18n="config.think_mode_thinking_mode"></option>
+                            </select>
+                        </div>
+                        <div id="thinkModeFields" style="display:none;flex-direction:column;gap:8px;">
+                            <div id="thinkBoolField" style="display:none;">
+                                <select class="form-control" id="thinkBoolParam">
+                                    <option value="enable_thinking">enable_thinking</option>
+                                    <option value="thinking">thinking</option>
+                                </select>
+                            </div>
+                            <div id="thinkLevelField" style="display:none;">
+                                <label class="form-label"><i class="bi bi-lightbulb"></i> <span data-i18n="config.thinking_level"></span></label>
+                                <div id="thinkLevelOptions" class="think-level-options"></div>
+                                <div class="form-text"><span data-i18n="config.thinking_level_custom_desc"></span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                 <div class="form-group">
+                      <label data-i18n="config.visibility"></label>
+                     <select class="form-control" id="modelFuncVisibility">
+                          <option value="PUBLIC" data-i18n="config.public_all"></option>
+                          <option value="PRIVATE" data-i18n="config.private_admin"></option>
+                        <option value="PROTECTED" data-i18n="config.protected_user"></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer" data-i18n="config.override_local_desc" data-i18n-attr="title">
+                        <input type="checkbox" id="modelFuncOverrideLocal">
+                        <span data-i18n="config.override_local"></span>
+                    </label>
+                    <span class="form-desc" data-i18n="config.override_local_desc"></span>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="saveModelFuncConfig()" data-i18n="user.save_user"></button>
+            <button class="btn btn-secondary" onclick="closeModelFuncFormModal()" data-i18n="reboot.cancel"></button>
+        </div>
+    </div>
+</div>
+
+<div id="renameSessionModal" class="modal">
+    <div class="modal-dialog">
+        <div class="modal-header">
+            <h3 data-i18n="chat.rename_session"></h3>
+            <button class="modal-close" onclick="closeRenameSessionModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="renameSessionForm">
+                <input type="hidden" id="renameSessionChatId">
+                <div class="form-group">
+                     <label data-i18n="chat.session_title"></label>
+                     <input type="text" class="form-control" id="renameSessionTitle" data-i18n="chat.new_title_placeholder" data-i18n-attr="placeholder" required
+                           maxlength="50">
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="saveRenameSession()" data-i18n="user.save_user"></button>
+            <button class="btn btn-secondary" onclick="closeRenameSessionModal()" data-i18n="reboot.cancel"></button>
+        </div>
+    </div>
+</div>
+
+<div id="chatSettingsModal" class="modal">
+    <div class="modal-dialog" style="width:36rem;max-width:90%">
+        <div class="modal-header no-title">
+            <h3><span data-i18n="user.settings"></span></h3>
+            <button class="modal-close" onclick="closeChatSettingsModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="settings-section">
+                <div class="form-group">
+                    <label data-i18n="config.retention_days"></label>
+                    <select class="form-control" id="chatSettingsSessionRetention">
+                        <option value="90" data-i18n="config.3_months"></option>
+                        <option value="180" data-i18n="config.6_months"></option>
+                        <option value="365" data-i18n="config.1_year"></option>
+                        <option value="1095" data-i18n="config.3_years"></option>
+                        <option value="0" data-i18n="config.permanent"></option>
+                    </select>
+                    <span class="form-desc" data-i18n="config.retention_desc"></span>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="form-group">
+                    <label data-i18n="config.send_key_label"></label>
+                    <div class="shortcut-options">
+                        <label class="option-label">
+                            <input type="radio" name="sendShortcutKey" value="ctrl+enter" checked> Ctrl + Enter
+                        </label>
+                        <label class="option-label">
+                            <input type="radio" name="sendShortcutKey" value="enter"> Enter
+                        </label>
+                    </div>
+                    <span class="form-desc" data-i18n="config.shortcut_desc"></span>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="form-group">
+                    <label class="option-label">
+                        <input type="checkbox" id="chatSettingsAttachReasoning"> <span data-i18n="config.attach_reasoning_label"></span>
+                    </label>
+                    <span class="form-desc" data-i18n="config.attach_reasoning_desc"></span>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="form-group">
+                    <label data-i18n="config.system_prompt_label"></label>
+                    <textarea class="form-control" id="chatSettingsSystemPrompt" rows="4" maxlength="2000"
+                              placeholder="" data-i18n="config.system_prompt_placeholder" data-i18n-attr="placeholder"></textarea>
+                    <span class="form-desc" data-i18n="config.system_prompt_desc"></span>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="saveChatSettings()"><span data-i18n="user.save_user"></span></button>
+            <button class="btn btn-secondary" onclick="closeChatSettingsModal()" data-i18n="reboot.cancel"></button>
+        </div>
+    </div>
+</div>
+
+<script src="../vendor/marked.min.js"></script>
+<script src="../vendor/highlight.min.js"></script>
+<script src="../vendor/purify.min.js"></script>
+<link rel="stylesheet" href="../user_share.css">
+<link rel="stylesheet" href="../common/common-dialog.css">
+<script src="../common/messages.js"></script>
+<script src="../common/i18n.js"></script>
+<script src="../common/common-dialog.js"></script>
+<script src="../common/common-api.js"></script>
+<script src="../common/common.js"></script>
+<script src="../user_share.js"></script>
+<script>
+    const STATIC_BASE = '/command/static/file';
+    const API_BASE = '/command';
+    let sessionId = localStorage.getItem('sessionId');
+
+    async function logout() {
+        try {
+            const response = await fetch(API_BASE + '/file/logout?sessionId=' + encodeURIComponent(localStorage.getItem('sessionId') || sessionId));
+        } catch (err) {
+        }
+        localStorage.removeItem('sessionId');
+        window.location.href = STATIC_BASE + '/login.html';
+    }
+</script>
+<script src="chat-core.js"></script>
+<script src="chat-message.js"></script>
+<script src="chat-sidebar.js"></script>
+<script src="chat-folder.js"></script>
+<script src="chat-input.js"></script>
+<script src="chat-model.js"></script>
+<script src="chat-config.js"></script>
+<script>
+    (function () {
+        if (typeof fetchCurrentUser === 'function') fetchCurrentUser();
+        if (typeof initChatApp === 'function' && !window.__chatInitialized) initChatApp();
+        if (typeof loadUserShareHtml === 'function') loadUserShareHtml();
+    })();
+</script>
+</body>
+</html>

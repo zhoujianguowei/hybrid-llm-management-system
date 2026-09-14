@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-i18n-title="login.page_title">
+<head>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="stylesheet" href="vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="common/common.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --border-color: #e2e8f0;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --hover-bg: rgba(99, 102, 241, 0.08);
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 10px rgba(0,0,0,0.06);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            padding: 28px;
+        }
+        .logo-area { text-align: center; margin-bottom: 20px; }
+        .logo-icon {
+            width: 52px; height: 52px;
+            background: var(--primary-gradient);
+            border-radius: 14px;
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+        }
+        .logo-icon i { font-size: 26px; color: white; }
+        .logo-area h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .logo-area p { font-size: 14px; color: var(--text-muted); }
+        .version-info { font-size: 12px; margin-top: 2px; }
+        .version-badge {
+            display: inline-block; background: var(--primary-gradient); color: white;
+            padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+        }
+        .form-group { margin-bottom: 14px; }
+        .form-group label { display: block; margin-bottom: 5px; color: var(--text-secondary); font-size: 13px; font-weight: 500; }
+        .input-wrapper { position: relative; }
+        .input-wrapper i {
+            position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+            color: var(--text-muted); font-size: 14px; pointer-events: none; transition: color 0.2s;
+        }
+        .input-wrapper input {
+            width: 100%; padding: 9px 12px 9px 36px;
+            border: 1px solid var(--border-color); border-radius: 9px;
+            background: var(--bg-color); color: var(--text-primary);
+            font-size: 14px; outline: none; transition: all 0.2s;
+        }
+        .input-wrapper input::placeholder { color: var(--text-muted); }
+        .input-wrapper input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px var(--hover-bg);
+        }
+        .input-wrapper input:focus ~ i { color: var(--primary-color); }
+        .btn-login {
+            width: 100%; padding: 10px; background: var(--primary-gradient);
+            color: white; border: none; border-radius: 9px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; margin-top: 0;
+        }
+        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35); }
+        .btn-login:active { transform: translateY(0); }
+        .error {
+            color: #ef4444; text-align: center; margin-top: 12px;
+            font-size: 13px;
+            background: rgba(239,68,68,0.06); padding: 9px; border-radius: 8px;
+            min-height: 37px; line-height: 19px;
+        }
+        .error:empty { visibility: hidden; padding: 0; border-radius: 0; min-height: 18px; background: transparent; }
+        .unblock-area { margin-top: 12px; display: none; text-align: center; }
+        .unblock-reason {
+            width: 100%; padding: 9px 12px; background: var(--bg-color);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            color: var(--text-primary); font-size: 13px; resize: none; outline: none; margin-bottom: 8px;
+        }
+        .unblock-reason:focus { border-color: var(--primary-color); }
+        .unblock-btn {
+            background: none; border: 1px solid var(--primary-color);
+            color: var(--primary-color); padding: 7px 22px; border-radius: 8px;
+            cursor: pointer; font-size: 13px; transition: all 0.2s;
+        }
+        .unblock-btn:hover { background: var(--hover-bg); }
+        .unblock-result { margin-top: 6px; font-size: 13px; display: none; }
+        .unblock-result.success { color: #10b981; }
+        .unblock-result.fail { color: #ef4444; }
+        .unblock-result:empty { display: none; }
+        .guest-register-link {
+            display: none; text-align: center; margin-top: 14px;
+            padding: 10px; background: var(--hover-bg);
+            border: 1px dashed var(--primary-color); border-radius: 9px;
+            color: var(--primary-color); text-decoration: none;
+            font-size: 13px; font-weight: 600; transition: all 0.2s;
+        }
+        .guest-register-link:hover { background: rgba(99, 102, 241, 0.15); }
+        .bottom-links { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 14px; flex-wrap: wrap; }
+        .bottom-links .guest-register-link { margin-top: 0; }
+        .help-link-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            color: var(--primary-color); text-decoration: none;
+            font-size: 13px; font-weight: 600;
+            padding: 8px 14px; border-radius: 9px;
+            background: var(--hover-bg); border: 1px dashed var(--primary-color);
+            transition: all 0.2s;
+        }
+        .help-link-btn:hover { background: rgba(99, 102, 241, 0.15); }
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 4px;
+            z-index: 100;
+        }
+        .lang-switch button {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+    </style>
+
+</head>
+<body>
+    <div class="lang-switch">
+        <button data-lang="zh" onclick="setLang('zh')">中</button>
+        <button data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="bi bi-folder2-open"></i></div>
+                <h1 data-i18n="login.app_name"></h1>
+                <p data-i18n="login.slogan"></p>
+                <p class="version-info"><span class="version-badge" id="versionInfo"></span></p>
+            </div>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label data-i18n="login.username_label"></label>
+                    <div class="input-wrapper">
+                        <input type="text" id="username" name="username" placeholder="" data-i18n="login.username_placeholder" data-i18n-attr="placeholder" required autocomplete="username">
+                        <i class="bi bi-person"></i>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="login.password_label"></label>
+                    <div class="input-wrapper">
+                        <input type="password" id="password" name="password" placeholder="" data-i18n="login.password_placeholder" data-i18n-attr="placeholder" required autocomplete="current-password">
+                        <i class="bi bi-lock"></i>
+                    </div>
+                </div>
+                <button type="submit" class="btn-login" data-i18n="login.submit"></button>
+                <p class="error" id="errorMsg"></p>
+                <div class="unblock-area" id="unblockArea">
+                    <textarea class="unblock-reason" id="unblockReason" placeholder="" data-i18n="login.unblock_reason_placeholder" data-i18n-attr="placeholder" rows="2"></textarea>
+                    <button type="button" class="unblock-btn" id="unblockBtn" data-i18n="login.unblock_submit"></button>
+                    <p class="unblock-result" id="unblockResult"></p>
+                </div>
+            </form>
+            <div class="bottom-links">
+                <a class="guest-register-link" id="registerLink" href="#"><i class="bi bi-person-plus"></i> <span data-i18n="login.register_link"></span></a>
+                <a class="help-link-btn" href="/command/static/file/instruct/main.html" target="_blank" title="" data-i18n="login.help_text" data-i18n-attr="title"><i class="bi bi-question-circle"></i> <span data-i18n="login.help_text"></span></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="common/messages.js"></script>
+    <script src="common/i18n.js"></script>
+    <script src="common/common-api.js"></script>
+    <script>
+        const API_BASE = '/command';
+        const STATIC_BASE = '/command/static/file';
+
+        function updateLangButtons() {
+            document.querySelectorAll('.lang-switch button').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === getLang());
+            });
+        }
+
+        window.onLangChange = function() {
+            updateLangButtons();
+            applyI18n();
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLangButtons();
+            applyI18n();
+        });
+
+        const sessionId = localStorage.getItem('sessionId');
+        if (sessionId) {
+            fetch(API_BASE + '/file/validate?sessionId=' + encodeURIComponent(sessionId))
+                .then(res => res.json())
+                .then(result => {
+                    if (result.success) {
+                        window.location.href = STATIC_BASE + '/index.html';
+                    }
+                })
+                .catch(err => console.log('Session validation skipped'));
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            try {
+                const response = await fetch(API_BASE + '/file/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('sessionId', result.data);
+                    if (result.code === 201) {
+                        window.location.href = STATIC_BASE + '/changePassword.html';
+                    } else {
+                        window.location.href = STATIC_BASE + '/index.html';
+                    }
+                } else {
+                    errorMsg.textContent = resultMsg(result, 'login.login_failed');
+                    const unblockArea = document.getElementById('unblockArea');
+                    const unblockResult = document.getElementById('unblockResult');
+                    unblockResult.textContent = '';
+                    if (result.msgKey && result.msgKey === 'login.user_blocked') {
+                        errorMsg.style.fontWeight = 'bold';
+                        unblockArea.style.display = 'block';
+                    } else {
+                        unblockArea.style.display = 'none';
+                    }
+                }
+            } catch (err) {
+                errorMsg.textContent = t('login.network_error');
+            }
+        });
+
+        document.getElementById('unblockBtn').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const reason = document.getElementById('unblockReason').value;
+            const unblockResult = document.getElementById('unblockResult');
+            unblockResult.style.display = 'none';
+            try {
+                const response = await fetch(API_BASE + '/file/user/request-unblock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'username=' + encodeURIComponent(username) + '&password=' + encodeURIComponent(password) + '&reason=' + encodeURIComponent(reason)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.data || t('login.unblock_success'), 'success');
+                    setTimeout(function() { window.location.href = STATIC_BASE + '/login.html'; }, 1500);
+                    return;
+                }
+                unblockResult.textContent = result.msg || t('login.unblock_fail');
+                unblockResult.className = 'unblock-result fail';
+                unblockResult.style.display = 'block';
+            } catch (err) {
+                unblockResult.textContent = t('login.network_error');
+                unblockResult.className = 'unblock-result fail';
+                unblockResult.style.display = 'block';
+            }
+        });
+
+        fetch(API_BASE + '/file/guest-register-enabled')
+            .then(res => res.json())
+            .then(result => {
+                if (result.success && result.data) {
+                    const link = document.getElementById('registerLink');
+                    link.href = STATIC_BASE + '/register.html';
+                    link.style.display = 'block';
+                }
+            })
+            .catch(err => console.log('Check guest register failed'));
+
+        fetch(API_BASE + '/file/version')
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    document.getElementById('versionInfo').textContent = result.data;
+                }
+            })
+            .catch(err => console.log('Fetch version failed'));
+    </script>
+</body>
+</html>

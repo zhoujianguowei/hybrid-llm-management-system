@@ -1,0 +1,72 @@
+<div class="user-settings-modal" id="userSettingsModal">
+    <div class="user-settings-dialog">
+        <div class="user-settings-header">
+            <div class="header-avatar-info">
+                <div class="header-avatar"><i class="bi bi-person-fill"></i></div>
+                <div class="header-user-meta">
+                    <h3 id="settingsUsernameDisplay"></h3>
+                    <span class="header-role-tag" id="settingsRoleDisplay"></span>
+                </div>
+            </div>
+            <button class="user-settings-close" onclick="closeUserSettingsModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="user-settings-body">
+            <div class="user-edit-section">
+                <div class="form-group">
+                    <label><span data-i18n="user.nickname_label"></span><span class="form-hint" data-i18n="user.nickname_hint2"></span></label>
+                    <input type="text" class="form-control" id="settingsNickname" maxlength="8" data-i18n="user.nickname_placeholder" data-i18n-attr="placeholder" placeholder="">
+                    <div class="error-msg" id="settingsNicknameError"></div>
+                </div>
+                <div class="form-divider"></div>
+                <div class="form-group">
+                    <label><span data-i18n="user.change_password_label"></span><span class="form-hint" data-i18n="user.password_hint2"></span></label>
+                    <input type="password" class="form-control" id="settingsPassword" maxlength="20" data-i18n="user.password_placeholder" data-i18n-attr="placeholder" placeholder="" oninput="validateSettingsPassword()">
+                    <div class="error-msg" id="settingsPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label data-i18n="user.confirm_password_label"></label>
+                    <input type="password" class="form-control" id="settingsConfirmPassword" maxlength="20" data-i18n="user.confirm_password_placeholder" data-i18n-attr="placeholder" placeholder="" oninput="validateSettingsPassword()">
+                    <div class="error-msg" id="settingsConfirmError"></div>
+                </div>
+            </div>
+            <div class="user-info-compact">
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label" data-i18n="user.register_time"></span><span class="info-value" id="settingsRegisterTimeDisplay">-</span></div>
+                    <div class="info-item"><span class="info-label" data-i18n="user.account_status"></span><span class="info-value" id="settingsStatusDisplay">-</span></div>
+                    <div class="info-item"><span class="info-label" data-i18n="user.online_status"></span><span class="info-value" id="settingsLoginStatusDisplay">-</span></div>
+                    <div class="info-item"><span class="info-label" data-i18n="user.validity_period"></span><span class="info-value" id="settingsRegisterEndDisplay">-</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="user-settings-footer">
+            <button class="btn btn-secondary" onclick="closeUserSettingsModal()" data-i18n="common.close"></button>
+            <button class="btn btn-primary" onclick="saveSettings()"><i class="bi bi-check2"></i> <span data-i18n="common.save"></span></button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="blockedCurrentUserModal">
+    <div class="modal-dialog" style="width: 400px;">
+        <div class="modal-header">
+            <h3 data-i18n="user.account_blocked"></h3>
+            <button class="modal-close" onclick="closeBlockedCurrentUserModal()"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 30px;">
+            <i class="bi bi-shield-exclamation" style="font-size: 3rem; color: #ef4444; margin-bottom: 16px;"></i>
+            <p style="font-size: 16px; color: var(--text-primary); margin-bottom: 16px;" data-i18n="user.account_blocked_msg"></p>
+            <div style="text-align: left;">
+                <div class="form-group">
+                    <label data-i18n="user.username"></label>
+                    <input type="text" class="form-control" id="blockedUsername" readonly style="background:var(--bg-color);color:var(--text-secondary);cursor:not-allowed;">
+                </div>
+                <div class="form-group"><label><span data-i18n="user.password_verify"></span><span style="color:#ef4444">*</span></label><input type="password" class="form-control" id="blockedPassword" data-i18n="user.password_placeholder" data-i18n-attr="placeholder" placeholder=""></div>
+                <div class="form-group"><label data-i18n="user.unblock_reason"></label><textarea class="form-control" id="blockedReason" rows="2" data-i18n="user.unblock_reason_placeholder" data-i18n-attr="placeholder" placeholder=""></textarea></div>
+            </div>
+            <p class="unblock-result" id="blockedSubmitResult" style="display:none; font-size:13px;"></p>
+        </div>
+        <div class="modal-footer" style="justify-content: center;">
+            <button class="btn btn-secondary" onclick="closeBlockedCurrentUserModal()" data-i18n="common.close"></button>
+            <button class="btn btn-primary" onclick="submitBlockedUnblock()" data-i18n="user.request_unblock"></button>
+        </div>
+    </div>
+</div>

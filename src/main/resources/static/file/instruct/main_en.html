@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hybrid LLM Management System - User Guide</title>
+    <link rel="stylesheet" href="../vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-color: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --bg: #f8fafc;
+            --bg-color: #f8fafc;
+            --card: #ffffff;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --border-color: #e2e8f0;
+            --sidebar-w: 280px;
+            --header-h: 56px;
+            --hover-bg: rgba(99, 102, 241, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        html {
+            scroll-padding-top: calc(var(--header-h) + 16px);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.7;
+        }
+        .top-header {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; display: flex; align-items: center; padding: 0 24px;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.3); z-index: 100;
+        }
+        .top-header h1 { font-size: 18px; font-weight: 700; }
+        .top-header .back-link {
+            margin-right: auto; color: rgba(255,255,255,0.85); text-decoration: none;
+            font-size: 14px; padding: 6px 14px; border-radius: 6px;
+            background: rgba(255,255,255,0.15); transition: all 0.2s;
+        }
+        .top-header .back-link:hover { background: rgba(255,255,255,0.25); color: white; }
+        .sidebar {
+            position: fixed; top: var(--header-h); left: 0; bottom: 0;
+            width: var(--sidebar-w); background: var(--card);
+            border-right: 1px solid var(--border); overflow-y: auto;
+            padding: 16px 0; z-index: 50;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .nav-l1 {
+            padding: 8px 20px; font-size: 14px; font-weight: 700;
+            color: var(--primary); cursor: pointer; display: flex;
+            align-items: center; gap: 8px; user-select: none;
+        }
+        .nav-l1:hover { background: rgba(99,102,241,0.05); }
+        .nav-l2 {
+            display: none; padding: 6px 20px 6px 48px; font-size: 13px;
+            color: var(--text-secondary); text-decoration: none;
+            border-left: 3px solid transparent; transition: all 0.15s;
+        }
+        .nav-l2:hover { color: var(--primary); background: rgba(99,102,241,0.04); border-left-color: var(--primary-light); }
+        .nav-l2.active { color: #fff !important; font-weight: 700 !important; background: var(--primary) !important; border-left-color: var(--primary-light) !important; }
+        .nav-l1.expanded + .nav-l2-group { display: block; }
+        .nav-l2-group { display: none; }
+        .content {
+            margin-left: var(--sidebar-w); margin-top: var(--header-h);
+            padding: 40px 48px 80px;
+            min-width: 600px;
+            max-width: 1400px;
+            width: calc(100% - var(--sidebar-w));
+            position: relative;
+            box-sizing: border-box;
+        }
+        @media (max-width: 1280px) {
+            .content { padding: 30px 30px 60px; }
+        }
+        @media (min-width: 2560px) {
+            .content { max-width: 1800px; padding: 60px 80px 100px; }
+        }
+        @media (min-width: 3840px) {
+            .content { max-width: 2400px; padding: 80px 120px 120px; }
+        }
+        .content h2 {
+            font-size: 26px; font-weight: 700; color: var(--text);
+            margin: 48px 0 16px; padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+        .content h2:first-child { margin-top: 0; }
+        .content h3 {
+            font-size: 20px; font-weight: 600; color: var(--primary-dark);
+            margin: 32px 0 12px; padding-left: 12px;
+            border-left: 4px solid var(--primary-light);
+        }
+        .content h4 {
+            font-size: 16px; font-weight: 600; color: var(--text);
+            margin: 24px 0 8px;
+        }
+        .content p { margin: 10px 0; color: var(--text-secondary); font-size: 15px; }
+        .content ul, .content ol { margin: 10px 0 10px 24px; color: var(--text-secondary); font-size: 15px; }
+        .content li { margin: 4px 0; }
+        .content strong { color: var(--text); }
+        .content img {
+            max-width: 100%; width: auto; height: auto; border-radius: 10px; margin: 16px auto;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid var(--border);
+            display: block;
+        }
+        .content img[src*="login"], .content img[src*="register"] {
+            max-width: 440px; display: block; margin: 20px auto;
+        }
+        .tip-box {
+            background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
+            border-radius: 10px; padding: 14px 18px; margin: 16px 0;
+            font-size: 14px; color: var(--primary-dark);
+        }
+        .tip-box i { margin-right: 6px; }
+        .warn-box {
+            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15);
+            border-radius: 10px; padding: 14px 18px; margin: 16px 0;
+            font-size: 14px; color: #92400e;
+        }
+        .warn-box i { margin-right: 6px; }
+        .feature-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 20px 0; }
+        .feature-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; transition: all 0.2s;
+        }
+        .feature-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-color: var(--primary-light); }
+        .feature-card .fc-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px; margin-bottom: 12px;
+        }
+        .feature-card h4 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+        .feature-card p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+        table {
+            width: 100%; border-collapse: collapse; margin: 16px 0;
+            font-size: 14px; background: var(--card); border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        th { background: var(--bg); font-weight: 600; color: var(--text); text-align: left; padding: 10px 14px; }
+        td { padding: 10px 14px; color: var(--text-secondary); border-top: 1px solid var(--border); }
+        tr:hover td { background: rgba(99,102,241,0.02); }
+        .step-list { counter-reset: step; list-style: none; margin-left: 0; padding: 0; }
+        .step-list li {
+            counter-increment: step; padding: 10px 0 10px 44px;
+            position: relative; border-left: 2px solid var(--border);
+        }
+        .step-list li:last-child { border-left-color: transparent; }
+        .step-list li::before {
+            content: counter(step); position: absolute; left: -15px; top: 8px;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .step-list li strong { display: block; color: var(--text); margin-bottom: 2px; }
+        .step-list li span { font-size: 14px; color: var(--text-secondary); }
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .content { margin-left: 0; padding: 24px 20px 60px; }
+        }
+        .main-gpu-box {
+            background: linear-gradient(135deg, rgba(220,38,38,0.10), rgba(220,38,38,0.04));
+            border: 1px solid rgba(220,38,38,0.35);
+            border-left: 4px solid #dc2626;
+            border-radius: 10px; padding: 16px 18px; margin: 16px 0;
+            font-size: 14px; color: #b91c1c; font-weight: 600;
+        }
+        .main-gpu-box i { margin-right: 6px; }
+        .main-gpu-box strong { color: #b91c1c; font-weight: 700; }
+        .main-gpu-box code { color: #b91c1c; background: rgba(220,38,38,0.08); padding: 1px 5px; border-radius: 4px; }
+        .lang-selector { position: relative; }
+        .lang-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; height: 2.25rem; min-width: 6.5rem; padding: 0 0.75rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.8125rem; transition: all 0.2s; white-space: nowrap; justify-content: center; }
+        .lang-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+        .lang-btn i.bi-chevron-down { font-size: 0.7em; opacity: 0.8; margin-left: 2px; }
+        .lang-dropdown { position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--card-bg); border-radius: 0.625rem; box-shadow: var(--shadow-lg); padding: 0.5rem; display: none; flex-direction: column; gap: 4px; min-width: 9rem; z-index: 200; border: 1px solid var(--border-color); }
+        .lang-dropdown.active { display: flex; }
+        .lang-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-primary); font-size: 13px; white-space: nowrap; }
+        .lang-option:hover { background: var(--hover-bg); }
+        .lang-option.active { background: var(--hover-bg); color: var(--primary-color); font-weight: 500; }
+        .lang-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-color); display: inline-block; flex-shrink: 0; }
+        .lang-dot.zh { background: linear-gradient(135deg, #fee2e2, #ef4444); }
+        .lang-dot.en { background: linear-gradient(135deg, #dbeafe, #3b82f6); }
+    </style>
+</head>
+<body>
+
+<div class="top-header">
+    <a class="back-link" href="javascript:window.close();(window.opener||true)&&history.back();" onclick="if(!window.opener){window.location.href='/command/static/file/login.html';}return false;" title="Back to System" style="margin-left: 0;">
+        <i class="bi bi-arrow-left-circle-fill" style="font-size: 20px;"></i>
+    </a>
+    <div class="lang-selector" style="margin-right: 16px;">
+        <button class="lang-btn" onclick="toggleLangDropdown()">
+            <i class="bi bi-translate"></i>
+            <span id="langCurrentLabel">English</span>
+            <i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+            <div class="lang-option" onclick="switchLang('zh')"><span class="lang-dot zh"></span><span>中文</span></div>
+            <div class="lang-option" onclick="switchLang('en')"><span class="lang-dot en"></span><span>English</span></div>
+        </div>
+    </div>
+    <h1><i class="bi bi-folder2-open"></i>&nbsp; User Guide</h1>
+</div>
+
+<nav class="sidebar" id="sidebar">
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('overview')"><i class="bi bi-lightning-charge-fill"></i> Quick Introduction </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2 active" href="#overview">System Overview</a>
+        <a class="nav-l2" href="#highlights">Core Features</a>
+        <a class="nav-l2" href="#roles">User Roles</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('login')"><i class="bi bi-box-arrow-in-right"></i> Login & Registration </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#login">Login Page</a>
+        <a class="nav-l2" href="#register">Guest Registration</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('file-browse')"><i class="bi bi-folder2-open"></i> File Management </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#file-browse">File Browsing & Search</a>
+        <a class="nav-l2" href="#file-upload">File Upload</a>
+        <a class="nav-l2" href="#file-download">File Download</a>
+        <a class="nav-l2" href="#file-preview">File Preview</a>
+        <a class="nav-l2" href="#file-delete">File Deletion</a>
+        <a class="nav-l2" href="#file-create-folder">Create Folder</a>
+        <a class="nav-l2" href="#perm-overview">Permission Management Overview</a>
+        <a class="nav-l2" href="#perm-path">Set Path Permissions</a>
+        <a class="nav-l2" href="#perm-tree">Permission Tree Management</a>
+        <a class="nav-l2" href="#perm-protect">Protected Paths</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('user-list')"><i class="bi bi-people"></i> User Management </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#user-list">User List & Filtering</a>
+        <a class="nav-l2" href="#user-edit">Add & Edit Users</a>
+        <a class="nav-l2" href="#user-status">Account Status Management</a>
+        <a class="nav-l2" href="#user-expiry">Guest Expiry Settings</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('chat-session')"><i class="bi bi-chat-dots-fill"></i> AI Chat </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#chat-session">Conversation Management</a>
+        <a class="nav-l2" href="#chat-model">Model Selection</a>
+        <a class="nav-l2" href="#chat-attach">Attachment Upload</a>
+        <a class="nav-l2" href="#chat-code">Code Generation & Viewing</a>
+        <a class="nav-l2" href="#chat-config">System Configuration</a>
+        <a class="nav-l2" href="#model-thinking">Model Function & Thinking Config</a>
+        <a class="nav-l2" href="#chat-personal">Personal Settings</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('model-list')"><i class="bi bi-cpu"></i> Model Management </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#model-list">Model List & Status</a>
+        <a class="nav-l2" href="#model-llama-guide">llama.cpp User Guide</a>
+        <a class="nav-l2" href="#model-launch">Configure & Launch Model</a>
+        <a class="nav-l2" href="#model-gpu">GPU Monitoring</a>
+        <a class="nav-l2" href="#model-mem">Memory Monitoring</a>
+        <a class="nav-l2" href="#model-merge">Model Naming & Shard Merging</a>
+        <a class="nav-l2" href="#model-setting">System Settings</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('reboot-add')"><i class="bi bi-power"></i> Scheduled Reboot </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#reboot-add">Add Scheduled Task</a>
+        <a class="nav-l2" href="#reboot-manage">Task Management</a>
+    </div>
+</nav>
+
+<main class="content">
+
+    <!-- ==================== Quick Introduction ==================== -->
+    <h2 id="overview"><i class="bi bi-lightning-charge-fill"></i> System Overview</h2>
+    <p>This system (Hybrid LLM Management System) is a comprehensive management platform for locally deployed large language models, integrating <strong>file management, user permissions, model scheduling, AI conversation, and system monitoring</strong> into one secure, efficient, and convenient all-in-one experience.</p>
+    <p>Built on Java + Spring Boot, the frontend uses Bootstrap 5, and the backend schedules local GGUF-format large language models through llama.cpp, while also supporting OpenAI-compatible remote API integration. Its core objective is to address the cumbersome path permission management, model parameter configuration, and resource monitoring challenges in local model deployment.</p>
+    <p>The system is available in two editions, identified by the following version suffixes:</p>
+    <table>
+        <tr><th>Edition</th><th>Version Suffix</th><th>Description</th><th>Included Features</th></tr>
+        <tr><td><strong>Base Edition</strong></td><td><code style="background:#eee; padding:2px 6px; border-radius:4px;">release_base</code></td><td>Streamlined deployment version</td><td>Core features: file management, user management, AI chat, permission system, etc.</td></tr>
+        <tr><td><strong>Ultimate Edition</strong></td><td><code style="background:#eee; padding:2px 6px; border-radius:4px;">release_ultimate</code></td><td>Full-featured version</td><td>All Base Edition features + model management, resource monitoring, scheduled power control, and other advanced features</td></tr>
+    </table>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Multimodal Capability Notice</strong>: The current version's multimodal capabilities <strong>only support images</strong>; audio and video input are not supported.</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Compatibility Notice</strong>: The scheduled shutdown/restart feature depends on the underlying OS instruction set and hardware support; not all machine models can operate normally. Current test system status: Dual X99 (Ubuntu 22.04, E5-2696 v4) and Mac M1 Pro shutdown/restart work normally; Windows 10 64-bit (z690 motherboard, i7-13700K) shutdown works normally, but automatic wake-up restart is limited by motherboard BIOS and cannot wake up in self-tests.</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>GPU Monitoring Notice</strong>: GPU monitoring relies on the <code style="color:var(--primary)">nvidia-smi</code> tool and only supports systems with NVIDIA GPUs. macOS uses Apple Silicon (M series) or integrated graphics, which lack corresponding monitoring interfaces, so GPU monitoring panels are not available on macOS.</div>
+
+    <h3 id="highlights"><i class="bi bi-stars"></i> Core Features</h3>
+    <div class="feature-cards">
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-wifi-off"></i></div>
+            <h4>Fully Offline, No Internet Required</h4>
+            <p>Frontend resources are fully offline, with no dependency on external CDNs. Ready to use out of the box, convenient for intranet deployment.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-pc-display"></i></div>
+            <h4>No Database Configuration, Cross-Platform</h4>
+            <p>Supports Windows, Linux, and macOS platforms with no database configuration needed. Single JAR deployment, zero dependencies, ready to run upon startup.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-shield-lock-fill"></i></div>
+            <h4>Fine-Grained Path Permissions</h4>
+            <p>Path-inheritance-based permission verification mechanism supporting five permission types: read, execute, upload, download, and delete. Supports role-based minimum permission restrictions and additional authorization for specific users to ensure data security.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-folder-plus"></i></div>
+            <h4>Project-Level AI Analysis</h4>
+            <p>Supports batch file upload with automatic text content extraction. Submit key files from an entire source directory to AI at once for cross-file project-level code analysis and refactoring suggestions.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-cpu"></i></div>
+            <h4>Latest llama.cpp Feature Support</h4>
+            <p>Deeply integrated with the latest llama.cpp capabilities, fully supporting multi-GPU parallel acceleration (SM Tensor in llama.cpp) and Speculative Decoding (predictive inference) acceleration: supports MTP (Multi-Token Prediction), DFlash and DSpark types, significantly improving large model inference throughput and response speed.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-puzzle-fill"></i></div>
+            <h4>Automated GGUF Management</h4>
+            <p>Automatically identifies GGUF shard files with one-click merge support. Built-in naming convention checks ensure consistent model file naming for quick retrieval and scheduling.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <h4>Real-Time Resource Monitoring</h4>
+            <p>Integrated nvidia-smi real-time monitoring with trend charts for GPU memory usage and system memory, helping administrators assess resource availability before launching models.</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-clock-history"></i></div>
+            <h4>Smart Scheduled Restart</h4>
+            <p>Supports one-time and recurring (by workday) scheduled shutdown/wake tasks. Features task conflict detection and pre-expiration warnings, suitable for unattended server environments.</p>
+        </div>
+    </div>
+
+    <h3 id="roles"><i class="bi bi-people"></i> User Roles</h3>
+    <table>
+        <tr><th>Role</th><th>Permission Level</th><th>Description</th><th>Accessible Features</th></tr>
+        <tr><td><strong>Administrator (Admin)</strong></td><td>Highest (Level 3)</td><td>System maintainer</td><td>All features: file management, user management, model management, resource monitoring, scheduled shutdown, global configuration</td></tr>
+        <tr><td><strong>Regular User (User)</strong></td><td>Standard (Level 2)</td><td>Registered user</td><td>File management (permission-restricted), AI chat, personal settings; account has an expiration date, automatically banned upon expiry</td></tr>
+        <tr><td><strong>Guest</strong></td><td>Temporary (Level 1)</td><td>Self-registered account</td><td>File management (permission-restricted), AI chat, personal settings; account has an expiration date, automatically banned upon expiry</td></tr>
+    </table>
+
+    <!-- ==================== Login & Registration ==================== -->
+    <h2 id="login"><i class="bi bi-box-arrow-in-right"></i> Login & Registration</h2>
+    <p>The default system access URL is <code style="background:#eee; padding:2px 4px; border-radius:4px;">http://&lt;server IP&gt;:8098/command</code>.</p>
+    <img src="images/login.png" alt="Login page">
+    <p>The login page provides simple account password verification. If an account is banned by an administrator, users can fill in the reason below to submit an <strong class="text-danger">unban request</strong>, which administrators can process with one click on the user management page.</p>
+
+    <h3 id="register"><i class="bi bi-person-plus-fill"></i> Guest Self-Registration</h3>
+    <p>When the administrator enables "Guest Registration" in system settings, the login page will display a registration link.</p>
+    <img src="images/register.png" alt="Registration page">
+    <p>Registration requirements:</p>
+    <ul>
+        <li><strong>Username</strong>: Must start with an English letter, 3–32 characters</li>
+        <li><strong>Password</strong>: 8–20 characters, must contain both numbers and letters</li>
+        <li><strong>Validity Period</strong>: Upon successful registration, the account will receive a default validity period preset by the administrator (e.g., 7 days). It will automatically switch to a banned status upon expiration.</li>
+    </ul>
+
+    <!-- ==================== File Management ==================== -->
+    <h2 id="file-browse"><i class="bi bi-folder2-open"></i> File Management System</h2>
+    <p>The file manager is the core module of the system, designed to provide an operation experience similar to a local file explorer while integrating strict permission verification.</p>
+    <img src="images/file-manager-main.png" alt="File manager main page">
+
+    <h4 id="file-manager-details">Interface Features Overview</h4>
+    <ul class="step-list">
+        <li><strong>Root Directory Switching</strong><span>The left navigation bar displays accessible root paths. For Linux/macOS systems, the system root path ( / ) and user home directory ( ~ ) are shown by default; for Windows systems, all detected disk drive letters (e.g., C:\, D:\) are displayed. Click to quickly switch the current workspace.</span></li>
+        <li><strong>Path Navigation</strong><span>The breadcrumb navigation at the top supports clicking any level for quick backtracking.</span></li>
+        <li><strong>Efficient Search</strong><span>Supports fuzzy filename matching with wildcards (e.g., <code style="color:var(--primary)">*.py</code>) for quick filtering of specific file types.</span></li>
+        <li><strong>View Switching</strong><span>Supports switching between list view (showing detailed properties) and tile view (suitable for image browsing).</span></li>
+    </ul>
+    <img src="images/file-manager-list.png" alt="File list view">
+
+    <h3 id="file-upload"><i class="bi bi-cloud-upload-fill"></i> Smart Upload</h3>
+    <p>Supports batch file upload using chunked upload technology to ensure stable large file transfers.</p>
+    <img src="images/file-upload.png" alt="File upload selector">
+    <p>Upload features:</p>
+    <ul class="step-list">
+        <li><strong>Drag & Drop Support</strong><span>Simply drag local files into the browser window to trigger upload.</span></li>
+        <li><strong>Progress Tracking</strong><span>The right task bar displays real-time upload progress for each chunk and overall percentage.</span></li>
+    </ul>
+    <img src="images/file-upload-progress.png" alt="File upload progress">
+    <p>After successful upload, the file list updates in real-time, showing newly uploaded files and their properties:</p>
+    <img src="images/file-manager-list-alt.png" alt="File list after successful upload">
+
+    <h3 id="file-download"><i class="bi bi-cloud-download-fill"></i> Flexible Download</h3>
+    <p>Click the download button to directly obtain a single file. For folders, the system automatically packages them as <code style="color:var(--primary)">.zip</code> archives in the background and notifies users through the download task list upon completion.</p>
+
+    <h3 id="file-preview"><i class="bi bi-eye-fill"></i> Multimedia Preview</h3>
+    <p>The system has a built-in efficient preview engine, allowing content viewing without download:</p>
+    <table>
+        <tr><th>Type</th><th>Supported Formats</th><th>Preview Features</th></tr>
+        <tr><td><strong>Image</strong></td><td>JPG, PNG, GIF, WebP</td><td>Supports full-screen viewing</td></tr>
+        <tr><td><strong>Video/Audio</strong></td><td>MP4, WebM, MP3, WAV</td><td>Supports Range requests, allowing free progress bar seeking (Seek)</td></tr>
+        <tr><td><strong>Document</strong></td><td>PDF</td><td>Built-in PDF.js reader with online preview support</td></tr>
+        <tr><td><strong>Text</strong></td><td>Java, Python, JS, HTML, JSON, YAML, etc.</td><td>Supports preview of common text content</td></tr>
+    </table>
+    <img src="images/file-preview-video.png" alt="Video file preview">
+
+    <h3 id="file-delete"><i class="bi bi-trash3-fill"></i> Secure Deletion</h3>
+    <p>Deletion requires double confirmation. The system strictly verifies <code style="color:var(--primary)">DELETE</code> permissions. For paths marked as <strong class="text-danger">protected</strong>, even administrators cannot perform deletion operations to prevent accidental deletion of core system files.</p>
+
+    <h3 id="file-create-folder"><i class="bi bi-folder-plus"></i> Create Folder</h3>
+    <p>"Create Folder" is a folder-specific feature. Click the "New Folder" button in the file manager toolbar and enter a folder name to create it. This feature is bound to the upload permission of the folder; users with upload permission on the current directory can create folders. Folders cannot be created on the root directory list page; you must navigate into a specific directory first.</p>
+
+    <!-- ==================== Permission Management ==================== -->
+    <h2 id="perm-overview"><i class="bi bi-shield-lock-fill"></i> Fine-Grained Permission System</h2>
+    <p>This system uses a path-inheritance-based permission verification algorithm to ensure absolute security of resource access.</p>
+
+    <h4 id="perm-logic">Permission Verification Logic</h4>
+    <ul class="step-list">
+        <li><strong>Path Inheritance</strong><span>When accessing <code style="color:var(--primary)">/home/data/file.txt</code>, if no rule is set for this file, the system traces upward to <code style="color:var(--primary)">/home/data</code> &rarr; <code style="color:var(--primary)">/home</code> &rarr; <code style="color:var(--primary)">/</code> until the nearest matching rule is found.</span></li>
+        <li><strong>Permission Cascade (Priority)</strong><span>Permissions have an inclusion relationship; higher levels automatically grant lower-level permissions. Priority order:<br><strong>Delete &gt; Upload &gt; Download &gt; Execute &gt; Read</strong>.<br>For example, a user with "Delete" permission automatically has all other permissions for that path.</span></li>
+        <li><strong>Role & User Dual Verification</strong><span>Each permission can configure a "minimum allowed role" (e.g., regular users and above), and also supports adding a "specific authorized users" list for flexible privilege management.</span></li>
+    </ul>
+
+    <h4 id="perm-type">Permission Types & Functions Explained</h4>
+    <p>The system categorizes permissions into "general permissions" and "folder-specific permissions" as follows:</p>
+    <table>
+        <tr><th>Permission Name</th><th style="width: 25%;">Applies To</th><th>Detailed Description</th></tr>
+        <tr><td><strong>Read</strong></td><td align="center">File / Folder</td><td>[Lowest Permission] Allows viewing file content and previewing files. For folders, it only means the folder is visible in the list, <strong style="color:var(--primary)">cannot</strong> enter the folder to view its contents.</td></tr>
+        <tr><td><strong>Execute</strong></td><td align="center">Folder Only</td><td>Allows users to "enter" the directory; a prerequisite for viewing directory listings and accessing sub-items.</td></tr>
+        <tr><td><strong>Download</strong></td><td align="center">File / Folder</td><td>Allows downloading individual files or packaging entire folders for download.</td></tr>
+        <tr><td><strong>Upload</strong></td><td align="center">Folder Only</td><td>Allows uploading new files to or overwriting existing files in the directory.</td></tr>
+        <tr><td><strong>Delete</strong></td><td align="center">File / Folder</td><td>[Highest Permission] Allows deleting the file or recursively deleting the entire folder.</td></tr>
+    </table>
+
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Special Mechanism: Path Penetration</strong><br>
+        The system supports permission verification based on the final target. If a user lacks "Execute" permission for a parent directory but has "Read" permission for a deeply nested sub-file (e.g., has read permission for <code style="color:var(--primary)">/home/nice/good.txt</code> but no execute permission for <code style="color:var(--primary)">/home/nice</code>), the user can still directly access that file. In this case, while browsing, the user can only see the path leading to that file (e.g., only <code style="color:var(--primary)">/home/nice</code> is visible) and cannot see other files in the parent directory (such as <code style="color:var(--primary)">/home</code>).</div>
+
+    <h3 id="perm-path"><i class="bi bi-pencil-square"></i> Permission Configuration</h3>
+    <p>Administrators can define rules for any path through "Permission Settings".</p>
+    <img src="images/permission-edit.png" alt="Edit path permissions">
+    <img src="images/permission-edit-file.png" alt="Edit specific file permissions">
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Verification Constraints</strong>: To prevent permission configuration conflicts, the system requires that the role scope for higher permissions must be a subset of the role scope for lower permissions (e.g., those allowed to delete must also be allowed to read).</div>
+
+    <h3 id="perm-tree"><i class="bi bi-diagram-3-fill"></i> Permission Tree Management</h3>
+    <p>Through a visual tree structure, administrators can intuitively view the permission distribution across the entire system and quickly locate and modify permissions for specific subdirectories.</p>
+    <img src="images/permission-tree.png" alt="Permission tree management">
+    <img src="images/permission-tree-detail.png" alt="Permission tree detail view">
+
+    <h3 id="perm-protect"><i class="bi bi-shield-fill-check"></i> Path Protection Mechanism</h3>
+    <p>After checking "Protected" in the permission edit interface, the path will be locked. Protected paths display a special indicator in the file management interface, and all deletion requests will be directly blocked.</p>
+
+    <!-- ==================== User Management ==================== -->
+    <h2 id="user-list"><i class="bi bi-people"></i> User Management</h2>
+    <p>Provides comprehensive account lifecycle management, including role switching, status control, and validity monitoring.</p>
+    <img src="images/user-list.png" alt="User management list">
+
+    <h3 id="user-edit"><i class="bi bi-pencil-square"></i> Account Editing</h3>
+    <p>Administrators can modify user roles (Admin/User/Guest), nicknames, and passwords at any time. For guest accounts, the registration validity period can be overridden individually.</p>
+    <img src="images/user-edit.png" alt="User edit dialog">
+
+    <h3 id="user-status"><i class="bi bi-toggle-on"></i> Status Control</h3>
+    <p>Supports one-click ban/unban. Banned users will trigger an unban request process when attempting to log in, and administrators can receive and process application reminders in real-time on the user list page.</p>
+
+    <h3 id="user-expiry"><i class="bi bi-calendar-event"></i> Guest Expiry Management</h3>
+    <p>In user management settings, you can configure the default validity period (in days) for guest accounts. System background tasks will periodically scan expired accounts and automatically execute ban operations.</p>
+
+    <!-- ==================== AI Chat ==================== -->
+    <h2 id="chat-session"><i class="bi bi-chat-dots-fill"></i> AI Intelligent Chat</h2>
+    <p>Integrates multiple local and remote large models, providing production-grade conversation experience.</p>
+    <img src="images/chat-main.png" alt="Chat main interface">
+    <p>The AI chat page provides complete conversation management capabilities:</p>
+    <ul class="step-list">
+        <li><strong>New Conversation</strong><span>Click the "New Conversation" button on the left to start a new session</span></li>
+        <li><strong>Load History</strong><span>Click any session in the left session list to load historical messages</span></li>
+        <li><strong>Delete Session</strong><span>Right-click or long-press a session entry to delete</span></li>
+        <li><strong>Rename</strong><span>Custom session names are supported</span></li>
+        <li><strong>Pin Session</strong><span>Pin frequently used sessions for quick access</span></li>
+    </ul>
+
+    <h3 id="chat-attach"><i class="bi bi-paperclip"></i> Attachment Upload</h3>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Multimodal Capability Notice</strong>: The current version's multimodal capabilities <strong>only support images</strong>; audio and video input are not supported.</div>
+    <p>Supports multiple attachment upload methods for submitting file content to AI for analysis:</p>
+    <ul class="step-list">
+        <li><strong>Image Upload</strong><span>Supports direct upload of screenshots or image files; AI can recognize text content in images (OCR).</span></li>
+        <li><strong>Text File Upload</strong><span>Supports uploading common text format files (e.g., .txt, .java, .py, .js, etc.); the system automatically extracts text content for AI analysis.</span></li>
+        <li><strong>Folder Upload</strong><span>Supports uploading entire folders. If the current model supports image input, uploaded folders will include image files; otherwise, only plain text files.</span></li>
+        <li><strong>Paste File Path</strong><span>Paste a file path in the input box; the system will automatically recognize and upload the corresponding file.</span></li>
+        <li><strong>Copy & Paste Files</strong><span>After copying image or text files in the file manager or IDE, paste directly into the chat input box to upload; supports batch copy-paste.</span></li>
+    </ul>
+    <img src="images/chat-attachment.png" alt="Attachment upload menu">
+    <img src="images/chat-image-ocr.png" alt="Image OCR recognition">
+    <img src="images/chat-bulk-upload.png" alt="Batch file upload">
+    <img src="images/chat-project-analysis.png" alt="Project code analysis">
+
+    <h3 id="chat-code"><i class="bi bi-code-slash"></i> Developer Friendly</h3>
+    <p>AI-generated code blocks support one-click copy and direct save as local files. For long code, collapsible display is supported to optimize the reading experience.</p>
+    <img src="images/chat-code-gen.png" alt="Code generation details">
+
+    <h3 id="chat-config"><i class="bi bi-gear"></i> System-Level Chat Configuration</h3>
+    <p>Administrators can deeply customize the chat experience:</p>
+    <ul class="step-list">
+        <li><strong>OpenAPI Integration</strong><span>Configure external API endpoints and keys to expand the model library.</span></li>
+        <li><strong>Model Feature Definition</strong><span>Match model names via exact match or regular expressions to define multimodal capabilities, thinking modes, and visibility, with the option to override auto-detected model configuration (see "Model Function Definition & Thinking Mode Configuration" below).</span></li>
+        <li><strong>Quota Management</strong><span>Limit attachment size, maximum message count, etc. by role to prevent resource abuse.</span></li>
+    </ul>
+    <img src="images/chat-system-config.png" alt="System configuration overview">
+    <img src="images/chat-api-config.png" alt="Edit API configuration">
+    <img src="images/chat-model-func-config.png" alt="Model feature configuration">
+    <img src="images/chat-session-settings.png" alt="Session settings">
+    <img src="images/chat-personal-config.png" alt="Personal settings">
+
+    <h3 id="model-thinking"><i class="bi bi-lightbulb-fill"></i> Model Function Definition &amp; Thinking Mode Configuration</h3>
+    <p>The model function definition assigns multimodal capabilities (image/video/audio), thinking mode, and visibility to models matching specific names, via exact match or regular expressions. For models that support "deep thinking" (reasoning) capabilities, thinking modes can be flexibly configured here; the <strong>Override Auto-Detection</strong> option forces this entry to override the configuration auto-detected by the system (see below).</p>
+
+    <h4>Auto-Detection from GGUF Metadata</h4>
+    <p>When launching a local GGUF model, the system automatically parses the model's <code style="color:var(--primary)">tokenizer.chat_template</code> metadata to detect thinking-related parameters. If the chat template contains keywords like <code style="color:var(--primary)">thinking_mode</code>, <code style="color:var(--primary)">enable_thinking</code>, <code style="color:var(--primary)">thinking</code>, or <code style="color:var(--primary)">reasoning_effort</code>, the system automatically populates the thinking mode configuration, eliminating manual setup.</p>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Auto-Detection Logic</strong>: The system scans the GGUF file's chat template for recognized parameter keywords and thinking level values (e.g., <code>thinking_mode</code> three-state values <code>disabled</code> / <code>adaptive</code> / <code>enabled</code>, and <code>reasoning_effort</code> level values like <code>no_think</code>, <code>low</code>, <code>high</code>, <code>max</code>). Detection priority: <code>thinking_mode</code> > other parameter combinations. Based on the detected parameters, it determines the appropriate thinking mode and available levels.</div>
+
+    <h4>Thinking Modes</h4>
+    <p>The system supports four thinking modes, each suited to different model capabilities:</p>
+    <table>
+        <tr><th>Mode</th><th>Parameters Used</th><th>Description</th><th>Applicable Models</th></tr>
+        <tr><td><strong>Single Thinking Mode</strong></td><td><code>enable_thinking</code> / <code>thinking</code></td><td>Uses a single boolean parameter (<code>enable_thinking</code> or <code>thinking</code>) to control the on/off state of thinking (<code>true</code> / <code>false</code>), with no intensity levels.</td><td>Models whose chat template uses a boolean thinking param, such as Qwen3.5 and Qwen3.6 series</td></tr>
+        <tr><td><strong>Multi-Stage Thinking Mode</strong></td><td><code>reasoning_effort</code></td><td>Uses <code>reasoning_effort</code> to control both the on/off state and intensity of thinking. The parameter value range includes an off level (<code>no_think</code>) and intensity levels (<code>low</code>, <code>medium</code>, <code>high</code>, <code>xhigh</code>, <code>max</code>), and at least one intensity level must be selected.</td><td>Models that use <code>reasoning_effort</code> to control thinking, such as hy3 series</td></tr>
+        <tr><td><strong>Hybrid Mode</strong></td><td><code>enable_thinking</code> / <code>thinking</code> + <code>reasoning_effort</code></td><td>Uses two parameters simultaneously: a boolean parameter (<code>enable_thinking</code> or <code>thinking</code>) controls the on/off state, while <code>reasoning_effort</code> controls thinking intensity. When an off level is selected, only the boolean parameter is sent; when an intensity level is selected, both parameters are sent.</td><td>Models requiring separate on/off and intensity control, such as Qwen3.8 series and DeepSeek V4 Flash</td></tr>
+        <tr><td><strong>Thinking Mode</strong> (<code>thinking_mode</code>)</td><td><code>thinking_mode</code></td><td>Uses a single parameter to control the thinking mode, supporting three states: <code>disabled</code> (disable thinking), <code>adaptive</code> (adaptive, model decides whether to think), and <code>enabled</code> (force enable thinking). This mode has the highest detection priority in GGUF metadata.</td><td>Models with native thinking_mode parameter support, such as MiniMax M3</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Default Level Difference</strong>: The default selection logic for <code>thinking_mode</code> differs from other modes. In the model launch configuration page, <code>thinking_mode</code> defaults to the highest level (e.g., <code>enabled</code>) to maximize thinking capability at startup. In the chat page, it defaults to the lowest level (e.g., <code>disabled</code>) for faster response times in everyday conversations.</div>
+
+    <h4>Thinking Levels</h4>
+    <p>Thinking levels determine the intensity of the model's reasoning process. Available levels from low to high:</p>
+    <table>
+        <tr><th>Level</th><th>Identifier</th><th>Description</th></tr>
+        <tr><td><strong>Off</strong></td><td><code>no_think</code> / <code>false</code></td><td>Disable thinking, model responds directly without reasoning process (fastest response)</td></tr>
+        <tr><td><strong>Low</strong></td><td><code>low</code></td><td>Minimal reasoning, suitable for simple questions</td></tr>
+        <tr><td><strong>Medium</strong></td><td><code>medium</code></td><td>Moderate reasoning, balanced between speed and quality</td></tr>
+        <tr><td><strong>High</strong></td><td><code>high</code></td><td>Deep reasoning, suitable for complex problem-solving</td></tr>
+        <tr><td><strong>Extra High</strong></td><td><code>xhigh</code></td><td>Very deep reasoning, for highly complex tasks</td></tr>
+        <tr><td><strong>Max</strong></td><td><code>max</code></td><td>Maximum reasoning intensity, longest response time</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Configuration Rules</strong>: Select <strong>at least one intensity level</strong>; the off level (<code>no_think</code>/<code>false</code>/<code>disabled</code>) is no longer mandatory, since some models provide no non-thinking mode. For <code>thinking_mode</code> mode the intensity levels are <code>adaptive</code>/<code>enabled</code> (<code>disabled</code> optional); for Hybrid mode the on/off state is controlled by the boolean parameter, so only intensity levels are configured.</div>
+
+    <h4>Parameter Mapping</h4>
+    <p>The system converts thinking mode configuration into <code style="color:var(--primary)">--chat-template-kwargs</code> parameters for llama.cpp. The following table shows how different modes map to actual parameters:</p>
+    <table>
+        <tr><th>Mode</th><th>Selected Level</th><th>Parameters Sent</th></tr>
+        <tr><td rowspan="2"><strong>Single Mode</strong></td><td>Off (<code>false</code>)</td><td><code>enable_thinking=false</code> (or <code>thinking=false</code>)</td></tr>
+        <tr><td>On (<code>true</code>)</td><td><code>enable_thinking=true</code> (or <code>thinking=true</code>)</td></tr>
+        <tr><td rowspan="2"><strong>Multi-Stage Mode</strong></td><td>Off level (<code>no_think</code>)</td><td><code>reasoning_effort="no_think"</code></td></tr>
+        <tr><td>Intensity level (<code>high</code>)</td><td><code>reasoning_effort="high"</code></td></tr>
+        <tr><td rowspan="2"><strong>Hybrid Mode</strong></td><td>Off level (<code>no_think</code>)</td><td><code>enable_thinking=false</code></td></tr>
+        <tr><td>Intensity level (<code>high</code>)</td><td><code>enable_thinking=true</code> + <code>reasoning_effort="high"</code></td></tr>
+        <tr><td rowspan="3"><strong>Thinking Mode</strong> (<code>thinking_mode</code>)</td><td><code>disabled</code></td><td><code>thinking_mode="disabled"</code></td></tr>
+        <tr><td><code>adaptive</code></td><td><code>thinking_mode="adaptive"</code></td></tr>
+        <tr><td><code>enabled</code></td><td><code>thinking_mode="enabled"</code></td></tr>
+    </table>
+    <h4>Override Auto-Detection</h4>
+    <p>Locally launched models are auto-detected by the system with their actual features and thinking configuration (derived from launch parameters and GGUF chat template parsing). The "Override Auto-Detection" option in the model function definition determines which one wins on conflict:</p>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong style="color:#dc2626">"Override Auto-Detection" is unchecked by default: when checked, the multimodal features and thinking configuration in this entry forcibly override the auto-detected model configuration</strong> (if thinking mode is set to "Not Supported", the auto-detected thinking configuration is cleared as well); when unchecked, auto-detected local models keep their detected values, and only the visibility setting of this entry takes effect.</div>
+    <ul>
+        <li><strong>Auto-detected models</strong> (llama.cpp models launched locally by the system): with this option unchecked, the detected values win; when checked, this config entry wins.</li>
+        <li><strong>Models scanned via OpenAPI integration</strong>: no auto-detected info exists, so the model function definition always applies; this option has no effect on them.</li>
+        <li><strong>Visibility</strong>: always applies regardless of this option.</li>
+    </ul>
+
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Configuration Scope</strong>: Thinking mode configuration is matched to models via exact name match or regular expressions. A configuration only takes effect for matching models. Unmatched models will not have thinking mode enabled.</div>
+
+    <!-- ==================== Model Management ==================== -->
+    <h2 id="model-list"><i class="bi bi-cpu"></i> Model Management</h2>
+    <p>Provides full lifecycle management for local GGUF models, from scanning and configuration to runtime monitoring.</p>
+    <img src="images/model-list-overview.png" alt="Model list overview">
+    <p>Running models will show a green status; administrators can stop running models at any time:</p>
+    <img src="images/model-running-active.png" alt="Model running status">
+
+    <h3 id="model-llama-guide"><i class="bi bi-book"></i> llama.cpp User Guide</h3>
+    <p>The system is deeply integrated with llama.cpp, supporting local inference of GGUF format models. Below are detailed explanations of model file organization, naming conventions, and related features.</p>
+
+    <h4>Directory Structure</h4>
+    <p>The following directory structure is recommended for organizing model files:</p>
+    <table>
+        <tr><th>Path</th><th>Purpose</th><th>Description</th></tr>
+        <tr><td><code>&lt;model dir&gt;/</code></td><td>Main Model File</td><td>Stores all main model <code>*.gguf</code> files</td></tr>
+        <tr><td><code>&lt;model dir&gt;/mmproj/</code></td><td>Multimodal Projection Files</td><td>Stores mmproj files for vision-language models; the system automatically matches and loads them</td></tr>
+        <tr><td><code>&lt;model dir&gt;/mtp/</code></td><td>MTP Draft Models</td><td>Stores draft model files for MTP acceleration (only required when the main model file does not have built-in MTP layers)</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Example Directory Structure</strong><br>
+        <code>models/qwen3.6_Q5_1.gguf</code><br>
+        <code>models/mmproj/mmproj-qwen3.6-f32.gguf</code><br>
+        <code>models/mtp/mtp-qwen3.6-f32.gguf</code></div>
+
+    <h4>Supported Quantization Types</h4>
+    <p>The system supports all llama.cpp quantization formats, categorized by precision from high to low as follows:</p>
+    <table>
+        <tr><th>Precision Level</th><th>Supported Quantization Formats</th><th>Recommended Use Case</th></tr>
+        <tr><td><strong>High Precision</strong></td><td><code>F32</code> <code>BF16</code> <code>F16</code> <code>IQ8</code></td><td>Highest precision inference, largest VRAM usage</td></tr>
+        <tr><td><strong>Q8</strong></td><td><code>Q8_0</code> <code>Q8_K</code> <code>Q8_K_P</code> <code>UD_Q8_K_XL</code></td><td>Near FP16 precision, half VRAM usage</td></tr>
+        <tr><td><strong>Q6</strong></td><td><code>Q6_K</code> <code>Q6_K_L</code> <code>Q6_K_P</code> <code>UD_Q6_K</code> <code>UD_Q6_K_XL</code></td><td>Balanced choice between precision and VRAM</td></tr>
+        <tr><td><strong>Q5</strong></td><td><code>Q5_0</code> <code>Q5_1</code> <code>Q5_K</code> <code>Q5_K_S</code> <code>Q5_K_M</code> <code>Q5_K_P</code> etc.</td><td>Recommended for daily inference, minimal precision loss</td></tr>
+        <tr><td><strong>Q4</strong></td><td><code>Q4_0</code> <code>Q4_1</code> <code>Q4_K</code> <code>Q4_K_S</code> <code>Q4_K_M</code> <code>IQ4_NL</code> <code>IQ4_XS</code> <code>IQ4_KS</code> etc.</td><td>Best choice for VRAM-constrained scenarios, high cost-performance ratio</td></tr>
+        <tr><td><strong>Q3</strong></td><td><code>Q3_K</code> <code>Q3_K_S</code> <code>Q3_K_M</code> <code>IQ3_XXS</code> <code>IQ3_XS</code> <code>IQ3_S</code> <code>IQ3_M</code> etc.</td><td>Extremely VRAM-constrained scenarios</td></tr>
+        <tr><td><strong>Q2</strong></td><td><code>Q2_K</code> <code>Q2_K_S</code> <code>Q2_K_L</code> <code>IQ2_XXS</code> <code>IQ2_XS</code> <code>IQ2_S</code> <code>IQ2_M</code> etc.</td><td>Maximum compression, significant precision loss</td></tr>
+        <tr><td><strong>IQ1/TQ</strong></td><td><code>IQ1_S</code> <code>IQ1_M</code> <code>TQ1_0</code> <code>TQ2_0</code></td><td>Experimental ultra-low bit quantization</td></tr>
+        <tr><td><strong>MoE</strong></td><td><code>MXFP4_MOE</code></td><td>Specialized quantization for Mixture of Experts models</td></tr>
+    </table>
+
+    <h4>Main Model File Naming Convention</h4>
+    <p>Main model files must follow a unified naming format for automatic system recognition and matching:</p>
+    <table>
+        <tr><th>Rule</th><th>Description</th></tr>
+        <tr><td><strong>Format</strong></td><td><code>ModelName_QuantizationType.gguf</code></td></tr>
+        <tr><td><strong>Separator</strong></td><td>Model name and quantization type are connected with an underscore <code>_</code></td></tr>
+        <tr><td><strong>Base Name</strong></td><td>The part before the first underscore is considered the model base name, used for matching mmproj and MTP files</td></tr>
+        <tr><td><strong>Example</strong></td><td><code>qwen3.6_Q5_1.gguf</code> → Base name <code>qwen3.6</code>, quantization type <code>Q5_1</code></td></tr>
+    </table>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Important Limitation</strong>: The model name portion <strong>cannot contain underscores (<code>_</code>)</strong>. The system uses the first underscore as a separator to distinguish between the model name and quantization type. If the model name itself contains an underscore, the system will incorrectly truncate it, causing the model to be unrecognized. For example: <code>qwen_3.6_Q5_1.gguf</code> would be parsed as base name <code>qwen</code>, quantization type <code>3.6_Q5_1</code>, which is incorrect.</div>
+
+    <h4>Multimodal File (mmproj) Naming Convention</h4>
+    <p>mmproj files are used for vision-language multimodal models and must be placed in the <code>mmproj/</code> subdirectory under the model directory. Filenames <strong>must start with <code>mmproj-</code></strong>; the system will automatically match based on the main model filename:</p>
+    <table>
+        <tr><th>Priority</th><th>Matching Rule</th><th>Example</th></tr>
+        <tr><td><strong>Priority 1</strong></td><td>Full Name Match</td><td><code>mmproj/mmproj-qwen3.6_Q5_1.gguf</code></td></tr>
+        <tr><td><strong>Priority 2</strong></td><td rowspan="2">Base Name + Precision Suffix Match<br><code>mmproj/mmproj-{base name}-{precision}.gguf</code></td><td><code>mmproj/mmproj-qwen3.6-f32.gguf</code></td></tr>
+        <tr><td></td><td><code>mmproj/mmproj-qwen3.6-bf16.gguf</code> etc.</td></tr>
+        <tr><td><strong>Priority 3</strong></td><td>Base Name Fallback Match</td><td><code>mmproj/mmproj-qwen3.6.gguf</code></td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> Precision suffix is case-insensitive (e.g., <code>F32</code> / <code>f32</code> are both recognized). Supported precision suffixes include: <code>F32</code>, <code>BF16</code>, <code>F16</code>, <code>Q8_0</code>.</div>
+
+    <h4>MTP Draft Model File Naming Convention</h4>
+    <p>MTP (Multi-Token Prediction) is llama.cpp's multi-token prediction acceleration feature. If the main model file itself already contains MTP layers, no separate draft model file is needed; only when the main model does not contain MTP layers must the draft model be placed in the <code>mtp/</code> subdirectory under the model directory, with filenames <strong>starting with <code>mtp-</code></strong>:</p>
+    <table>
+        <tr><th>Priority</th><th>Matching Rule</th><th>Example</th></tr>
+        <tr><td><strong>Priority 1</strong></td><td rowspan="2">Base Name + Precision Suffix Match<br><code>mtp/mtp-{base name}-{precision}.gguf</code></td><td><code>mtp/mtp-qwen3.6-f32.gguf</code></td></tr>
+        <tr><td></td><td><code>mtp/mtp-qwen3.6-bf16.gguf</code> etc.</td></tr>
+        <tr><td><strong>Priority 2</strong></td><td>Base Name Fallback Match</td><td><code>mtp/mtp-qwen3.6.gguf</code></td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> Select the MTP type in "Speculative Decoding" when launching a model to enable MTP acceleration: it takes effect directly when the main model file has built-in MTP layers, with no extra configuration needed; otherwise the system automatically detects and loads the corresponding draft model from the mtp/ subdirectory. DFlash/DSpark types require a manual path to a separate draft model file.</div>
+
+    <h4>GGUF Shard Merging</h4>
+    <p>Large models downloaded may be split into multiple shard files (e.g., <code>model-00001-of-00002.gguf</code>). The system provides automatic recognition and one-click merge functionality:</p>
+    <ul class="step-list">
+        <li><strong>Auto Detection</strong><span>Click the "Model Naming & Shard Merging" button; the system automatically scans for shard files in the model directory</span></li>
+        <li><strong>One-Click Merge</strong><span>Click the "One-Click Rename" button; the system will automatically merge shards and delete original shard files</span></li>
+        <li><strong>Naming Convention</strong><span>Merged files are automatically renamed to <code>ModelName_QuantizationType.gguf</code> format</span></li>
+    </ul>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Note</strong>: Merge operations will delete original shard files; ensure backups are made.</div>
+
+    <h3 id="model-launch"><i class="bi bi-play-circle-fill"></i> Launch Configuration & Underlying Parameter Mapping</h3>
+    <p>Fine-grained parameter tuning can be performed before launching a model. The system converts UI configuration into llama.cpp command-line parameters for high-performance inference.</p>
+
+    <h4>1. Text Sampling Parameters (Control "What to Say")</h4>
+    <p>These parameters directly affect the probability distribution (Logits) when the model outputs the next Token, determining the creativity, diversity, and coherence of generated text.</p>
+    <table>
+        <tr><th>UI Configuration</th><th>Underlying Parameter</th><th>Detailed Description</th></tr>
+        <tr><td><strong>Temperature</strong></td><td><code>--temp</code></td><td>Controls generation randomness by scaling Logits at the Softmax layer:<br>• Lower values (e.g., 0.2) make the model favor the highest-probability words, producing stable but rigid output<br>• Higher values (e.g., 0.8-1.2) flatten the distribution, producing more creative output but potentially causing hallucinations<br>• Setting to 0 enables Greedy Decoding, always choosing the highest-probability word<br><strong>Range:</strong> 0.00-2.00, <strong>Default:</strong> 0.80</td></tr>
+        <tr><td><strong>Top K</strong></td><td><code>--top-k</code></td><td>Absolute count truncation. When predicting the next word, only keep the top K most probable tokens and discard all others:<br>• Setting to 40 means the model only samples from the 40 most likely words<br>• Effectively prevents the model from generating extremely unlikely "long-tail gibberish" at high temperatures<br>• Setting to -1 fully disables this feature (equivalent to vocab size)<br><strong>Range:</strong> -1-1024, <strong>Default:</strong> 40</td></tr>
+        <tr><td><strong>Top P</strong></td><td><code>--top-p</code></td><td>Cumulative probability truncation (Nucleus Sampling). Sort candidate tokens by probability, accumulate until reaching P, then truncate:<br>• Setting to 0.9 means only sampling from core vocabulary that covers 90% of total probability<br>• More dynamic than topK: if one word dominates, the pool may have only 1 word; if probabilities are spread, the pool may have dozens<br>• Setting to 1.0 disables this feature<br><strong>Range:</strong> 0.00-1.00, <strong>Default:</strong> 0.95</td></tr>
+        <tr><td><strong>Min P</strong></td><td><code>--min-p</code></td><td>Relative probability threshold truncation (modern sampling method recommended by llama.cpp). Sets a floor relative to the most probable Token:<br>• If the most likely word has 50% probability and minP is 0.1, the threshold = 50% × 0.1 = 5%. Tokens below 5% are discarded<br>• Perfectly balances high-confidence (fewer choices) and low-confidence (more choices) scenarios, often replacing topP<br><strong>Range:</strong> 0.00-1.00, <strong>Default:</strong> 0.05</td></tr>
+        <tr><td><strong>Repeat Penalty</strong></td><td><code>--repeat-penalty</code></td><td>Directly discounts the probability of already-appeared Tokens:<br>• 1.0 is neutral (no penalty, no encouragement)<br>• 1.1-1.2 effectively prevents the model from repeating the same sentence like a broken record<br>• Too high (1.5+) causes the model to force rare words to avoid repetition, resulting in fragmented language<br><strong>Range:</strong> 0.10-2.00, <strong>Default:</strong> 1.00</td></tr>
+        <tr><td><strong>Repeat Last N</strong></td><td><code>--repeat-last-n</code></td><td>Determines how many Tokens backward the repeat penalty looks:<br>• 64 means only penalize repetitions within the last 64 tokens<br>• -1 means look back across the entire current context length<br>• 0 disables this feature<br><strong>Options:</strong> 0/16/32/64/128/256/512/1024/-1, <strong>Default:</strong> 64</td></tr>
+        <tr><td><strong>Presence Penalty</strong></td><td><code>--presence-penalty</code></td><td>Applies a fixed penalty to any token that has appeared in the context (regardless of frequency):<br>• Primarily encourages the model to switch topics and avoid dwelling on the same content<br>• Positive values encourage new topics; negative values encourage focusing on current topics<br><strong>Range:</strong> -2.00-2.00, <strong>Default:</strong> 0.00</td></tr>
+        <tr><td><strong>Frequency Penalty</strong></td><td><code>--frequency-penalty</code></td><td>Applies a penalty proportional to how many times a token has appeared in the context:<br>• The more often a word appears, the heavier the penalty<br>• Mainly suppresses overused common words (e.g., "then", "so"), making vocabulary more diverse<br><strong>Range:</strong> -2.00-2.00, <strong>Default:</strong> 0.00</td></tr>
+    </table>
+
+    <h4>2. Hardware & System Scheduling Parameters (Control "How to Compute")</h4>
+    <p>These parameters determine how the engine utilizes CPU, memory, and GPU, having a major impact on inference performance (Tokens/s).</p>
+    <table>
+        <tr><th>UI Configuration</th><th>Underlying Parameter</th><th>Detailed Description</th></tr>
+        <tr><td><strong>Context Size</strong></td><td><code>-c</code></td><td>Set KV Cache size, affecting model memory length. Longer context means more historical information retained, but also more memory usage. Set according to actual conversation length to avoid wasting resources.</td></tr>
+        <tr><td><strong>GPU Layer Count</strong></td><td><code>-ngl</code></td><td>Specify the number of layers loaded to VRAM; more layers mean faster inference. <strong style="color:#dc2626;">Special note: setting to 0 means pure CPU inference without any GPU acceleration.</strong></td></tr>
+        <tr><td><strong>Generation Threads</strong></td><td><code>--threads</code></td><td>CPU threads used during the decoding (word-by-word generation) phase. <strong>More is not always better</strong>: on multi-socket CPUs (e.g., dual Xeon), cross-NUMA thread calls cause severe memory bandwidth bottlenecks, actually slowing down generation. Typically set to no more than the physical core count of a single CPU.</td></tr>
+        <tr><td><strong>Logical Batch</strong></td><td><code>-b</code></td><td>Maximum number of Tokens processed in parallel during the Prefill phase (processing long Prompts). Default is usually 512 or 2048. Larger values speed up long text pre-processing but significantly increase peak VRAM/memory usage.</td></tr>
+        <tr><td><strong>Physical Batch</strong></td><td><code>-ub</code></td><td>llama.cpp further splits BatchSize into multiple Micro-batches for circular processing at the底层. This is a memory optimization technique. Typically UbatchSize ≤ BatchSize. Proper settings prevent VRAM overflow (OOM) during large-batch Prompt computation.</td></tr>
+        <tr><td><strong>Batch Threads</strong></td><td><code>--threads-batch</code></td><td>CPU threads used during the Prefill phase. Since Prefill is compute-intensive (primarily matrix multiplication), it scales better with multi-threading than Decoding. This value can typically be set higher than generation threads, even equal to total system physical cores.</td></tr>
+        <tr><td><strong>GPU Selection</strong></td><td><code>selectedGpuIds</code></td><td>Specify which GPUs to offload model weights to. Format is comma-separated GPU indices (e.g., "0,1,2,3"). On heterogeneous multi-GPU arrays (e.g., mixing different VRAM capacities), this allows precise layer distribution to avoid being bottlenecked by the weakest GPU's VRAM limit.</td></tr>
+        <tr><td><strong>Tensor Split</strong></td><td><code>--tensor-split</code></td><td>Define VRAM allocation ratio across multiple GPUs, working with GPU selection for fine-grained memory management.</td></tr>
+        <tr><td><strong>Main GPU</strong></td><td><code>CUDA_VISIBLE_DEVICES</code> reorder</td><td>Specify the main GPU index; the system automatically moves it to the first position of <code>CUDA_VISIBLE_DEVICES</code> (mapping to llama.cpp logical device 0), with no extra <code>-mg</code> parameter needed.</td></tr>
+        <tr><td><strong>Tensor Parallelism</strong></td><td><code>-sm tensor/graph</code></td><td>Enable SM Tensor scheduling for multi-GPU parallel acceleration, significantly boosting inference throughput for large models.</td></tr>
+        <tr><td><strong>Load Mode</strong></td><td><code>--load-mode</code></td><td>Model weight loading mode. <strong>Available in the LLAMACPP launch mode only</strong> (IK_LLAMACPP always uses <code>--mlock</code> with default mmap, equivalent to mmap+mlock), <strong>Default:</strong> mmap+mlock:<br>• <code>mmap+mlock</code>: memory-mapped loading plus mlock<br>• <code>mlock</code>: load all weights into RAM and lock the pages, no swapping or compression, highest performance<br>• <code>mmap</code>: memory-mapped loading, the OS pages weights in on demand<br>• <code>auto</code>: mmap unless the device does not support it<br>• <code>none</code>: no special loading mode, regular read into RAM<br>• <code>dio</code>: Direct I/O read into RAM when available</td></tr>
+        <tr><td><strong>Lazy Mode</strong></td><td><code>--lazy-mode</code></td><td>On-demand reading of specific tensors (e.g., per-layer embeddings). <strong>Available in the LLAMACPP launch mode only</strong>, <strong>Default:</strong> off:<br>• <code>off</code>: keep all tensors resident in RAM<br>• <code>auto</code>: read tensors larger than 4 GiB from disk on demand<br>• <code>on</code>: read all supported tensors from disk on demand, noticeably slower<br><strong>Combination rule:</strong> <code>auto</code> / <code>on</code> are only supported when Load Mode is <code>auto</code> or <code>mmap</code>; <code>mlock</code>, <code>mmap+mlock</code>, <code>none</code> and <code>dio</code> only support <code>off</code>. Selecting an invalid pair in the UI automatically switches Lazy Mode back to <code>off</code>.</td></tr>
+        <tr><td><strong>Speculative Decoding</strong></td><td><code>--spec-type</code> / <code>--spec-draft-n-max</code> / <code>--spec-draft-n-min</code> / <code>--spec-draft-p-min</code> / <code>--gpu-layers-draft</code> / <code>--model-draft</code></td><td>Enable Speculative Decoding (predictive inference) acceleration. Supports MTP / DFlash / DSpark: the Draft model predicts multiple tokens ahead of time, and the main model validates and accepts them in one pass, reducing inference steps and significantly improving generation speed. See "Speculative Decoding Parameters" below for type differences and full parameter configuration.</td></tr>
+    </table>
+
+    <h4>Speculative Decoding Parameters</h4>
+    <p>Speculative Decoding (a.k.a. predictive inference) uses a Draft model to predict multiple subsequent tokens ahead of time, which the main model then validates in one pass, reducing inference steps and significantly improving generation speed. The "Speculative Decoding" setting in the launch configuration supports the following acceleration types:</p>
+    <table>
+        <tr><th>Type</th><th>Description</th><th>Draft Model Requirement</th></tr>
+        <tr><td><strong>Off</strong></td><td>Speculative decoding disabled; standard token-by-token decoding</td><td>—</td></tr>
+        <tr><td><strong>MTP</strong> (Multi-Token Prediction)</td><td>Multi-token prediction acceleration using the model's MTP capability for drafting</td><td>No extra file needed when the main model file has built-in MTP layers; otherwise auto-detects the draft model in the <code>mtp/</code> subdirectory (see "MTP Draft Model File Naming Convention" above)</td></tr>
+        <tr><td><strong>DFlash</strong></td><td>DFlash draft model prediction acceleration</td><td>Must manually specify a separate draft model file</td></tr>
+        <tr><td><strong>DSpark</strong></td><td>DSpark draft model prediction acceleration</td><td>Must manually specify a separate draft model file</td></tr>
+    </table>
+    <p>After selecting a type, the following parameters can be configured:</p>
+    <table>
+        <tr><th>UI Configuration</th><th>Underlying Parameter</th><th>Detailed Description</th></tr>
+        <tr><td><strong>Type</strong></td><td><code>--spec-type</code></td><td>Selects the speculative decoding type (MTP / DFlash / DSpark). The LLAMACPP launch mode maps to <code>--spec-type draft-&lt;type&gt;</code>; the IK_LLAMACPP launch mode uses the inline syntax <code>--spec-type &lt;type&gt;:n_max=N,n_min=N,p_min=P</code>.</td></tr>
+        <tr><td><strong>n-max</strong></td><td><code>--spec-draft-n-max</code></td><td>Number of tokens drafted per step, <strong>Range:</strong> ≥1, <strong>Default:</strong> 3. Larger values validate more tokens per step for better acceleration, but increase the cost of rollback when validation fails.</td></tr>
+        <tr><td><strong>n-min</strong></td><td><code>--spec-draft-n-min</code></td><td>Minimum number of draft tokens: the draft model always generates at least this many tokens per step, so the p-min early stop does not kick in before this count, <strong>Range:</strong> ≥0 and ≤ n-max, <strong>Default:</strong> 0. Raising it keeps a minimum of draft tokens validated per step even when the draft confidence drops early.</td></tr>
+        <tr><td><strong>p-min</strong></td><td><code>--spec-draft-p-min</code></td><td>Minimum acceptance probability, <strong>Range:</strong> 0.00-1.00, <strong>Default:</strong> 0.00. Controls the acceptance threshold for Draft tokens, balancing acceleration and output quality.</td></tr>
+        <tr><td><strong>draft-ngl</strong></td><td><code>--gpu-layers-draft</code></td><td>Number of the draft model's layers offloaded to the GPU. The LLAMACPP launch mode supports a number, <code>auto</code> or <code>all</code> (<strong>Default:</strong> auto); the IK_LLAMACPP launch mode supports a number only. More GPU layers speed up draft prediction and reduce the latency of rollback when validation fails.</td></tr>
+        <tr><td><strong>Draft Model</strong></td><td><code>--model-draft</code></td><td>Path to the draft model file. This setting appears when DFlash / DSpark is selected; startup is rejected if the file does not exist. The MTP type needs no manual specification — it takes effect directly when the main model file has built-in MTP layers; otherwise the system auto-detects the draft model in the <code>mtp/</code> subdirectory.</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>Framework Syntax Differences</strong>: In the LLAMACPP launch mode, parameters are passed as <code style="color:var(--primary)">--spec-type draft-&lt;type&gt; --spec-draft-n-max N --spec-draft-n-min N --spec-draft-p-min P --gpu-layers-draft &lt;layers&gt; --model-draft &lt;path&gt;</code>; in the IK_LLAMACPP launch mode, n_max / n_min / p_min only support the inline syntax <code style="color:var(--primary)">--spec-type &lt;type&gt;:n_max=N,n_min=N,p_min=P</code> (the draft model is specified via <code style="color:var(--primary)">--model-draft</code>, and the draft model's GPU layer count via <code style="color:var(--primary)">--gpu-layers-draft</code>).</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Note</strong>: DFlash / DSpark types require a draft model file; the system will refuse to start if the file does not exist. For the MTP type, if the main model file has no built-in MTP layers and no draft model is found in the <code style="color:var(--primary)">mtp/</code> subdirectory either, no draft model is loaded and model startup is unaffected.</div>
+
+    <h4>3. Cache & State Parameters</h4>
+    <p>These parameters control memory usage and session state management.</p>
+    <table>
+        <tr><th>UI Configuration</th><th>Underlying Parameter</th><th>Detailed Description</th></tr>
+        <tr><td><strong>Cache Size</strong></td><td><code>--cache-ram</code></td><td>Limit or pre-allocate KV Cache capacity (unit: MiB). Longer context consumes more KV Cache. For massive MoE models, long text causes significant cache inflation. This parameter prevents memory overflow.</td></tr>
+        <tr><td><strong>KV Cache Quantization</strong></td><td><code>-ctk / -ctv</code></td><td>Set KV cache quantization type (e.g., f16, q8_0, q4_0). Quantizing KV Cache significantly reduces memory usage but may slightly affect inference accuracy. Recommended q8_0 or q4_0 when VRAM is limited.</td></tr>
+        <tr><td><strong>Checkpoint Step</strong></td><td><code>--checkpoint-min-step</code></td><td>Minimum interval step for context checkpoints. Checkpoints persist session state by saving KV Cache to disk, allowing direct loading next time without re-inference. This parameter controls checkpoint creation frequency.</td></tr>
+        <tr><td><strong>Checkpoint Count</strong></td><td><code>--ctx-checkpoints</code></td><td>Maximum number of checkpoints per slot. Works with checkpoint step to manage the number of state files generated, preventing disk space from being filled with checkpoint files.</td></tr>
+    </table>
+
+    <h4>4. Other Service Parameters</h4>
+    <table>
+        <tr><th>UI Configuration</th><th>Underlying Parameter</th><th>Detailed Description</th></tr>
+        <tr><td><strong>Port Number</strong></td><td><code>--port</code></td><td>HTTP port for the model service, default 8080. Ensure the port is not occupied by other services.</td></tr>
+        <tr><td><strong>Parallel Tasks</strong></td><td><code>--parallel</code></td><td>Number of concurrent requests that can be processed simultaneously. Increasing this improves throughput in multi-user scenarios but increases memory usage.</td></tr>
+        <tr><td><strong>Jinja Template</strong></td><td><code>--jinja</code></td><td>Enable Jinja2 chat template support. Some models (e.g., Qwen, Llama 3) use Jinja template format; enabling this correctly parses system prompts and user messages.</td></tr>
+        <tr><td><strong>MOE Layers</strong></td><td><code>--n-cpu-moe</code></td><td>Specify the number of MOE (Mixture of Experts) expert layers loaded on CPU. Applicable to MoE architecture models (e.g., Mixtral), controlling expert routing computation.</td></tr>
+    </table>
+    <div class="main-gpu-box"><i class="bi bi-star-fill"></i> <strong>Main GPU Note</strong>: After setting the main GPU, the system moves it to the first position of <code>CUDA_VISIBLE_DEVICES</code> so llama.cpp naturally uses it as the primary card (logical device 0), with no extra <code>-mg</code> parameter needed.<br><strong>Tensor Split</strong>: VRAM allocation then maps to physical GPUs in this reordered order, requiring no manual adjustment and avoiding misaligned VRAM allocation.</div>
+    <img src="images/model-config-form.png" alt="Model configuration form">
+    <img src="images/model-launch-config.png" alt="Real-time launch parameter adjustment">
+    <img src="images/model-config-gpu.png" alt="GPU configuration">
+
+
+    <h3 id="model-gpu"><i class="bi bi-gpu-card"></i> GPU Monitoring</h3>
+    <p>Built-in GPU monitoring panel, syncing data every 10 seconds, recording trend charts of the last 60 samples.</p>
+    <img src="images/model-gpu-overview.png" alt="GPU monitoring overview">
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> Monitoring data is based on real-time parsing of <code style="color:var(--primary)">nvidia-smi</code>, allowing intuitive viewing of each GPU's type and VRAM usage.</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>macOS Does Not Support GPU Monitoring</strong>: GPU monitoring depends on the <code style="color:var(--primary)">nvidia-smi</code> tool, which is only applicable to NVIDIA GPUs. macOS uses Apple Silicon (M series) or integrated graphics, which do not provide independent GPU monitoring interfaces similar to NVIDIA, so GPU monitoring panels are not available on macOS.</div>
+
+    <h3 id="model-mem"><i class="bi bi-memory"></i> Memory Monitoring</h3>
+    <p>The memory monitoring panel displays system memory usage:</p>
+    <img src="images/model-mem.png" alt="Memory monitoring panel">
+    <ul class="step-list">
+        <li><strong>Overview Cards</strong><span>Displays total memory, used memory, available memory, and overall usage percentage in real-time.</span></li>
+        <li><strong>Trend Chart</strong><span>Draws memory usage fluctuation curves for the past 3 minutes, helping analyze memory peaks during model loading.</span></li>
+        <li><strong>Status Progress Bar</strong><span>Visually presents current memory usage in the form of a progress bar.</span></li>
+    </ul>
+
+    <h3 id="model-merge"><i class="bi bi-puzzle-fill"></i> Model File Maintenance</h3>
+    <p>Provides automated processing tools for large model shard files:</p>
+    <ul class="step-list">
+        <li><strong>Auto Merge</strong><span>Identifies shards like <code style="color:var(--primary)">model-00001-of-00002.gguf</code> and merges them into a single file with one click.</span></li>
+        <li><strong>Standardized Rename</strong><span>Unifies messy filenames to the <code style="color:var(--primary)">ModelName_QuantizationType.gguf</code> format.</span></li>
+    </ul>
+    <img src="images/model-naming-merge.png" alt="Model naming and shard merging">
+    <img src="images/model-merge-process.png" alt="Merge process">
+    <img src="images/model-merge-success.png" alt="Merge successful">
+
+    <h3 id="model-setting"><i class="bi bi-gear"></i> Underlying Environment Settings</h3>
+    <p>Configure the llama.cpp execution path and model storage root directory.</p>
+    <img src="images/model-setting-detailed.png" alt="System settings - detailed">
+    <img src="images/model-setting-path.png" alt="Path configuration details">
+
+    <!-- ==================== Scheduled Reboot ==================== -->
+    <h2 id="reboot-add"><i class="bi bi-power"></i> Scheduled Restart Management</h2>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>Compatibility Notice</strong>: The scheduled shutdown/restart feature depends on the underlying OS instruction set and hardware support; not all machine models can operate normally. Current test system status: Dual X99 (Ubuntu 22.04, E5-2696 v4) and Mac M1 Pro shutdown/restart work normally; Windows 10 64-bit (z690 motherboard, i7-13700K) shutdown works normally, but automatic wake-up restart is limited by motherboard BIOS and cannot wake up in self-tests.</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>macOS Restart Special Notice</strong>: When macOS executes a scheduled restart, the power adapter <strong>must be connected</strong>. Without a power connection, the system may refuse to execute the restart or fail to wake up properly after restart; ensure the device is in a powered state.</div>
+    <p>To reduce energy consumption and maintain system stability, flexible scheduled power on/off solutions are provided.</p>
+    <img src="images/reboot-add-detailed.png" alt="Add scheduled task - detailed">
+
+    <h3 id="reboot-manage"><i class="bi bi-list-check"></i> Task Scheduling & Warning</h3>
+    <p>Supports two task modes:</p>
+    <table>
+        <tr><th>Mode</th><th>Features</th><th>Applicable Scenarios</th></tr>
+        <tr><td><strong>One-time Task</strong></td><td>Automatically deleted after one execution</td><td>Temporary maintenance, single experiment</td></tr>
+        <tr><td><strong>Recurring Task</strong></td><td>Workdays can be specified; automatically calculates the next cycle upon expiration</td><td>Daily scheduled shutdown/wake</td></tr>
+    </table>
+    <p><strong>Task Management</strong>: Administrators can view all created tasks, including execution time, status (pending/running/expired), and real-time countdown. Supports deleting or postponing tasks (Postpone).</p>
+    <p><strong>Warning Mechanism</strong>: When a task is less than 10 minutes from execution time, the system will pop up a countdown warning card at the top of the page.</p>
+    <img src="images/reboot-warning.png" alt="Restart warning prompt">
+
+    <!-- ==================== Footer ==================== -->
+    <div style="margin-top:60px; padding-top:24px; border-top:1px solid var(--border); text-align:center; color:var(--text-muted); font-size:13px;">
+        <p>Hybrid LLM Management System <span id="appVersion">-</span></p>
+        <p style="margin-top:4px;">Secure &nbsp;&middot;&nbsp; Efficient &nbsp;&middot;&nbsp; Convenient</p>
+    </div>
+
+</main>
+
+<script>
+    function toggleLangDropdown() {
+        document.getElementById('langDropdown').classList.toggle('active');
+    }
+    function switchLang(lang) {
+        var target = lang === 'zh' ? 'main_zh.html' : 'main_en.html';
+        if (window.location.pathname.endsWith(target)) return;
+        localStorage.setItem('appLang', lang);
+        window.location.href = target + window.location.hash;
+    }
+    document.addEventListener('click', function(e) {
+        var dropdown = document.getElementById('langDropdown');
+            if (!e.target.closest('.lang-selector')) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    function toggleNav(el) {
+        el.classList.toggle('expanded');
+        var group = el.nextElementSibling;
+        if (group && group.classList.contains('nav-l2-group')) {
+            group.style.display = el.classList.contains('expanded') ? 'block' : 'none';
+        }
+    }
+
+    // Get all navigation links and corresponding sections
+    var navLinks = document.querySelectorAll('.nav-l2');
+    var sectionIds = {};
+    navLinks.forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (href && href.startsWith('#')) {
+            sectionIds[href.substring(1)] = link;
+        }
+    });
+
+    // Get all section elements
+    var sectionHeadings = [];
+    Object.keys(sectionIds).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) sectionHeadings.push(el);
+    });
+
+    // Scroll to specified section
+    function scrollToSection(id) {
+        var target = document.getElementById(id);
+        if (target) {
+            var headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h'));
+            window.scrollTo({
+                top: target.getBoundingClientRect().top + window.scrollY - headerHeight - 16,
+                behavior: 'instant'
+            });
+
+            // Immediately set highlight status
+            setActiveNav(id);
+        }
+    }
+
+    // Set specified navigation item as active
+    function setActiveNav(activeId) {
+        navLinks.forEach(function(link) {
+            link.classList.remove('active');
+        });
+
+        if (activeId && sectionIds[activeId]) {
+            sectionIds[activeId].classList.add('active');
+
+            // Ensure corresponding navigation group is expanded
+            var navGroup = sectionIds[activeId].closest('.nav-l2-group');
+            if (navGroup) {
+                var navL1 = navGroup.previousElementSibling;
+                if (navL1 && !navL1.classList.contains('expanded')) {
+                    navL1.classList.add('expanded');
+                    navGroup.style.display = 'block';
+                }
+            }
+
+            // Scroll active navigation item into view
+            sectionIds[activeId].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    // Update active navigation item based on scroll position
+    function updateActiveNav() {
+        var headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h'));
+        var scrollPosition = window.scrollY;
+        var currentId = null;
+
+        // Traverse from back to front, find the last section above the viewport
+        for (var i = sectionHeadings.length - 1; i >= 0; i--) {
+            var section = sectionHeadings[i];
+            var sectionTop = section.getBoundingClientRect().top + scrollPosition - headerHeight - 20;
+
+            if (scrollPosition >= sectionTop) {
+                currentId = section.id;
+                break;
+            }
+        }
+
+        // If no current section is found, default to the first one
+        if (!currentId && sectionHeadings.length > 0) {
+            currentId = sectionHeadings[0].id;
+        }
+
+        // Update active status
+        setActiveNav(currentId);
+    }
+
+    // Initialize scroll listener
+    var scrollTimeout;
+    window.addEventListener('scroll', function() {
+        // Use throttling to improve performance
+        if (scrollTimeout) {
+            window.cancelAnimationFrame(scrollTimeout);
+        }
+        scrollTimeout = window.requestAnimationFrame(updateActiveNav);
+    });
+
+    // Update active status when window size changes
+    window.addEventListener('resize', function() {
+        updateActiveNav();
+    });
+
+    // Initialize after page load completes
+    document.addEventListener('DOMContentLoaded', function() {
+        // Delayed execution to ensure all elements are loaded
+        setTimeout(updateActiveNav, 100);
+    });
+
+    // Fetch version from backend
+    (function() {
+        var el = document.getElementById('appVersion');
+        if (!el) return;
+        fetch('/command/file/version')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.success && data.data) {
+                    el.textContent = data.data;
+                }
+            })
+            .catch(function() {});
+    })();
+
+    // Add click event to navigation links
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var href = this.getAttribute('href');
+            var id = href.substring(1);
+
+            // Scroll to corresponding section
+            scrollToSection(id);
+
+            // Immediately set highlight status
+            setActiveNav(id);
+        });
+    });
+</script>
+
+</body>
+</html>

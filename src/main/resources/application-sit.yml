@@ -1,0 +1,15 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 300MB # 单个文件大小
+      max-request-size: 300MB # 总上传的数据大小
+
+#配置swagger配置
+swagger:
+  enable: true
+springdoc:
+  api-docs:
+    path: /llm-doc  # 自定义路径，避免与Springfox冲突
+  swagger-ui:
+    path: /llm-swagger-ui  # 自定义Swagger UI路径
+    enabled: true  # 可选：禁用Springdoc的Swagger UI

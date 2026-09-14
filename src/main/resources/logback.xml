@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+
+    <property name="LOG_HOME" value="logs/llmcommand"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [traceId=%X{traceId}]  %logger{36} - %msg%n"/>
+    <property name="LOG_MAX_FILE_SIZE" value="100MB"/>
+    <property name="LOG_MAX_HISTORY" value="10"/>
+
+    <statusListener class="ch.qos.logback.core.status.NopStatusListener"/>
+
+    <!-- 控制台输出 -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 1. com.grw.xiaobai.hybrid.llm 包的日志输出到 main.log -->
+    <appender name="MAIN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/main.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/old/main.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 2. com.grw.xiaobai 其他包的日志输出到 app.log -->
+    <appender name="APP_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/old/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 3. 其他第三方包的日志输出到 third.log -->
+    <appender name="THIRD_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/third.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/old/third.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 4. CommandExecutor 命令执行日志单独输出到 command.log -->
+    <appender name="COMMAND_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/command.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/old/command.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 5. WARN/ERROR 级别日志单独输出到 warn.log -->
+    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/warn.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/old/warn.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_MAX_FILE_SIZE}</maxFileSize>
+            <maxHistory>${LOG_MAX_HISTORY}</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+    </appender>
+
+    <!-- 5. CommandExecutor 日志仅输出 command.log，不进控制台和 main.log -->
+    <logger name="com.grw.xiaobai.hybrid.llm.utils.CommandExecutor" level="INFO" additivity="false">
+        <appender-ref ref="COMMAND_FILE"/>
+    </logger>
+
+    <!-- 6. com.grw.xiaobai.hybrid.llm 包日志 -->
+    <logger name="com.grw.xiaobai.hybrid.llm" level="INFO" additivity="false">
+        <appender-ref ref="MAIN_FILE"/>
+        <appender-ref ref="WARN_FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- 7. com.grw.xiaobai 其他包日志 -->
+    <logger name="com.grw.xiaobai" level="INFO" additivity="false">
+        <appender-ref ref="APP_FILE"/>
+        <appender-ref ref="WARN_FILE"/>
+    </logger>
+
+    <!-- 8. 根日志 -->
+    <root level="INFO">
+        <appender-ref ref="THIRD_FILE"/>
+        <appender-ref ref="WARN_FILE"/>
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>
