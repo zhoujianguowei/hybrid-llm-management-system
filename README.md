@@ -8,7 +8,7 @@
 [![Inference](https://img.shields.io/badge/Inference-llama.cpp%20%7C%20OpenAI%20API-blue)](https://github.com/ggml-org/llama.cpp)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#)
 [![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
-[![License](https://img.shields.io/badge/License-Commercial%20%2B%2030%20Days%20Trial-red)](#-how-to-obtain-a-lifetime-license)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 **📖 Table of Contents**
 
@@ -18,8 +18,9 @@
 - [❗ Compatibility & Known Limitations](#-compatibility--known-limitations)
 - [🚀 Quick Start](#-quick-start)
 - [🛠️ Installation Guide](#-installation-guide)
+- [🧩 Build & Development](#-build--development)
 - [👥 User Roles](#-user-roles)
-- [🔒 Offline Licensing & Hardware Binding](#-offline-licensing--hardware-binding)
+- [💼 Open-Source Edition vs Ultimate Edition](#-open-source-edition-vs-ultimate-edition)
 - [❓ FAQ](#-faq)
 - [📮 Contact & Support](#-contact--support)
 
@@ -29,7 +30,11 @@
 
 This system (Hybrid LLM Management System) is a comprehensive management platform for locally deployed large language models, integrating **file management, user permissions, model scheduling, AI chat, and system monitoring** into one secure, efficient, and user-friendly solution.
 
+> 📌 **This repository is the free open-source edition (Base Edition, Apache-2.0)** of the system, covering file management, the permission system, AI chat, and user management. The Ultimate Edition (closed-source commercial version) adds llama.cpp local model scheduling, thinking-mode auto-detection, resource monitoring, scheduled shutdown/reboot and more — see [Open-Source Edition vs Ultimate Edition](#-open-source-edition-vs-ultimate-edition).
+
 Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system schedules local GGUF-formatted large language models through **llama.cpp** on the backend, while also supporting **OpenAI-compatible** remote API integration. Its core objective is to address cumbersome path permission management, model parameter configuration, and resource monitoring in local model deployments.
+
+> 🤖 **About AI assistance**: The frontend UI code and some supporting scripts of this project were completed with the help of an AI coding assistant, with human review and testing. This follows common open-source practice, and does not affect functionality or maintainability. If you have concerns about AI-generated content, please point out specific issues via Code Review / Issues.
 
 ### ✨ Key Highlights
 
@@ -45,6 +50,8 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 | 📊 **Real-Time Resource Monitoring Panel** | Integrated `nvidia-smi` for millisecond-level monitoring, providing dynamic trend charts of GPU VRAM and system memory usage to help administrators accurately assess resource availability before launching models |
 | ⏰ **Intelligent Scheduled Shutdown/Reboot** | Supports one-time and periodic (workday-based) scheduled shutdown/wake tasks, with built-in task conflict detection and expiry warnings — ideal for unattended server environments |
 
+> 📺 **Full demo video** (5:25, 720p, ~6.6MB): [demo-preview.mp4](demo-preview.mp4)
+
 ![Main Interface](imgs/base_main.png)
 ![Model Launch Thinking Mode](imgs/model-launch-thinking.png)
 ![AI Chat Thinking Level Selection](imgs/chat-multi-think-level.png)
@@ -53,7 +60,11 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 
 ## 🌟 Feature Details
 
-### 1. Deep Integration of the llama.cpp Inference Engine
+> 💡 Some screenshots below show the Ultimate Edition UI; the open-source (Base) edition does not include the entry points for features marked [Ultimate] (model management, resource monitoring, scheduled power control).
+
+### 1. Deep Integration of the llama.cpp Inference Engine [Ultimate]
+
+> 💡 The model scheduling capabilities in this section belong to the Ultimate Edition; the open-source edition connects to any deployed OpenAI-compatible inference service (llama.cpp server / Ollama / vLLM, etc.) for AI chat.
 
 **Optionally integrate ik_llama.cpp as an inference engine (not required)**: once its path is configured, you can switch between llama.cpp and ik_llama.cpp when starting a model. The ik_llama.cpp branch performs better in concurrent processing and acceleration of certain quantized models, providing extra flexibility for performance enthusiasts. (Note: automatic GGUF shard merging is still based on llama.cpp under the hood; shards produced by ik_llama.cpp need to be merged manually.)
 
@@ -71,6 +82,8 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 
 ### 2. Intelligent AI Chat
 
+> 💡 The open-source edition requires configuring an OpenAI-compatible API in system settings; the Ultimate Edition automatically detects capabilities and thinking modes of locally scheduled models (Jinja template parsing) with no manual configuration.
+
 ![AI Chat](imgs/chat-main.png)
 
 - **Conversation Management**: Supports creating new chats, loading history, deleting sessions, renaming, and pinning frequently used conversations.
@@ -83,7 +96,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 - **Message Rendering**: Supports Markdown syntax highlighting, LaTeX formula rendering, and a sandboxed HTML preview pane, with the current model name shown for assistant replies.
 - **Deep Thinking Mode**: Supports deep thinking for models such as unsloth-quantized qwen3.8 series, gemma4, hy3, deepseek-v4-flash-0731, inkling-small, and minimax-m3.
 - **System-Level Configuration**: Administrators can configure OpenAI API integration, model capability definitions (regex-based thinking mode on/off, with an option to override auto-detected capabilities/thinking modes of local models), and per-role limits on attachment size and maximum message count.
-- **Conversation Statistics**: Real-time display of prompt prefill speed, decode speed, current context usage ratio, and other performance metrics.
+- **Conversation Statistics**: Real-time display of prompt prefill speed, decode speed, cached-token count, current context usage ratio, and other performance metrics (**full statistics are only available for the llama.cpp engine**; other engines currently show only the number of tokens used).
 
 ### 3. File Management
 
@@ -122,7 +135,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 - **Guest Validity Period**: Configurable default validity period (in days) for guest accounts; the system periodically scans and automatically bans expired accounts.
 - **Self-Service Registration**: Once guest registration is enabled, users can register on the login page and receive a preset validity period automatically.
 
-### 6. Real-Time Resource Monitoring
+### 6. Real-Time Resource Monitoring [Ultimate]
 
 ![GPU Monitoring](imgs/model-gpu-overview.png)
 
@@ -130,7 +143,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 ![Memory Monitoring](imgs/model-mem.png)
 - **Memory Monitoring**: Real-time display of total, used, and available memory with overall usage percentage, plus a 3-minute memory usage curve to help analyze memory peaks during model loading.
 
-### 7. Intelligent Scheduled Reboot
+### 7. Intelligent Scheduled Reboot [Ultimate]
 
 ![Scheduled Reboot](imgs/reboot-add-detailed.png)
 
@@ -147,10 +160,12 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 
 ### Edition Comparison
 
-| Edition | Version Suffix | Description | Included Features |
+> 💡 **Starting with v1.13 (release_base), the Base edition is officially free and open source, with no license or expiration restrictions.** Users who previously purchased Base Edition licenses for earlier versions are unaffected and may keep using them; Base v1.13 and later are free to use at no cost.
+
+| Edition | Availability | Description | Included Features |
 | :--- | :--- | :--- | :--- |
-| **Base Edition** | `release_base` | Minimal deployment version | Core features: file management, user management, AI chat, permission system |
-| **Ultimate Edition** | `release_ultimate` | Full-featured version | All Base Edition features + model management, resource monitoring, scheduled shutdown/reboot, and more |
+| **Open-Source Edition (Base)** | This repository / `release_base` packages | Free & open source, Apache-2.0 | Core features: file management, user management, AI chat (via OpenAI-compatible API), permission system |
+| **Ultimate Edition** | `release_ultimate` packages | Closed-source commercial edition, one-time purchase | All open-source features + llama.cpp local model scheduling, thinking-mode auto-detection, resource monitoring, scheduled shutdown/reboot, and more |
 
 ### Version History
 
@@ -171,16 +186,18 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 | Item | Description |
 | :--- | :--- |
 | **Multimodal Capability** | The current version's multimodal capability **only supports image input**; audio and video input are not supported. |
+| **Conversation Statistics** | Full conversation statistics (prefill / decode speed, cached tokens, etc.) are **only available for models launched with the llama.cpp engine**; other inference engines (Ollama, vLLM, sglang, etc.) currently show only the number of tokens used. |
 | **Scheduled Shutdown/Reboot** | This feature depends on the underlying OS command set and hardware support; not all machines can run it properly. Tested environments: dual X99 (Ubuntu 22.04, E5-2696 v4) and Mac M1 Pro — shutdown/reboot work normally; Windows 10 64-bit (z690 motherboard, i7-13700K) — shutdown works, but automatic wake-up reboot is limited by motherboard BIOS and could not be woken up in self-testing. |
 | **GPU Monitoring** | GPU monitoring depends on the `nvidia-smi` tool and **only supports systems with NVIDIA GPUs**. macOS uses Apple Silicon (M series) or integrated graphics with no corresponding monitoring interface, so no GPU monitoring panel is provided on macOS (memory monitoring is unaffected). |
 | **Thinking Mode Auto-Detection** | Automatic GGUF thinking-mode detection currently parses the embedded Jinja template via regex matching, so a few models may be detected incorrectly. In that case, thinking levels can be configured manually in the model management settings under system settings in AI chat to override the automatic detection (see [FAQ](#-faq)). |
+| **Dependency & Security Baseline** | To keep JDK 8 compatibility, current dependencies are pinned to Spring Boot 2.1.x / fastjson 1.2.83 and related versions; for known dependency risks, security recommendations (default credentials, Swagger switch, etc.) and the upgrade plan, see [SECURITY.md](SECURITY.md) before deploying to production. |
 
 ---
 
 ## 🚀 Quick Start
 
-1. **Prepare the environment**: Install JDK 8 or above and download the [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) executable (see the [Installation Guide](#-installation-guide) for details).
-2. **Download & run**: Download the [latest release package](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases), extract it, and run the launcher script for your platform.
+1. **Prepare the environment**: Install JDK 8 or above (the Ultimate Edition additionally requires the [llama.cpp](https://github.com/ggml-org/llama.cpp/releases) executable — see the [Installation Guide](#-installation-guide)).
+2. **Download & run**: Download the [latest release package](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases) (the open-source edition has no license restrictions) or [build from source](#-build--development); extract it and run the launcher script for your platform.
 3. **Log in & configure**: Open [http://localhost:8098/command/static/file/login.html](http://localhost:8098/command/static/file/login.html) in your browser. Default credentials are `admin` / `admin`; please change them after the first login.
 
 ---
@@ -203,9 +220,9 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 Install [JDK 8 or above](https://www.oracle.com/java/technologies/downloads/#java8) (JDK 8 is recommended, as it has been tested across multiple platforms) and add the Java executable path to your system environment variables. On Linux or macOS, add the Java bin path to your PATH.
 ![JDK Environment Configuration](imgs/install-jdk-env.png)
 
-**2. Install llama.cpp**
+**2. Install llama.cpp (Ultimate only)**
 
-Download and extract [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases) (pick the build for your platform). **For Windows systems with NVIDIA GPUs, you must also download the corresponding cudart resources and place them in the extracted directory** (e.g., if using CUDA 13.3, download cudart 13.3).
+Not required for the open-source edition. Download and extract [llama.cpp releases](https://github.com/ggml-org/llama.cpp/releases) (pick the build for your platform). **For Windows systems with NVIDIA GPUs, you must also download the corresponding cudart resources and place them in the extracted directory** (e.g., if using CUDA 13.3, download cudart 13.3).
 ![llama.cpp and cudart Installation](imgs/install-llama-cpp-cudart.png)
 
 **3. Download & Extract the Release Package**
@@ -219,11 +236,12 @@ Download the [latest release package](https://github.com/zhoujianguowei/hybrid-l
 Once the JAR has started, open [http://localhost:8098/command/static/file/login.html](http://localhost:8098/command/static/file/login.html) in your browser. Default credentials are `admin` / `admin`; you must change your password after the first login.
 ![Login Page](imgs/install-login-page.png)
 
-**5. Update License & View the Guide**
+**5. View the Usage Guide**
 
-After logging in, click the **Update License** button to refresh your machine's authorization code. The question mark button in the toolbar opens the detailed usage guide and feature documentation.
-![License Update](imgs/install-license-update.png)
+After logging in, the question mark button in the toolbar opens the detailed usage guide and feature documentation. The open-source edition requires no license and can be used directly; for Ultimate Edition licensing, see [Open-Source Edition vs Ultimate Edition](#-open-source-edition-vs-ultimate-edition).
 ![Help Guide](imgs/install-help-guide.png)
+
+Steps 6 ~ 8 below configure local model scheduling and apply to the Ultimate Edition only; for the open-source edition, simply configure an OpenAI-compatible API in the AI chat system settings instead.
 
 **6. Configure Model Management**
 
@@ -245,9 +263,71 @@ Use `where nvidia-smi` (Windows) or `which nvidia-smi` (Linux/macOS) to find the
 
 **9. Start AI Chat**
 
-**Ultimate Edition v1.1 and above supports automatic detection of locally deployed models — no OpenAI API or model thinking-level parameters need to be configured. If you are using v1.0 or the Base Edition, an OpenAI API must be configured.**
+**Ultimate Edition v1.1 and above supports automatic detection of locally deployed models — no OpenAI API or model thinking-level parameters need to be configured. For the open-source edition, configure an OpenAI-compatible API (e.g., a locally running llama.cpp server or Ollama) in system settings.**
 ![AI Chat Demo](imgs/install-chat-demo.png)
 ![AI Deep Thinking Mode](imgs/install-chat-thinking.png)
+
+---
+
+## 🧩 Build & Development
+
+### Requirements
+
+- JDK 8 or above (JDK 8 / 11 recommended)
+- Gradle: not required — use the Wrapper shipped with this repository (`./gradlew` / `gradlew.bat`)
+
+### Build from Source
+
+```bash
+# Compile and produce the executable jar: build/libs/hybridLLM-v1.13_release_base.jar
+./gradlew bootJar
+
+# Package release archives (jar + launcher scripts):
+# base-hybridLLM-v1.13-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
+./gradlew buildJar
+
+# Run
+java -jar build/libs/hybridLLM-v1.13_release_base.jar
+```
+
+Then open `http://localhost:8098/command/static/file/login.html` in your browser. Default credentials are `admin` / `admin` (**change them immediately after first login**).
+
+### Key Configuration
+
+Configuration lives in `src/main/resources/application.yml` (the `sit` profile is active by default):
+
+| Property | Default | Description |
+| :--- | :--- | :--- |
+| `server.port` | `8098` | Service port |
+| `server.servlet.context-path` | `/command` | Context path |
+| `spring.servlet.multipart.max-file-size` | `200MB` | Max upload size per file |
+| `swagger.enable` | `true` | Swagger docs switch, **recommended `false` in production** |
+| `llm.version` | `v1.13_release_base` | Version identifier (fixed to `release_base` for the open-source edition) |
+
+Running-time settings such as file storage directories, AI feature definitions, and attachment size limits are maintained in the system settings page after login (persisted to the data directory; no external database required).
+
+### Project Structure
+
+```
+src/main/java/com/grw/xiaobai/hybrid/llm/
+├── controller/   REST API layer
+├── service/      business interfaces + impl
+├── manager/      in-memory config/state (sessions, permission tree, upload tasks...)
+├── entity/       domain POJOs (chat/file/model/user/...)
+├── config/       Spring configuration (MVC, thread pool, Swagger...)
+├── task/         scheduled tasks
+└── utils/        utilities
+src/main/resources/static/        frontend static assets (vanilla JS + Bootstrap 5, no Node build chain)
+```
+
+Layering: `controller → service → manager → entity`. The system has no database — user/permission/task state is persisted to files on disk and kept in memory at runtime.
+
+### More Development Docs
+
+- Contributing guide & code conventions: [CONTRIBUTING.md](CONTRIBUTING.md)
+- Security recommendations & known items: [SECURITY.md](SECURITY.md)
+- Release changelog: [CHANGELOG.md](CHANGELOG.md)
+- Third-party components & licenses: [NOTICE](NOTICE)
 
 ---
 
@@ -261,45 +341,33 @@ Use `where nvidia-smi` (Windows) or `which nvidia-smi` (Linux/macOS) to find the
 
 ---
 
-## 🔒 Offline Licensing & Hardware Binding
+## 💼 Open-Source Edition vs Ultimate Edition
 
-The Ultimate Edition uses a **pure offline, one-machine-one-code, hardware-bound** activation mechanism. During operation the system is 100% isolated from external networks, with no data upload or backdoor dependencies whatsoever. Core components are protected with industrial-grade deep obfuscation and encryption, ensuring your private assets and code context remain absolutely secure.
+> Note: **Starting with the v1.13 release_base, the Base edition is officially free and open source — no license and no expiration.** Existing Base Edition licenses for historical versions remain valid; v1.13+ can be used directly with no license required.
 
-**How the machine code is determined:**
+This repository is the **free open-source edition (Base)** of the system, released under the **Apache-2.0 license**: free for commercial use and derivative works (please keep the original LICENSE and NOTICE attribution; the project name and logo are not licensed).
 
-- The system's physical fingerprint is computed jointly from your **CPU, motherboard, and operating system**.
-- **Worry-Free Hardware Upgrades**: Routine hot-swapping or replacement of peripherals such as the **GPU, hard drive, RAM, or power supply** will **never** invalidate your license.
-- **Re-Activation Triggers**: The machine code only changes when the underlying operating system is reinstalled or the core components (CPU/motherboard) are fully replaced.
+The **Ultimate Edition** is the closed-source commercial version. It adds llama.cpp local model scheduling, thinking-mode auto-detection, resource monitoring and scheduled shutdown/reboot on top of the open-source edition, with ongoing updates and support.
 
-**Version Compatibility Notes:**
+**Ultimate Edition licensing & purchase:**
 
-- **Base and Ultimate Edition licenses are not interchangeable**: Base Edition licenses only work with the Base Edition, and Ultimate Edition licenses only work with the Ultimate Edition.
-- **Same-Major-Version License Reuse**: License codes within the same major version series are interchangeable. For example, v3.1, v3.2, and v3.53 all belong to the v3 series and their licenses can be used across them.
-- **Worry-Free Minor Version Upgrades**: Blocking bug fixes and minor optimizations are released as minor version upgrades; existing licenses remain valid.
-- **Higher Version Licenses Are Downward Compatible**: A higher version license can be used with lower versions. For example, an Ultimate Edition v3.53 license is compatible with v3.1, v3.2, and all v2 and v1 series versions.
-- **Lower Version Licenses Cannot Be Used with Higher Versions**: For example, a v1 series license code cannot be used on v2 or v3 series software.
-
-### 🛒 How to Obtain a Lifetime License
-
-All release packages come with a built-in **30-day full-feature free trial (Ultimate Edition Trial)**. After the trial expires, you can purchase the lifetime version through the dedicated channels below.
-
-> **🔒 Privacy Guarantee**: Activation is fully offline. The license code is generated entirely from your hardware hash. The system never collects any analytics, telemetry, or user privacy data — use it with confidence.
-
-*Please fill in your **Machine Code** and **email address to receive the license code** in the **Notes/Reference** field on the Wise payment page.*
-*(If you forget to fill them in at the time of payment, simply send the payment receipt screenshot together with your machine code to `zhoujianguowei@gmail.com`. The license code will be issued manually within 24 hours.)*
+- Ultimate Edition releases include a built-in **30-day full-feature free trial**; after the trial you can buy a one-time, lifetime license.
+- The Ultimate Edition uses a **fully offline, one-machine-one-code** mechanism. The machine code is computed from your CPU / motherboard / operating system; replacing the GPU, hard drive or RAM does not invalidate your license; full licensing rules are described in the Ultimate Edition release package.
+- Please fill in your **Machine Code** and **email address to receive the license code** in the **Notes/Reference** field on the Wise payment page. If you forget, send your payment receipt together with the machine code to `zhoujianguowei@gmail.com` (manual issuance within 24 hours).
 
 | Software Version | Lifetime Price | Offline Payment Link |
 | :--- | :--- | :--- |
-| 📦 **Base Edition** | **$9** / Lifetime | [Purchase via Wise](https://wise.com/pay/r/gm5d-VpLW7MCSEw) |
 | 👑 **Ultimate Edition** | **$19** / Lifetime | [Purchase via Wise](https://wise.com/pay/r/-5LpLO3Vcn6x4Cc) |
+
+> **🔒 Privacy Guarantee**: During operation the system is 100% isolated from external networks with no telemetry or data collection; the open-source edition's code is fully public and can be audited at any time.
 
 ---
 
 ## ❓ FAQ
 
-**Q: What is the difference between the Base Edition and the Ultimate Edition?**
+**Q: What is the difference between the open-source edition and the Ultimate Edition?**
 
-A: The Base Edition is a minimal deployment version covering core features such as file management, user management, AI chat, and the permission system. The Ultimate Edition adds advanced features on top, including model management, resource monitoring, and scheduled shutdown/reboot. Licenses for the two editions are not interchangeable — see [Edition Comparison](#edition-comparison).
+A: The open-source edition is this repository, licensed free under Apache-2.0, covering file management, user management, AI chat (via an OpenAI-compatible API), and the permission system. The Ultimate Edition adds llama.cpp local model scheduling, thinking-mode auto-detection, resource monitoring, and scheduled shutdown/reboot, and is a closed-source one-time-purchase product — see [Open-Source Edition vs Ultimate Edition](#-open-source-edition-vs-ultimate-edition).
 
 **Q: Why is there no GPU monitoring panel on macOS?**
 
@@ -309,17 +377,17 @@ A: GPU monitoring depends on the `nvidia-smi` tool and only supports systems wit
 
 A: Wake-on-schedule depends on motherboard BIOS hardware support. Some machines (e.g., the self-tested z690 + i7-13700K environment) cannot be woken automatically due to BIOS/hardware limitations; the shutdown function itself is unaffected.
 
-**Q: Will replacing my GPU/hard drive/RAM invalidate my license?**
+**Q: (Ultimate) Will replacing my GPU/hard drive/RAM invalidate my license?**
 
 A: No. The machine code is computed from the CPU, motherboard, and operating system. Routine replacement of peripherals such as the GPU, hard drive, RAM, or power supply does not affect your license; it only changes when the OS is reinstalled or the CPU/motherboard is replaced.
 
-**Q: How long is the trial period, and how do I purchase a lifetime license?**
+**Q: How long is the trial period, and how do I purchase the Ultimate Edition?**
 
-A: Every release package includes a 30-day full-feature free trial. After the trial expires, you can purchase a lifetime license via the [Wise payment links](#-how-to-obtain-a-lifetime-license) (Base Edition $9 / Ultimate Edition $19). Please include your machine code and receiving email in the payment notes.
+A: Ultimate Edition releases include a 30-day full-feature free trial. After the trial expires, you can purchase a lifetime license via the [Wise payment link](#-open-source-edition-vs-ultimate-edition) ($19). Please include your machine code and receiving email in the payment notes.
 
 **Q: Why does AI chat ask me to configure an OpenAI API?**
 
-A: Ultimate Edition v1.1 and above supports automatic detection of locally deployed models, so no API configuration is needed. v1.0 or the Base Edition requires an OpenAI-compatible API to be configured before AI chat can be used.
+A: The open-source edition uses AI chat as a standard API client: configure an OpenAI-compatible API in system settings (it can be a locally running llama.cpp server, Ollama, etc.). Ultimate Edition v1.1 and above automatically detects locally scheduled models, so no manual API configuration is needed in that scenario.
 
 **Q: What should I do if a model's thinking mode is detected incorrectly?**
 

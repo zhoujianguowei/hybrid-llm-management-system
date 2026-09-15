@@ -3,13 +3,10 @@ buildscript {
         springBootVersion = '2.1.8.RELEASE'
     }
     repositories {
-        // 1. 先配置远程镜像，速度快且稳定
+        // 远程镜像优先，保证下载速度与稳定性；如需代理或私仓可在 init script 中另行声明
         maven { url 'https://maven.aliyun.com/repository/public' }
         maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
         mavenCentral()
-
-        // 2. 最后配置本地仓库，用于覆盖远程依赖
-        mavenLocal()
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
@@ -17,7 +14,6 @@ buildscript {
 }
 
 repositories {
-    mavenLocal()
     maven { url 'https://maven.aliyun.com/repository/public' }
     maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
     mavenCentral()
@@ -28,7 +24,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'com.grw.xiaobai.hybrid.llm'
-version = 'v1'
+version = 'v1.13'
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8

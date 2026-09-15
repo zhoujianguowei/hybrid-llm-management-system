@@ -47,3 +47,6 @@ llama_server.pid
 *.log
 /.opencode/
 /arthas-output/
+### Demo raw recordings / 原始录屏不入库(压缩预览 demo-preview.mp4 保留) ###
+simplescreenrecorder-*.mp4
+*.mov

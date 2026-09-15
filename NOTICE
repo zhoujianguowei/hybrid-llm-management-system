@@ -1,0 +1,39 @@
+Hybrid LLM Management System (open-source edition / Base)
+Copyright 2024-2026 The Hybrid LLM Management System Authors
+
+This product bundles third-party software components. Each component is
+governed by its own license, as listed below. Please see the LICENSE file in
+each component's official distribution for the full license text.
+
+Backend (runtime dependencies, resolved via Gradle):
+  - Spring Boot / Spring Framework (2.1.8.RELEASE line)   - Apache License 2.0
+  - Lombok                                                  - MIT / Eclipse Public License 1.0
+  - Fastjson (com.alibaba.fastjson, 1.2.83)                 - Apache License 2.0
+  - Hutool (cn.hutool, 5.8.12)                              - MulanPSL-2.0
+  - Apache Commons Lang3 / IO / Collections4                - Apache License 2.0
+  - Guava                                                   - Apache License 2.0
+  - OkHttp                                                  - Apache License 2.0
+  - Kotlin stdlib (runtime)                                 - Apache License 2.0
+  - Springfox (swagger) / springdoc-openapi                 - Apache License 2.0
+  - Swagger annotations / swagger-ui                        - Apache License 2.0
+  - Orika (ma.glasnost.orika, 1.5.4)                        - Apache License 2.0
+  - Reflections (0.9.9)                                     - Apache License 2.0 / WTFPL
+  - Thumbnailator                                           - Apache License 2.0
+  - SLF4J / Logback                                         - MIT / Eclipse Public License 1.0
+  - JUnit Jupiter (tests only)                              - Eclipse Public License 2.0
+
+Frontend (static assets bundled under src/main/resources/static/):
+  - Bootstrap 5.3.0 (CSS/JS)                                - MIT License
+  - Bootstrap Icons 1.11.3 (code)                           - MIT License
+  - Bootstrap Icons 1.11.3 (icon fonts)                     - SIL Open Font License 1.1
+  - Chart.js 3.9.1                                          - MIT License
+  - KaTeX 0.16.9 (JS/CSS; includes derived font files)      - MIT License
+  - highlight.js (bundled build, styles included)           - BSD 3-Clause License
+  - marked 12.0.1                                           - MIT License
+  - DOMPurify 3.1.6                                         - Apache License 2.0 / MPL-2.0 (dual)
+  - FingerprintJS Open Source 3.4.2                         - MIT License
+
+Screenshots and documentation images (imgs/): property of this project;
+documentation license follows the Apache License 2.0 terms of this project.
+
+END OF NOTICE
