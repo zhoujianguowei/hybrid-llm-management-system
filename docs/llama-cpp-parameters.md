@@ -1,4 +1,6 @@
-# llama.cpp Startup Parameters Reference (English)
+# llama.cpp Startup Parameters Reference
+
+> 🌐 **English** | [中文](llama-cpp-parameters_zh.md)
 
 This document lists every system UI setting mapped to llama.cpp startup arguments (with ranges and defaults), consistent with v1.13 and kept in sync with the in-app usage guide.
 
