@@ -39,7 +39,7 @@ This system (Hybrid LLM Management System) is a comprehensive management platfor
 
 Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system schedules local GGUF-formatted large language models through **llama.cpp** on the backend, while also supporting **OpenAI-compatible** remote API integration. Its core objective is to address cumbersome path permission management, model parameter configuration, and resource monitoring in local model deployments.
 
-> 🤖 **About AI assistance**: The frontend UI code and some supporting scripts of this project were completed with the help of an AI coding assistant, with human review and testing. This follows common open-source practice, and does not affect functionality or maintainability. If you have concerns about AI-generated content, please point out specific issues via Code Review / Issues.
+> 🤖 **About AI assistance**: The frontend UI code and some supporting scripts of this project were completed with the help of an AI coding assistant, with human review and testing. This follows common open-source practice, and does not affect functionality or maintainability. If you have concerns about AI-generated content, please point out specific issues via Code Review / Issues. See the [AI-generated content statement](docs/AI-CONTENT.md).
 
 ### ✨ Key Highlights
 
