@@ -10,6 +10,8 @@
 [![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+![功能演示](imgs/demo.gif)
+
 > 📺 **完整演示视频**(时长 5 分 25 秒，720p，约 6.6MB)：[demo-preview.mp4](demo-preview.mp4)
 
 **📖 目录**
