@@ -74,7 +74,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 
 - **Multi-GPU Parallel Acceleration**: Full support for llama.cpp **SM Tensor** scheduling for multi-GPU parallel inference.
 - **MTP Speculative Acceleration**: Supports **Multi-Token Prediction** speculative decoding, covering DSpark, DFlash, and MTP types, significantly reducing inference steps; configurable speculative decoding parameters such as n-min and draft-ngl; MTP draft files are auto-detected from the mtp/ directory and can also be selected manually; DFlash/DSpark require a `.gguf` draft model
-- **Multiple Quantization Formats**: Supports common quantization types such as F32/BF16/F16Q8_0/Q8_0, Q6_K, Q5_K_M, Q4_K_M, IQ3_XXS, and more.
+- **Multiple Quantization Formats**: Supports common quantization types such as F32/BF16/F16, Q8_0, Q6_K, Q5_K_M, Q4_K_M, IQ3_XXS, and more.
 - **Automated GGUF Management**:
   - Automatically recognizes sharded files (e.g., `model-00001-of-00002.gguf`) with one-click merge
   - Built-in naming convention checks keep model file names uniform (format: `model_name_quantization.gguf`)
