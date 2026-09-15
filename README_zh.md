@@ -7,7 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-Java%20Web-6DB33F?logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Inference](https://img.shields.io/badge/Inference-llama.cpp%20%7C%20OpenAI%20API-blue)](https://github.com/ggml-org/llama.cpp)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#)
-[![Release](https://img.shields.io/badge/Release-v1.12-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
+[![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Commercial%20%2B%2030%20Days%20Trial-red)](#-如何获取终身授权)
 
 **📖 目录**
@@ -60,13 +60,13 @@
 ![模型列表](imgs/model-list-overview.png)
 
 - **多 GPU 并行加速**：全面支持 llama.cpp 的 **SM Tensor** 调度，实现多卡并行推理。
-- **MTP 预测加速**：支持 **Multi-Token Prediction** 多 Token 预测，涵盖 DSpark、DFlash、MTP，显著减少推理步数。
+- **MTP 预测加速**：支持 **Multi-Token Prediction** 多 Token 预测，涵盖 DSpark、DFlash、MTP，显著减少推理步数；支持设置 n-min、draft-ngl 等预测解码参数；MTP draft 文件自动检测 mtp/ 目录并支持手动选择，DFlash/DSpark 须配置 `.gguf` 格式 draft 模型
 - **多种量化格式支持**：支持 F32/BF16/F16Q8_0/Q8_0、Q6_K、Q5_K_M、Q4_K_M、IQ3_XXS 等常见量化类型。
 - **GGUF 自动化管理**：
   - 自动识别分片文件（如 `model-00001-of-00002.gguf`）并一键合并
   - 内置命名规范检查，确保模型文件命名统一（格式：`模型名_量化类型.gguf`）
   - 自动匹配 `mmproj` 多模态投影文件和 `mtp` Draft 模型文件
-- **精细化启动参数**：支持上下文大小、GPU 加载层数、并行任务数、张量分割、KV Cache 量化、温度、线程数、批处理大小等 18+ 参数调优。
+- **精细化启动参数**：支持上下文大小、GPU 加载层数、并行任务数、张量分割、KV Cache 量化、温度、线程数、批处理大小等 18+ 参数调优，并支持通过 `--load-mode`、`--lazy-mode` 配置模型加载模式（仅适用于 llama.cpp，不适用于 ik_llama.cpp）。
 ![GPU 配置](imgs/model-gpu-config.png)
 
 ### 2. 智能 AI 对话
@@ -81,8 +81,9 @@
     ![项目级代码分析](imgs/chat-project-analysis.png)
 
 - **代码生成**：AI 生成的代码块支持一键复制、保存为本地文件，长代码支持折叠显示。
-- **深度思考模式**：支持 qwen3.5、qwen3.6、gemma4、deepseek-v4-flash、hy3 等模型的深度思考功能。
-- **系统级配置**：管理员可配置 OpenAI API 接入、模型功能定义（正则匹配开启/关闭思考模式）、按角色限制附件大小和最大消息数。
+- **消息渲染**：支持 Markdown 语法高亮、LaTeX 公式渲染与沙箱 HTML 预览面板，并在回复中显示当前模型名称。
+- **深度思考模式**：支持 unsloth 量化的 qwen3.8 系列、gemma4、hy3、deepseek-v4-flash-0731、inkling-small、minimax-m3 等模型的深度思考功能。
+- **系统级配置**：管理员可配置 OpenAI API 接入、模型功能定义（正则匹配开启/关闭思考模式，支持覆盖本地模型自动检测的功能/思考模式），按角色限制附件大小和最大消息数。
 - **对话统计**：实时显示 prompt prefill 速度、decode 速度、当前对话上下文占比等性能指标。
 
 ### 3. 文件管理
@@ -156,6 +157,7 @@
 
 | 版本 | 变更内容 |
 | :--- | :--- |
+| **v1.13** | 1. 新增 --load-mode、--lazy-mode 两个启动参数（仅适用于 llama.cpp，不适用于 ik_llama.cpp）<br />2. 预测解码增强：新增 n-min、draft-ngl 参数；MTP draft 文件支持手动选择（留空自动检测 mtp/ 目录）；DFlash/DSpark 必填 .gguf draft 并实时校验，启动前校验文件存在性<br />3. AI 对话增强：模型功能配置支持覆盖本地自动检测的功能/思考模式；思考等级校验放宽（不再强制要求提供非思考等级）；思考模式下拉框新增悬浮说明；新增沙箱 HTML 预览面板、LaTeX 公式渲染，消息渲染中增加模型名称显示<br />4. 修复重启模型未复用上次成功端口、模型停止流程加固、会话标题被自动标题覆盖、每轮速度展示缺失、会话切换滚动抖动、消息渲染正文被误解析为列表、分片上传因文件被改动中断、大目录删除超时等问题<br />5. 登录会话有效期由 2 小时延长至 12 小时，WebSocket 空闲超时由 1 小时延长至 10 小时 |
 | **v1.12** | 1. 新增 llama.cpp Speculative Decoding（预测推理）支持，涵盖 DSpark、DFlash、MTP 三种类型，并支持设置 n-max 和 p-min 参数<br />2. AI 对话功能增强：支持 Markdown 语法高亮、OpenAI 请求携带思考内容开关，以及运行时动态修改 temperature、top-p 等参数<br />3. OpenAI 请求兼容性增强：由仅支持 llama.cpp 扩展至支持 Ollama、kTransformer、sglang 等主流推理引擎（非 llama.cpp 引擎暂不支持查看 decode/prefill 速度等详细数据）<br />4. 修复文件列表上传、AI 对话特殊字符转义错误等已知问题 |
 | **v1.11** | 1. 修复模型思考模式自动检测 bug，新增 inkling-small、minimax-m3 以及 deepseek-v4-flash-0731 模型的思考模式自动检测<br />2. 修复模型参数导入 bug、AI 对话页面代码渲染问题<br />3. AI 对话页面 UI 显示优化 |
 | **v1.1** | 1. 完全版 AI 对话支持本地模型自动检测，无需手动配置 API，支持模型启动时或对话运行时选择思考等级，已自测验证 unsloth 的 qwen3.6、gemma4、deepseek-v4-flash 以及 hy3 等模型<br />2. 新增英语语言支持，界面支持中/英切换<br />3. 增加更多 llama.cpp 参数支持，包括主 GPU、repeat-penalty、top-k、top-p 等参数<br />4. 修复部分 bug，包括 AI 对话窗口异常关闭提示、路径搜索弹窗高度异常等问题 |
@@ -172,6 +174,7 @@
 | **多模态能力** | 当前版本多模态能力 **仅支持图片输入**，不支持音频和视频输入。 |
 | **定时关机/重启** | 该功能依赖于底层操作系统的指令集及硬件支持，并非所有机型均能正常运行。已测试环境：双路 X99 (Ubuntu 22.04, E5-2696 v4) 和 Mac M1 Pro 关机/重启均正常；Windows 10 64位 (z690 主板, i7-13700K) 关机功能正常，但自动唤醒重启受主板 BIOS 限制，自测无法唤醒。 |
 | **GPU 监控** | GPU 监控功能依赖 `nvidia-smi` 工具，**仅支持搭载 NVIDIA 显卡的系统**。macOS 系统使用 Apple Silicon (M 系列) 或集成显卡，无对应监控接口，因此 macOS 下不提供 GPU 监控面板（内存监控不受影响）。 |
+| **思考模式自动检测** | GGUF 思考模式自动检测目前基于正则匹配解析内置 Jinja 模板，个别模型可能存在检测不准的情况；此时可在 AI 聊天的系统设置 → 模型管理设置中手动配置思考等级以覆盖自动检测结果（详见 [常见问题](#-常见问题-faq)）。 |
 
 ---
 
@@ -318,6 +321,10 @@ A：所有发布包均内置 30 天完全功能免费试用。试用期满后可
 **Q：为什么 AI 对话提示需要配置 OpenAI API？**
 
 A：v1.1 及以上的完全版支持本地部署模型自动检测，无需手动配置 API；v1.0 或基础版需要配置 OpenAI 兼容 API 后方可使用 AI 对话。
+
+**Q：模型思考模式自动检测不正确怎么办？**
+
+A：完全版的 GGUF 思考模式自动检测目前采用正则匹配实现，对部分模型可能存在检测错误。这种情况下可在 AI 聊天的系统设置中的模型管理设置里手动配置思考等级进行覆盖（支持"覆盖本地检测"）。
 
 ---
 
