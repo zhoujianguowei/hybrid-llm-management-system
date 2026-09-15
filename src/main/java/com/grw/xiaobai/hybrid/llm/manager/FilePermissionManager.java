@@ -37,7 +37,22 @@ public class FilePermissionManager {
             tree = createDefaultTree();
             saveToFile();
         } else {
+            pruneMissingPaths();
             syncMissingRoots();
+        }
+    }
+
+    public int pruneMissingPaths() {
+        try {
+            int removed = tree.pruneMissingPaths(path -> new File(path).exists());
+            if (removed > 0) {
+                LOGGER.info("Pruned {} file permission entries whose paths no longer exist", removed);
+                saveToFile();
+            }
+            return removed;
+        } catch (Exception e) {
+            LOGGER.error("Failed to prune missing file permission entries", e);
+            return 0;
         }
     }
 

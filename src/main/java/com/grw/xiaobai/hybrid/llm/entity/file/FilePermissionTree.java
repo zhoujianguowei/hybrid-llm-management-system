@@ -6,11 +6,13 @@ import com.grw.xiaobai.hybrid.llm.enums.UserRoleEnum;
 import lombok.Data;
 
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 
@@ -166,6 +168,49 @@ public class FilePermissionTree {
         } finally {
             readWriteLock.writeLock().unlock();
         }
+    }
+
+    public int pruneMissingPaths(Predicate<String> pathExists) {
+        try {
+            readWriteLock.writeLock().lock();
+            int removed = 0;
+            Iterator<Map.Entry<String, FilePermissionTree>> iterator = childrenMap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, FilePermissionTree> entry = iterator.next();
+                if (!pathExists.test(entry.getKey())) {
+                    iterator.remove();
+                    removed++;
+                    continue;
+                }
+                removed += pruneChildren(entry.getValue(), entry.getKey(), pathExists);
+            }
+            return removed;
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
+    }
+
+    private int pruneChildren(FilePermissionTree node, String nodePath, Predicate<String> pathExists) {
+        int removed = 0;
+        Iterator<Map.Entry<String, FilePermissionTree>> iterator = node.getChildrenMap().entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, FilePermissionTree> entry = iterator.next();
+            String childPath = joinPath(nodePath, entry.getKey());
+            if (!pathExists.test(childPath)) {
+                iterator.remove();
+                removed++;
+                continue;
+            }
+            removed += pruneChildren(entry.getValue(), childPath, pathExists);
+        }
+        return removed;
+    }
+
+    private static String joinPath(String parentPath, String name) {
+        if (parentPath.endsWith(SystemConstants.PATH_SEPARATOR)) {
+            return parentPath + name;
+        }
+        return parentPath + SystemConstants.PATH_SEPARATOR + name;
     }
 
 
