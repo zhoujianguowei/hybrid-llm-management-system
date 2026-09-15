@@ -83,9 +83,7 @@
 - **精细化启动参数**：UI 配置自动映射为 llama.cpp 命令行参数，支持上下文大小、GPU 加载层数、并行任务数、张量分割、KV Cache 量化、温度、线程数、批处理大小、模型加载模式（`--load-mode` / `--lazy-mode`，仅适用于 llama.cpp，不适用于 ik_llama.cpp）等全面调优。
 - **思考模式参数映射**：思考模式配置自动转换为 `--chat-template-kwargs`，向 llama.cpp server 下发 `enable_thinking` / `reasoning_effort` / `thinking_mode` 等参数。
 
-> 完整说明与应用内操作截图见使用指南（登录页"使用指南"入口）中的「llama.cpp 使用指南」章节。
-
-> 📖 完整参数表（启动参数范围/默认值、预测解码语法差异、思考模式映射、量化类型）见 [docs/llama-cpp-parameters_zh.md](docs/llama-cpp-parameters_zh.md)。
+> 📖 完整参数表（范围/默认值、预测解码语法、思考模式映射、量化类型）见 [docs/llama-cpp-parameters_zh.md](docs/llama-cpp-parameters_zh.md)；应用内操作截图见登录页"使用指南"中的「llama.cpp 使用指南」章节。
 
 
 ![GPU 配置](imgs/model-gpu-config.png)
