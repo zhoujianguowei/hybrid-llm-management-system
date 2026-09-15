@@ -440,7 +440,7 @@
 <link rel="stylesheet" href="user_share.css">
     <link rel="stylesheet" href="common/common.css">
     <link rel="stylesheet" href="common/common-dialog.css">
-    <link rel="stylesheet" href="model/modals.css">
+    <link rel="stylesheet" href="common/modals.css">
     <script src="common/messages.js"></script>
     <script src="common/i18n.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.bundle.min.js" onerror="window.__bootstrapLoadFailed=true"></script>
@@ -901,7 +901,7 @@
                 navigateTo(path, perm);
             } else {
                 if (!isPreviewable(mimeType)) {
-                    showAlert(t('fm.toast_no_access'));
+                    showAlert(t('fm.toast_preview_fail'));
                 } else {
                     previewFile(path, mimeType);
                 }
@@ -997,7 +997,7 @@
                 navigateTo(path, perm);
             } else {
                 if (!isPreviewable(mimeType)) {
-                    showAlert(t('fm.toast_no_access'));
+                    showAlert(t('fm.toast_preview_fail'));
                 } else {
                     previewFile(path, mimeType);
                 }
