@@ -901,7 +901,7 @@
                 navigateTo(path, perm);
             } else {
                 if (!isPreviewable(mimeType)) {
-                    showAlert(t('fm.toast_no_access'));
+                    showAlert(t('fm.toast_preview_fail'));
                 } else {
                     previewFile(path, mimeType);
                 }
@@ -997,7 +997,7 @@
                 navigateTo(path, perm);
             } else {
                 if (!isPreviewable(mimeType)) {
-                    showAlert(t('fm.toast_no_access'));
+                    showAlert(t('fm.toast_preview_fail'));
                 } else {
                     previewFile(path, mimeType);
                 }
