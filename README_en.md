@@ -7,7 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-Java%20Web-6DB33F?logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Inference](https://img.shields.io/badge/Inference-llama.cpp%20%7C%20OpenAI%20API-blue)](https://github.com/ggml-org/llama.cpp)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#)
-[![Release](https://img.shields.io/badge/Release-v1.12-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
+[![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Commercial%20%2B%2030%20Days%20Trial-red)](#-how-to-obtain-a-lifetime-license)
 
 **📖 Table of Contents**
@@ -60,13 +60,13 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 ![Model List](imgs/model-list-overview.png)
 
 - **Multi-GPU Parallel Acceleration**: Full support for llama.cpp **SM Tensor** scheduling for multi-GPU parallel inference.
-- **MTP Speculative Acceleration**: Supports **Multi-Token Prediction** speculative decoding, covering DSpark, DFlash, and MTP types, significantly reducing inference steps.
+- **MTP Speculative Acceleration**: Supports **Multi-Token Prediction** speculative decoding, covering DSpark, DFlash, and MTP types, significantly reducing inference steps; configurable speculative decoding parameters such as n-min and draft-ngl; MTP draft files are auto-detected from the mtp/ directory and can also be selected manually; DFlash/DSpark require a `.gguf` draft model
 - **Multiple Quantization Formats**: Supports common quantization types such as F32/BF16/F16Q8_0/Q8_0, Q6_K, Q5_K_M, Q4_K_M, IQ3_XXS, and more.
 - **Automated GGUF Management**:
   - Automatically recognizes sharded files (e.g., `model-00001-of-00002.gguf`) with one-click merge
   - Built-in naming convention checks keep model file names uniform (format: `model_name_quantization.gguf`)
   - Automatically matches `mmproj` multimodal projection files and `mtp` draft model files
-- **Fine-Grained Startup Parameters**: 18+ tunable parameters including context size, GPU offload layers, parallel task count, tensor split, KV cache quantization, temperature, thread count, and batch size.
+- **Fine-Grained Startup Parameters**: 18+ tunable parameters including context size, GPU offload layers, parallel task count, tensor split, KV cache quantization, temperature, thread count, and batch size, plus `--load-mode` and `--lazy-mode` model load modes (only applicable to llama.cpp, not applicable to ik_llama.cpp).
 ![GPU Configuration](imgs/model-gpu-config.png)
 
 ### 2. Intelligent AI Chat
@@ -80,8 +80,9 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
   - Folder upload: supports uploading an entire directory listing. If the model supports image input, image files are included; otherwise only plain-text files are included
     ![Project-Level Code Analysis](imgs/chat-project-analysis.png)
 - **Code Generation**: AI-generated code blocks support one-click copy, saving to local files, and collapsible display for long code.
-- **Deep Thinking Mode**: Supports deep thinking for models such as qwen3.5, qwen3.6, gemma4, deepseek-v4-flash, and hy3.
-- **System-Level Configuration**: Administrators can configure OpenAI API integration, model capability definitions (regex-based thinking mode on/off), and per-role limits on attachment size and maximum message count.
+- **Message Rendering**: Supports Markdown syntax highlighting, LaTeX formula rendering, and a sandboxed HTML preview pane, with the current model name shown for assistant replies.
+- **Deep Thinking Mode**: Supports deep thinking for models such as unsloth-quantized qwen3.8 series, gemma4, hy3, deepseek-v4-flash-0731, inkling-small, and minimax-m3.
+- **System-Level Configuration**: Administrators can configure OpenAI API integration, model capability definitions (regex-based thinking mode on/off, with an option to override auto-detected capabilities/thinking modes of local models), and per-role limits on attachment size and maximum message count.
 - **Conversation Statistics**: Real-time display of prompt prefill speed, decode speed, current context usage ratio, and other performance metrics.
 
 ### 3. File Management
@@ -155,6 +156,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 
 | Version | Changes |
 | :--- | :--- |
+| **v1.13** | 1. Added --load-mode and --lazy-mode launch parameters (only applicable to llama.cpp, not applicable to ik_llama.cpp)<br />2. Speculative Decoding enhancements: added n-min and draft-ngl parameters; MTP draft file supports manual selection (auto-detects the mtp/ directory when left blank); DFlash/DSpark require a .gguf draft with real-time validation and file existence check before launch<br />3. AI chat enhancements: model feature configuration can override the auto-detected capabilities/thinking modes of local models; relaxed thinking level validation (a non-thinking level is no longer required); hover tooltips added to the thinking mode dropdown; new sandboxed HTML preview pane, LaTeX formula rendering, and the model name is now shown in message rendering<br />4. Fixed issues including model restart port reuse, hardened model stop flow, session titles overwritten by auto-titling, missing per-turn speed display, scroll jitter on session switch, message rendering wrongly splitting prose as lists, chunked upload interrupted by file changes, and large directory deletion timeout<br />5. Extended login session lifetime from 2 to 12 hours and WebSocket idle timeout from 1 to 10 hours |
 | **v1.12** | 1. Added llama.cpp Speculative Decoding support covering DSpark, DFlash, and MTP types, with configurable n-max and p-min parameters<br />2. AI Chat enhancements: Markdown syntax highlighting, toggle for including thinking content in OpenAI requests, and runtime modification of temperature, top-p, and other parameters<br />3. Enhanced OpenAI request compatibility: expanded from llama.cpp-only to mainstream engines such as Ollama, kTransformer, and sglang (detailed data such as decode/prefill speed is currently only available for llama.cpp)<br />4. Fixed known issues including file list upload and AI chat special character escaping errors |
 | **v1.11** | 1. Fixed a model thinking-mode auto-detection bug and added auto-detection support for inkling-small, minimax-m3, and deepseek-v4-flash-0731 models<br />2. Fixed a model parameter import bug and code rendering issues on the AI chat page<br />3. UI display optimization for the AI chat page |
 | **v1.1** | 1. Ultimate Edition AI chat supports automatic detection of local models with no manual API configuration; thinking level can be selected at model startup or during conversation (self-tested with unsloth's qwen3.6, gemma4, deepseek-v4-flash, hy3, and other models)<br />2. Added English language support with Chinese/English UI switching<br />3. Added more llama.cpp parameter support, including primary GPU, repeat-penalty, top-k, top-p, etc.<br />4. Fixed various bugs, including abnormal AI chat window closure prompts and path search popup height issues |
@@ -171,6 +173,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 | **Multimodal Capability** | The current version's multimodal capability **only supports image input**; audio and video input are not supported. |
 | **Scheduled Shutdown/Reboot** | This feature depends on the underlying OS command set and hardware support; not all machines can run it properly. Tested environments: dual X99 (Ubuntu 22.04, E5-2696 v4) and Mac M1 Pro — shutdown/reboot work normally; Windows 10 64-bit (z690 motherboard, i7-13700K) — shutdown works, but automatic wake-up reboot is limited by motherboard BIOS and could not be woken up in self-testing. |
 | **GPU Monitoring** | GPU monitoring depends on the `nvidia-smi` tool and **only supports systems with NVIDIA GPUs**. macOS uses Apple Silicon (M series) or integrated graphics with no corresponding monitoring interface, so no GPU monitoring panel is provided on macOS (memory monitoring is unaffected). |
+| **Thinking Mode Auto-Detection** | Automatic GGUF thinking-mode detection currently parses the embedded Jinja template via regex matching, so a few models may be detected incorrectly. In that case, thinking levels can be configured manually in the model management settings under system settings in AI chat to override the automatic detection (see [FAQ](#-faq)). |
 
 ---
 
@@ -317,6 +320,10 @@ A: Every release package includes a 30-day full-feature free trial. After the tr
 **Q: Why does AI chat ask me to configure an OpenAI API?**
 
 A: Ultimate Edition v1.1 and above supports automatic detection of locally deployed models, so no API configuration is needed. v1.0 or the Base Edition requires an OpenAI-compatible API to be configured before AI chat can be used.
+
+**Q: What should I do if a model's thinking mode is detected incorrectly?**
+
+A: Automatic GGUF thinking-mode detection in the Ultimate Edition currently relies on regex matching and may produce incorrect results for some models. In that case, you can override the thinking levels manually via the model management settings under system settings in AI chat (an "override local detection" option is supported).
 
 ---
 
