@@ -39,7 +39,7 @@
 
 系统基于 **Java + Spring Boot** 构建（前端采用 Bootstrap 5），后端通过 **llama.cpp** 调度本地 GGUF 格式的大语言模型，同时支持 **OpenAI 兼容**的远程 API 接入。其核心目标是解决本地模型部署中繁琐的路径权限管理、模型参数配置以及资源监控问题。
 
-> 🤖 **关于 AI 辅助**：本项目的前端界面代码及部分配套脚本在 AI 编码助手辅助下完成，并经过人工审查与测试。这完全符合开源实践，不影响功能与可维护性。若你希望对 AI 生成内容有更严格的把控，欢迎在 Code Review / Issue 中指出具体问题。
+> 🤖 **关于 AI 辅助**：本项目的前端界面代码及部分配套脚本在 AI 编码助手辅助下完成，并经过人工审查与测试。这完全符合开源实践，不影响功能与可维护性。若你希望对 AI 生成内容有更严格的把控，欢迎在 Code Review / Issue 中指出具体问题。详见 [AI 生成内容说明](docs/AI-CONTENT.md)。
 
 ### ✨ 亮点特性
 
@@ -371,6 +371,7 @@ src/main/resources/static/        前端静态资源（原生 JS + Bootstrap 5�
 - 安全建议与已知事项：[SECURITY.md](SECURITY.md)
 - 版本变更记录：[CHANGELOG.md](CHANGELOG.md)
 - llama.cpp 参数参考：[docs/llama-cpp-parameters_zh.md](docs/llama-cpp-parameters_zh.md)
+- AI 生成内容说明：[docs/AI-CONTENT.md](docs/AI-CONTENT.md)
 - 第三方组件及许可：[NOTICE](NOTICE)
 
 ---
