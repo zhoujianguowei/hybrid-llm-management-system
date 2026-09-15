@@ -426,7 +426,16 @@ async function uploadNextChunk(item, index, signal) {
 
     const start = chunkIndex * item.chunkSize;
     const end = Math.min(start + item.chunkSize, item.fileSize);
-    const chunk = item.file.slice(start, end);
+    let chunkBlob;
+    try {
+        chunkBlob = new Blob([await item.file.slice(start, end).arrayBuffer()]);
+    } catch (err) {
+        item.status = 'FAILED';
+        item.errorMsg = t('upload.file_changed');
+        updateUploadListItem(index);
+        renderUploadList();
+        return;
+    }
 
     try {
         const formData = new FormData();
@@ -435,7 +444,7 @@ async function uploadNextChunk(item, index, signal) {
         formData.append('chunkSize', end - start);
         formData.append('offset', start);
         formData.append('totalChunks', item.totalChunks);
-        formData.append('file', chunk);
+        formData.append('file', chunkBlob);
 
         const response = await fetch(API_BASE + '/file/upload/chunk?' + getSessionParam(), {
             method: 'POST',
