@@ -1,0 +1,564 @@
+/* 模态框公共样式 */
+.modal-content {
+    background: var(--card-bg);
+    border-radius: 16px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+}
+.nav-link {
+    border-radius: 6px 6px 0 0;
+}
+
+/* 配置模态框 */
+.config-modal .modal-content {
+    border: none;
+    box-shadow: var(--shadow-lg);
+}
+.config-modal .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+}
+.config-modal .modal-header .modal-title {
+    color: white;
+}
+.config-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.config-modal .modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+.config-modal .modal-body {
+    height: auto;
+    min-height: 400px;
+    max-height: 65vh;
+    overflow-y: auto;
+}
+.config-modal .form-label {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+.config-modal .form-control, .config-modal .form-select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    color: var(--text-primary);
+}
+.config-modal .form-control::placeholder, .config-modal .form-select::placeholder {
+    color: var(--text-muted);
+    opacity: 1;
+    font-weight: 500;
+    font-size: 0.8rem;
+}
+.config-modal .form-control:focus, .config-modal .form-select:focus {
+    background-color: var(--input-bg);
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+.config-modal .form-check-input:checked {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+.config-modal .form-check-input {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+}
+.config-modal .form-text {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+}
+.config-modal .form-switch .form-check-input:checked {
+    background-color: var(--accent-blue);
+    border-color: var(--accent-blue);
+}
+.config-modal .form-switch .form-check-input {
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+}
+
+.context-size-control {
+    background-color: rgba(59, 130, 246, 0.05);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.context-size-control .form-label {
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+}
+.context-size-control .progress-value {
+    color: var(--accent-blue);
+    font-weight: 600;
+}
+
+/* 参数弹窗 */
+.params-modal .modal-dialog {
+    max-width: 900px;
+}
+.params-modal .modal-content {
+    border: none;
+    box-shadow: var(--shadow-lg);
+}
+.params-modal .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+    padding: 0.875rem 1.25rem;
+}
+.params-modal .modal-header .modal-title {
+    color: white;
+    font-size: 1rem;
+}
+.params-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.params-modal .modal-footer {
+    border-top: 1px solid var(--border-color);
+    padding: 0.625rem 1.25rem;
+}
+.params-modal .modal-footer .btn {
+    padding: 0.375rem 1rem;
+    font-size: 0.8125rem;
+}
+.params-modal .modal-body {
+    height: auto;
+    min-height: 400px;
+    max-height: 65vh;
+    overflow-y: auto;
+    padding: 1rem 1.25rem;
+}
+.params-modal .modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+.params-modal .modal-body::-webkit-scrollbar-track {
+    background: var(--secondary-bg);
+    border-radius: 4px;
+}
+.params-modal .modal-body::-webkit-scrollbar-thumb {
+    background: var(--accent-blue);
+    border-radius: 4px;
+}
+.params-modal .modal-body::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-purple);
+}
+
+.param-card {
+    background: linear-gradient(135deg, var(--secondary-bg), rgba(59, 130, 246, 0.03));
+    border-radius: 8px;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+.param-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--accent-blue), var(--accent-purple));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+.param-card:hover {
+    border-color: var(--accent-blue);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--accent-blue);
+}
+.param-card:hover::before {
+    opacity: 1;
+}
+.param-label {
+    color: var(--text-secondary);
+    font-size: 0.6875rem;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+.param-label i {
+    color: var(--accent-blue);
+    font-size: 0.8125rem;
+    filter: drop-shadow(0 0 4px rgba(59, 130, 246, 0.3));
+}
+.param-value {
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: -0.3px;
+    padding: 0.25rem 0.5rem;
+    background: rgba(59, 130, 246, 0.08);
+    border-radius: 4px;
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.spec-decoding-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.spec-decoding-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.spec-decoding-head .param-label {
+    margin-bottom: 0;
+}
+.spec-params-inline {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.85rem;
+}
+.spec-inline-item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.spec-inline-label {
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 500;
+}
+.spec-inline-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.spec-draft-model {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+    min-width: 0;
+}
+.spec-draft-path {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1;
+    cursor: default;
+}
+.spec-missing {
+    color: var(--accent-red);
+}
+
+/* 投机解码配置卡片:一组参数视觉成组 */
+.spec-config-card {
+    background-color: rgba(59, 130, 246, 0.05);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+/* draft 必填时在标签后显示红色星号(i18n 安全,避免 JS 拼字符串被覆盖) */
+#llamaCppSpecDraftModelContainer.is-required #llamaCppSpecDraftModelLabel::after {
+    content: ' *';
+    color: var(--accent-red);
+    font-weight: 700;
+}
+#llamaCppSpecDraftModel.is-invalid {
+    border-color: var(--accent-red);
+}
+#llamaCppSpecDraftModel.is-invalid:focus {
+    border-color: var(--accent-red);
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.params-modal .row > .col-12 > h6 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+    background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), transparent);
+    border-left: 3px solid var(--accent-blue);
+    border-radius: 0 6px 6px 0;
+    margin-bottom: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.params-modal .row > .col-12 > h6 i {
+    font-size: 0.875rem;
+    filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.4));
+}
+.params-modal .badge {
+    font-size: 0.6875rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+.params-modal .badge.bg-success {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
+}
+.params-modal .badge.bg-secondary {
+    background: linear-gradient(135deg, #6b7280, #4b5563) !important;
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
+}
+.params-modal .password-cell {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.params-modal .password-toggle {
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 14px;
+    flex-shrink: 0;
+    transition: color 0.15s;
+}
+.params-modal .password-toggle:hover {
+    color: var(--accent-blue);
+}
+.params-modal .password-visible {
+    color: var(--accent-blue);
+    font-weight: 600;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+.params-modal .password-hidden {
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    letter-spacing: 2px;
+}
+
+.empty-params {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+.empty-params i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+/* 导入确认弹窗 */
+.import-confirm-modal .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+}
+.import-confirm-modal .modal-header .modal-title {
+    color: white;
+}
+.import-confirm-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.import-confirm-modal .modal-body {
+    height: auto;
+    min-height: 400px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.import-statistics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: rgba(59, 130, 246, 0.1);
+    border-radius: 8px;
+}
+.import-stat-item {
+    text-align: center;
+}
+.import-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent-blue);
+}
+.import-stat-label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+.import-preview-container {
+    height: auto;
+    min-height: 100px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+.import-preview-item {
+    background-color: var(--secondary-bg);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+.import-preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.import-preview-name {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.import-preview-item.conflict-item {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid var(--accent-red) !important;
+}
+.import-preview-item.conflict-item:hover {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+}
+.import-preview-name .existing-badge {
+    background-color: var(--accent-yellow);
+    color: #000000;
+    font-weight: 700;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+.import-preview-item.conflict-item .text-muted {
+    color: #fca5a5 !important;
+}
+.import-preview-params {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+.import-preview-params small {
+    display: block;
+    margin-top: 0.25rem;
+}
+
+/* 导出预览弹窗 */
+#exportPreviewModal .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+}
+#exportPreviewModal .modal-header .modal-title {
+    color: white;
+}
+#exportPreviewModal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.export-preview {
+    background-color: var(--secondary-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    height: auto;
+    min-height: 100px;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 1rem;
+}
+.export-preview pre {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+/* 停止模型弹窗 */
+#stopModelModal .modal-header {
+    border-radius: 16px 16px 0 0;
+}
+#stopModelModal .alert-danger {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: var(--accent-red);
+    color: var(--text-primary);
+}
+#stopModelModal #stopModelNameDisplay {
+    font-size: 1.1rem;
+    color: var(--accent-red);
+    word-break: break-all;
+    display: block;
+    margin: 0.5rem 0;
+}
+#stopModelModal #stopModelNameDisplay strong {
+    display: block;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+}
+#stopModelModal #stopModelNameDisplay strong:last-child {
+    border-bottom: none;
+}
+
+/* 文件浏览器弹窗 */
+.file-browser-modal {
+    z-index: 1300;
+}
+.file-browser-modal .modal-content {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    height: auto !important;
+}
+.file-browser-modal .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom: none;
+    border-radius: 16px 16px 0 0;
+}
+.file-browser-modal .modal-header .modal-title {
+    color: white;
+}
+.file-browser-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+}
+.file-browser-modal .modal-body {
+    padding: 0;
+    height: auto;
+    min-height: 150px;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+.file-browser-modal .modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+.file-browser-modal .modal-dialog {
+    width: auto;
+}
+.file-browser-modal .modal-dialog.modal-lg {
+    max-width: 800px;
+}
+
+/* Alert 样式 */
+.alert-info {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-color: var(--accent-blue);
+    color: var(--text-primary);
+}
+.alert-success {
+    background-color: rgba(34, 197, 94, 0.1);
+    border-color: var(--accent-green);
+    color: var(--text-primary);
+}
+
+/* 条件参数显示 */
+.conditional-param {
+    transition: all 0.3s ease;
+}
+.conditional-param.hidden {
+    display: none;
+}
+
+.text-warning {
+    color: var(--accent-yellow) !important;
+}
