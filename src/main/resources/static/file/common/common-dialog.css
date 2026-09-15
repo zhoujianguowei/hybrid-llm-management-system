@@ -1,0 +1,152 @@
+.confirm-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-modal.active {
+    display: flex;
+}
+
+.confirm-modal.toast-mode {
+    background: transparent;
+    pointer-events: none;
+}
+
+.confirm-dialog {
+    background: var(--card-bg, #fff);
+    padding: 28px 32px;
+    border-radius: 16px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: var(--shadow-lg, 0 10px 30px rgba(0, 0, 0, 0.08));
+}
+
+.confirm-dialog h3 {
+    margin-bottom: 12px;
+    color: var(--text-primary, #334155);
+    font-size: 18px;
+}
+
+.confirm-dialog p {
+    color: var(--text-secondary, #64748b);
+    margin-bottom: 24px;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.confirm-dialog .btn-group {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.confirm-dialog .btn {
+    padding: 10px 28px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.confirm-dialog .btn-confirm {
+    background: var(--primary-gradient, linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%));
+    color: white;
+}
+
+.confirm-dialog .btn-confirm:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md, 0 4px 10px rgba(0, 0, 0, 0.06));
+}
+
+.confirm-dialog .btn-confirm-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.confirm-dialog .btn-confirm-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+.confirm-dialog .btn-cancel {
+    background: var(--bg-color, #f8fafc);
+    color: var(--text-secondary, #64748b);
+    border: 1px solid var(--border-color, #e2e8f0);
+}
+
+.confirm-dialog .btn-cancel:hover {
+    background: var(--hover-bg, rgba(99, 102, 241, 0.08));
+    color: var(--primary-color, #6366f1);
+    border-color: var(--primary-color, #6366f1);
+}
+
+.dialog-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+}
+
+.dialog-icon.info {
+    color: var(--primary-color, #6366f1);
+}
+
+.dialog-icon.warn {
+    color: #f59e0b;
+}
+
+.dialog-icon.error {
+    color: #ef4444;
+}
+
+.dialog-icon.success {
+    color: #22c55e;
+}
+
+.regex-section {
+    margin-bottom: 12px;
+}
+.regex-section:last-child {
+    margin-bottom: 0;
+}
+.regex-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--primary-color, #6366f1);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.regex-item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 3px 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.regex-item code {
+    display: inline-block;
+    background: var(--hover-bg, #f1f5f9);
+    color: var(--text-primary, #1e293b);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    white-space: nowrap;
+    min-width: 120px;
+    text-align: center;
+}
+.regex-item .regex-desc {
+    color: var(--text-secondary, #64748b);
+    flex: 1;
+}

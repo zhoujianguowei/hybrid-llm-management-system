@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="../favicon.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>混合大模型管理系统使用指南</title>
+    <link rel="stylesheet" href="../vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #6366f1;
+            --primary-color: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --bg: #f8fafc;
+            --bg-color: #f8fafc;
+            --card: #ffffff;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --border: #e2e8f0;
+            --border-color: #e2e8f0;
+            --sidebar-w: 280px;
+            --header-h: 56px;
+            --hover-bg: rgba(99, 102, 241, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        html {
+            scroll-padding-top: calc(var(--header-h) + 16px);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.7;
+        }
+        .top-header {
+            position: fixed; top: 0; left: 0; right: 0; height: var(--header-h);
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; display: flex; align-items: center; padding: 0 24px;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.3); z-index: 100;
+        }
+        .top-header h1 { font-size: 18px; font-weight: 700; }
+        .top-header .back-link {
+            margin-right: auto; color: rgba(255,255,255,0.85); text-decoration: none;
+            font-size: 14px; padding: 6px 14px; border-radius: 6px;
+            background: rgba(255,255,255,0.15); transition: all 0.2s;
+        }
+        .top-header .back-link:hover { background: rgba(255,255,255,0.25); color: white; }
+        .sidebar {
+            position: fixed; top: var(--header-h); left: 0; bottom: 0;
+            width: var(--sidebar-w); background: var(--card);
+            border-right: 1px solid var(--border); overflow-y: auto;
+            padding: 16px 0; z-index: 50;
+        }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .nav-l1 {
+            padding: 8px 20px; font-size: 14px; font-weight: 700;
+            color: var(--primary); cursor: pointer; display: flex;
+            align-items: center; gap: 8px; user-select: none;
+        }
+        .nav-l1:hover { background: rgba(99,102,241,0.05); }
+        .nav-l2 {
+            display: none; padding: 6px 20px 6px 48px; font-size: 13px;
+            color: var(--text-secondary); text-decoration: none;
+            border-left: 3px solid transparent; transition: all 0.15s;
+        }
+        .nav-l2:hover { color: var(--primary); background: rgba(99,102,241,0.04); border-left-color: var(--primary-light); }
+        .nav-l2.active { color: #fff !important; font-weight: 700 !important; background: var(--primary) !important; border-left-color: var(--primary-light) !important; }
+        .nav-l1.expanded + .nav-l2-group { display: block; }
+        .nav-l2-group { display: none; }
+        .content {
+            margin-left: var(--sidebar-w); margin-top: var(--header-h);
+            padding: 40px 48px 80px;
+            min-width: 600px;
+            max-width: 1400px;
+            width: calc(100% - var(--sidebar-w));
+            position: relative;
+            box-sizing: border-box;
+        }
+        @media (max-width: 1280px) {
+            .content { padding: 30px 30px 60px; }
+        }
+        @media (min-width: 2560px) {
+            .content { max-width: 1800px; padding: 60px 80px 100px; }
+        }
+        @media (min-width: 3840px) {
+            .content { max-width: 2400px; padding: 80px 120px 120px; }
+        }
+        .content h2 {
+            font-size: 26px; font-weight: 700; color: var(--text);
+            margin: 48px 0 16px; padding-bottom: 10px;
+            border-bottom: 2px solid var(--primary-light);
+        }
+        .content h2:first-child { margin-top: 0; }
+        .content h3 {
+            font-size: 20px; font-weight: 600; color: var(--primary-dark);
+            margin: 32px 0 12px; padding-left: 12px;
+            border-left: 4px solid var(--primary-light);
+        }
+        .content h4 {
+            font-size: 16px; font-weight: 600; color: var(--text);
+            margin: 24px 0 8px;
+        }
+        .content p { margin: 10px 0; color: var(--text-secondary); font-size: 15px; }
+        .content ul, .content ol { margin: 10px 0 10px 24px; color: var(--text-secondary); font-size: 15px; }
+        .content li { margin: 4px 0; }
+        .content strong { color: var(--text); }
+        .content img {
+            max-width: 100%; width: auto; height: auto; border-radius: 10px; margin: 16px auto;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08); border: 1px solid var(--border);
+            display: block;
+        }
+        .content img[src*="login"], .content img[src*="register"] {
+            max-width: 440px; display: block; margin: 20px auto;
+        }
+        .tip-box {
+            background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
+            border-radius: 10px; padding: 14px 18px; margin: 16px 0;
+            font-size: 14px; color: var(--primary-dark);
+        }
+        .tip-box i { margin-right: 6px; }
+        .warn-box {
+            background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15);
+            border-radius: 10px; padding: 14px 18px; margin: 16px 0;
+            font-size: 14px; color: #92400e;
+        }
+        .warn-box i { margin-right: 6px; }
+        .feature-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin: 20px 0; }
+        .feature-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 20px; transition: all 0.2s;
+        }
+        .feature-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-color: var(--primary-light); }
+        .feature-card .fc-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 20px; margin-bottom: 12px;
+        }
+        .feature-card h4 { font-size: 15px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+        .feature-card p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+        table {
+            width: 100%; border-collapse: collapse; margin: 16px 0;
+            font-size: 14px; background: var(--card); border-radius: 8px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        th { background: var(--bg); font-weight: 600; color: var(--text); text-align: left; padding: 10px 14px; }
+        td { padding: 10px 14px; color: var(--text-secondary); border-top: 1px solid var(--border); }
+        tr:hover td { background: rgba(99,102,241,0.02); }
+        .step-list { counter-reset: step; list-style: none; margin-left: 0; padding: 0; }
+        .step-list li {
+            counter-increment: step; padding: 10px 0 10px 44px;
+            position: relative; border-left: 2px solid var(--border);
+        }
+        .step-list li:last-child { border-left-color: transparent; }
+        .step-list li::before {
+            content: counter(step); position: absolute; left: -15px; top: 8px;
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .step-list li strong { display: block; color: var(--text); margin-bottom: 2px; }
+        .step-list li span { font-size: 14px; color: var(--text-secondary); }
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .content { margin-left: 0; padding: 24px 20px 60px; }
+        }
+        .main-gpu-box {
+            background: linear-gradient(135deg, rgba(220,38,38,0.10), rgba(220,38,38,0.04));
+            border: 1px solid rgba(220,38,38,0.35);
+            border-left: 4px solid #dc2626;
+            border-radius: 10px; padding: 16px 18px; margin: 16px 0;
+            font-size: 14px; color: #b91c1c; font-weight: 600;
+        }
+        .main-gpu-box i { margin-right: 6px; }
+        .main-gpu-box strong { color: #b91c1c; font-weight: 700; }
+        .main-gpu-box code { color: #b91c1c; background: rgba(220,38,38,0.08); padding: 1px 5px; border-radius: 4px; }
+        .lang-selector { position: relative; }
+        .lang-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: white; height: 2.25rem; min-width: 6.5rem; padding: 0 0.75rem; border-radius: 0.5rem; cursor: pointer; font-size: 0.8125rem; transition: all 0.2s; white-space: nowrap; justify-content: center; }
+        .lang-btn:hover { background: rgba(255,255,255,0.25); transform: scale(1.05); }
+        .lang-btn i.bi-chevron-down { font-size: 0.7em; opacity: 0.8; margin-left: 2px; }
+        .lang-dropdown { position: absolute; top: calc(100% + 0.5rem); right: 0; background: var(--card-bg); border-radius: 0.625rem; box-shadow: var(--shadow-lg); padding: 0.5rem; display: none; flex-direction: column; gap: 4px; min-width: 9rem; z-index: 200; border: 1px solid var(--border-color); }
+        .lang-dropdown.active { display: flex; }
+        .lang-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; color: var(--text-primary); font-size: 13px; white-space: nowrap; }
+        .lang-option:hover { background: var(--hover-bg); }
+        .lang-option.active { background: var(--hover-bg); color: var(--primary-color); font-weight: 500; }
+        .lang-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border-color); display: inline-block; flex-shrink: 0; }
+        .lang-dot.zh { background: linear-gradient(135deg, #fee2e2, #ef4444); }
+        .lang-dot.en { background: linear-gradient(135deg, #dbeafe, #3b82f6); }
+    </style>
+</head>
+<body>
+
+<div class="top-header">
+    <a class="back-link" href="javascript:window.close();(window.opener||true)&&history.back();" onclick="if(!window.opener){window.location.href='/command/static/file/login.html';}return false;" title="返回系统" style="margin-left: 0;">
+        <i class="bi bi-arrow-left-circle-fill" style="font-size: 20px;"></i>
+    </a>
+    <div class="lang-selector" style="margin-right: 16px;">
+        <button class="lang-btn" onclick="toggleLangDropdown()">
+            <i class="bi bi-translate"></i>
+            <span id="langCurrentLabel">中文</span>
+            <i class="bi bi-chevron-down"></i>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+            <div class="lang-option" onclick="switchLang('zh')"><span class="lang-dot zh"></span><span>中文</span></div>
+            <div class="lang-option" onclick="switchLang('en')"><span class="lang-dot en"></span><span>English</span></div>
+        </div>
+    </div>
+    <h1><i class="bi bi-folder2-open"></i>&nbsp; 使用说明</h1>
+</div>
+
+<nav class="sidebar" id="sidebar">
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('overview')"><i class="bi bi-lightning-charge-fill"></i> 快速介绍 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2 active" href="#overview">系统概述</a>
+        <a class="nav-l2" href="#highlights">核心功能亮点</a>
+        <a class="nav-l2" href="#roles">用户角色说明</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('login')"><i class="bi bi-box-arrow-in-right"></i> 登录与注册 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#login">登录页面</a>
+        <a class="nav-l2" href="#register">访客注册</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('file-browse')"><i class="bi bi-folder2-open"></i> 文件管理 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#file-browse">文件浏览与搜索</a>
+        <a class="nav-l2" href="#file-upload">文件上传</a>
+        <a class="nav-l2" href="#file-download">文件下载</a>
+        <a class="nav-l2" href="#file-preview">文件预览</a>
+        <a class="nav-l2" href="#file-delete">文件删除</a>
+        <a class="nav-l2" href="#file-create-folder">新建文件夹</a>
+        <a class="nav-l2" href="#perm-overview">权限管理概述</a>
+        <a class="nav-l2" href="#perm-path">设置路径权限</a>
+        <a class="nav-l2" href="#perm-tree">权限树管理</a>
+        <a class="nav-l2" href="#perm-protect">受保护路径</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('user-list')"><i class="bi bi-people"></i> 用户管理 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#user-list">用户列表与筛选</a>
+        <a class="nav-l2" href="#user-edit">新增与编辑用户</a>
+        <a class="nav-l2" href="#user-status">账户状态管理</a>
+        <a class="nav-l2" href="#user-expiry">访客有效期设置</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('chat-session')"><i class="bi bi-chat-dots-fill"></i> AI 聊天 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#chat-session">对话管理</a>
+        <a class="nav-l2" href="#chat-model">模型选择</a>
+        <a class="nav-l2" href="#chat-attach">附件上传</a>
+        <a class="nav-l2" href="#chat-code">代码生成与查看</a>
+        <a class="nav-l2" href="#chat-config">系统配置</a>
+        <a class="nav-l2" href="#model-thinking">模型功能与思考模式配置</a>
+        <a class="nav-l2" href="#chat-personal">个人设置</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('model-list')"><i class="bi bi-cpu"></i> 模型管理 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#model-list">模型列表与状态</a>
+        <a class="nav-l2" href="#model-llama-guide">llama.cpp 使用指南</a>
+        <a class="nav-l2" href="#model-launch">配置并启动模型</a>
+        <a class="nav-l2" href="#model-gpu">GPU 监控</a>
+        <a class="nav-l2" href="#model-mem">内存监控</a>
+        <a class="nav-l2" href="#model-merge">模型命名与分片合并</a>
+        <a class="nav-l2" href="#model-setting">系统设置</a>
+    </div>
+
+    <div class="nav-l1 expanded" onclick="toggleNav(this); scrollToSection('reboot-add')"><i class="bi bi-power"></i> 定时关机 </div>
+    <div class="nav-l2-group">
+        <a class="nav-l2" href="#reboot-add">添加定时任务</a>
+        <a class="nav-l2" href="#reboot-manage">任务管理</a>
+    </div>
+</nav>
+
+<main class="content">
+
+    <!-- ==================== 快速介绍 ==================== -->
+    <h2 id="overview"><i class="bi bi-lightning-charge-fill"></i> 系统概述</h2>
+    <p>本系统（混合大模型管理系统）是一套面向本地部署的大语言模型综合管理平台，集<strong>文件管理、用户权限、模型调度、AI 对话、系统监控</strong>于一体，提供安全、高效、便捷的一站式操作体验。</p>
+    <p>系统基于 Java + Spring Boot 构建，前端采用 Bootstrap 5，后端通过 llama.cpp 调度本地 GGUF 格式的大语言模型，同时支持 OpenAI 兼容的远程 API 接入。其核心目标是解决本地模型部署中繁琐的路径权限管理、模型参数配置以及资源监控问题。</p>
+    <p>系统提供两个版本，版本号后缀标识如下：</p>
+    <table>
+        <tr><th>版本</th><th>版本号后缀</th><th>说明</th><th>包含功能</th></tr>
+        <tr><td><strong>基础版</strong></td><td><code style="background:#eee; padding:2px 6px; border-radius:4px;">release_base</code></td><td>精简部署版本</td><td>文件管理、用户管理、AI 聊天、权限体系等核心功能</td></tr>
+        <tr><td><strong>完全版</strong></td><td><code style="background:#eee; padding:2px 6px; border-radius:4px;">release_ultimate</code></td><td>全功能版本</td><td>基础版全部功能 + 模型管理、资源监控、定时开关机等高级功能</td></tr>
+    </table>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>多模态能力说明</strong>：当前版本多模态能力<strong>仅支持图片</strong>，不支持音频和视频输入。</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>兼容性说明</strong>：定时关机/重启功能依赖于底层操作系统的指令集及硬件支持，并非所有机型均能正常运行。当前测试系统情况：双路 X99 (Ubuntu 22.04, E5-2696 v4) 和 Mac M1 Pro 关机/重启均正常；Windows 10 64位 (z690 主板, i7-13700K) 关机功能正常，但自动唤醒重启受主板 BIOS 限制，自测无法唤醒。</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>GPU 监控说明</strong>：GPU 监控功能依赖 <code style="color:var(--primary)">nvidia-smi</code> 工具，仅支持搭载 NVIDIA 显卡的系统。macOS 系统使用 Apple Silicon (M 系列) 或集成显卡，无对应监控接口，因此 macOS 下不提供 GPU 监控面板。</div>
+
+    <h3 id="highlights"><i class="bi bi-stars"></i> 核心功能亮点</h3>
+    <div class="feature-cards">
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-wifi-off"></i></div>
+            <h4>完全离线，无需联网</h4>
+            <p>前端资源完全离线，不依赖任何外网 CDN，开箱即用，方便内网部署使用。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-pc-display"></i></div>
+            <h4>无需数据库配置 跨平台</h4>
+            <p>支持 Windows、Linux、macOS 三大平台，无需数据库配置，开箱即用。单 Jar 包部署，零依赖，启动即可运行。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-shield-lock-fill"></i></div>
+            <h4>细粒度路径权限</h4>
+            <p>基于路径继承的权限校验机制，支持读取、执行、上传、下载、删除五类权限。支持角色最小权限限制及特定用户额外授权，确保数据安全。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-folder-plus"></i></div>
+            <h4>项目级 AI 分析</h4>
+            <p>支持文件批量上传，自动提取文本内容。可将整个源代码目录中的关键文件一次性提交给 AI，实现跨文件的项目级代码分析与重构建议。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-cpu"></i></div>
+            <h4>最新 llama.cpp 特性支持</h4>
+            <p>深度集成 llama.cpp 最新能力，全面支持多 GPU 并行加速（对应 llama.cpp 的 SM Tensor）与预测推理（Speculative Decoding）加速：支持 MTP (Multi-Token Prediction)、DFlash、DSpark 三种类型，显著提升大模型推理吞吐量与响应速度。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-puzzle-fill"></i></div>
+            <h4>GGUF 自动化管理</h4>
+            <p>自动识别 GGUF 分片文件并支持一键合并。内置命名规范检查，确保模型文件命名统一，方便快速检索与调度。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-graph-up-arrow"></i></div>
+            <h4>实时资源监控</h4>
+            <p>集成 nvidia-smi 实时监控，提供 GPU 显存使用率和系统内存的趋势图表，帮助管理员在模型启动前评估资源可用性。</p>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon"><i class="bi bi-clock-history"></i></div>
+            <h4>智能定时重启</h4>
+            <p>支持一次性与周期性（按工作日）定时关机/唤醒任务。具备任务冲突检测与到期前预警功能，适合无人值守的服务器环境。</p>
+        </div>
+    </div>
+
+    <h3 id="roles"><i class="bi bi-people"></i> 用户角色说明</h3>
+    <table>
+        <tr><th>角色</th><th>权限级别</th><th>说明</th><th>可访问功能</th></tr>
+        <tr><td><strong>管理员 (Admin)</strong></td><td>最高 (Level 3)</td><td>系统维护者</td><td>全部功能：文件管理、用户管理、模型管理、资源监控、定时关机、全局配置</td></tr>
+        <tr><td><strong>普通用户 (User)</strong></td><td>标准 (Level 2)</td><td>正式注册用户</td><td>文件管理（受权限约束）、AI 聊天、个人设置；帐号具有有效期，到期自动封禁</td></tr>
+        <tr><td><strong>访客 (Guest)</strong></td><td>临时 (Level 1)</td><td>自助注册账号</td><td>文件管理（受权限约束）、AI 聊天、个人设置；账号具有有效期，到期自动封禁</td></tr>
+    </table>
+
+    <!-- ==================== 登录与注册 ==================== -->
+    <h2 id="login"><i class="bi bi-box-arrow-in-right"></i> 登录与注册</h2>
+    <p>系统默认访问地址为 <code style="background:#eee; padding:2px 4px; border-radius:4px;">http://&lt;服务器IP&gt;:8098/command</code>。</p>
+    <img src="images/login.png" alt="登录页面">
+    <p>登录页面提供简单的账号密码验证。如果账户被管理员封禁，用户可在页面下方填写申请原因提交<strong class="text-danger">解封申请</strong>，管理员在用户管理页面可一键处理。</p>
+
+    <h3 id="register"><i class="bi bi-person-plus-fill"></i> 访客自助注册</h3>
+    <p>当管理员在系统设置中开启"访客注册"后，登录页将显示注册链接。</p>
+    <img src="images/register.png" alt="注册页面">
+    <p>注册要求：</p>
+    <ul>
+        <li><strong>用户名</strong>：英文字母开头，3~32 个字符</li>
+        <li><strong>密码</strong>：8~20 位，必须同时包含数字和字母</li>
+        <li><strong>有效期</strong>：注册成功后，账号将获得由管理员预设的默认有效期（如 7 天），过期后自动转为封禁状态。</li>
+    </ul>
+
+    <!-- ==================== 文件管理 ==================== -->
+    <h2 id="file-browse"><i class="bi bi-folder2-open"></i> 文件管理系统</h2>
+    <p>文件管理器是系统的核心模块，旨在提供类似本地资源管理器的操作体验，同时集成严格的权限校验。</p>
+    <img src="images/file-manager-main.png" alt="文件管理器主页面">
+
+    <h4 id="file-manager-details">界面功能详解</h4>
+    <ul class="step-list">
+        <li><strong>根目录切换</strong><span>左侧导航栏显示可访问的根路径。对于 Linux/macOS 系统，默认显示系统根路径 ( / ) 和用户主目录 ( ~ )；对于 Windows 系统，则显示检测到的所有磁盘盘符（如 C:\, D:\）。点击可快速切换当前工作空间。</span></li>
+        <li><strong>路径导航</strong><span>顶部面包屑导航支持点击任意层级快速回溯。</span></li>
+        <li><strong>高效搜索</strong><span>支持文件名模糊匹配，可使用通配符（如 <code style="color:var(--primary)">*.py</code>）快速筛选特定类型文件。</span></li>
+        <li><strong>视图切换</strong><span>支持列表视图（显示详细属性）与平铺视图（适合图片浏览）切换。</span></li>
+    </ul>
+    <img src="images/file-manager-list.png" alt="文件列表视图">
+
+    <h3 id="file-upload"><i class="bi bi-cloud-upload-fill"></i> 智能上传</h3>
+    <p>支持文件的批量上传，采用分片上传技术确保大文件传输的稳定性。</p>
+    <img src="images/file-upload.png" alt="文件上传选择器">
+    <p>上传特性：</p>
+    <ul class="step-list">
+        <li><strong>拖拽支持</strong><span>直接将本地文件拖入浏览器窗口即可触发上传。</span></li>
+        <li><strong>进度追踪</strong><span>右侧任务栏实时显示每个分片的上传进度和整体百分比。</span></li>
+    </ul>
+    <img src="images/file-upload-progress.png" alt="文件上传进度">
+    <p>上传成功后，文件列表将实时更新，显示新上传的文件及其属性：</p>
+    <img src="images/file-manager-list-alt.png" alt="上传成功后的文件列表">
+
+    <h3 id="file-download"><i class="bi bi-cloud-download-fill"></i> 灵活下载</h3>
+    <p>单个文件点击下载按钮即可直接获取。对于文件夹，系统会在后台自动将其打包为 <code style="color:var(--primary)">.zip</code> 压缩包，完成后通过下载任务列表通知用户。</p>
+
+    <h3 id="file-preview"><i class="bi bi-eye-fill"></i> 多媒体预览</h3>
+    <p>系统内置高效的预览引擎，无需下载即可查看内容：</p>
+    <table>
+        <tr><th>类型</th><th>支持格式</th><th>预览特性</th></tr>
+        <tr><td><strong>图片</strong></td><td>JPG, PNG, GIF, WebP</td><td>支持全屏查看</td></tr>
+        <tr><td><strong>视频/音频</strong></td><td>MP4, WebM, MP3, WAV</td><td>支持 Range 请求，可随意拖动进度条（Seek）</td></tr>
+        <tr><td><strong>文档</strong></td><td>PDF</td><td>内置 PDF.js 阅读器，支持在线预览</td></tr>
+        <tr><td><strong>文本</strong></td><td>Java, Python, JS, HTML, JSON, YAML 等</td><td>支持常见文本内容预览</td></tr>
+    </table>
+    <img src="images/file-preview-video.png" alt="视频文件预览">
+
+    <h3 id="file-delete"><i class="bi bi-trash3-fill"></i> 安全删除</h3>
+    <p>删除操作需经过二次确认。系统严格校验 <code style="color:var(--primary)">DELETE</code> 权限。对于标记为<strong class="text-danger">受保护</strong>的路径，即使是管理员也无法执行删除操作，以防止误删系统核心文件。</p>
+
+    <h3 id="file-create-folder"><i class="bi bi-folder-plus"></i> 新建文件夹</h3>
+    <p>"新建文件夹"是文件夹特有功能。在文件管理器的工具栏中点击"新建文件夹"按钮，输入文件夹名称即可创建。该功能与文件夹的上传权限绑定，拥有当前目录上传权限即可新建文件夹。在根目录列表页面无法新建文件夹，需要进入具体的目录后才能使用此功能。</p>
+
+    <!-- ==================== 权限管理 ==================== -->
+    <h2 id="perm-overview"><i class="bi bi-shield-lock-fill"></i> 细粒度权限体系</h2>
+    <p>本系统采用一套基于路径继承的权限校验算法，确保资源访问的绝对安全。</p>
+
+    <h4 id="perm-logic">权限校验逻辑</h4>
+    <ul class="step-list">
+        <li><strong>路径继承</strong><span>当访问 <code style="color:var(--primary)">/home/data/file.txt</code> 时，若该文件未设置规则，系统将向上追溯至 <code style="color:var(--primary)">/home/data</code> &rarr; <code style="color:var(--primary)">/home</code> &rarr; <code style="color:var(--primary)">/</code>，直到找到最近的一条匹配规则。</span></li>
+        <li><strong>权限级联 (优先级)</strong><span>权限之间存在包含关系，级别越高则自动拥有低级别权限。优先级顺序为：<br><strong>删除 (Delete) &gt; 上传 (Upload) &gt; 下载 (Download) &gt; 执行 (Execute) &gt; 读取 (Read)</strong>。<br>例如：拥有"删除"权限的用户自动拥有该路径的所有其他权限。</span></li>
+        <li><strong>角色与用户双重校验</strong><span>每项权限可配置"最小允许角色"（如：仅限普通用户及以上），同时支持添加"特定授权用户"名单，实现灵活的特权管理。</span></li>
+    </ul>
+
+    <h4 id="perm-type">权限类型与作用详解</h4>
+    <p>系统将权限分为"通用权限"和"文件夹特有权限"，其具体作用如下：</p>
+    <table>
+        <tr><th>权限名称</th><th style="width: 25%;">适用对象</th><th>具体作用说明</th></tr>
+        <tr><td><strong>读取 (Read)</strong></td><td align="center">文件 / 文件夹</td><td>【最低权限】允许查看文件内容、预览文件。对于文件夹，仅意味着该文件夹在列表中可见，<strong style="color:var(--primary)">不能</strong>进入该文件夹查看内部列表。</td></tr>
+        <tr><td><strong>执行 (Execute)</strong></td><td align="center">仅文件夹</td><td>允许用户"进入"该目录，是查看目录列表、访问其子项的先决条件。</td></tr>
+        <tr><td><strong>下载 (Download)</strong></td><td align="center">文件 / 文件夹</td><td>允许下载单个文件或将整个文件夹打包下载。</td></tr>
+        <tr><td><strong>上传 (Upload)</strong></td><td align="center">仅文件夹</td><td>允许向该目录下上传新文件或覆盖现有文件。</td></tr>
+        <tr><td><strong>删除 (Delete)</strong></td><td align="center">文件 / 文件夹</td><td>【最高权限】允许删除该文件或递归删除整个文件夹。</td></tr>
+    </table>
+
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>特殊机制：路径穿透 (Path Penetration)</strong><br>
+        系统支持基于最终目标的权限校验。如果用户没有某个父目录的"执行"权限，但拥有其深层子文件的"读取"权限（例如，拥有 <code style="color:var(--primary)">/home/nice/good.txt</code> 的读取权限，但没有 <code style="color:var(--primary)">/home/nice</code> 的执行权限），用户仍然可以直接访问该文件。在这种情况下，用户在浏览时只能看到通往该文件的路径（例如只能看到 <code style="color:var(--primary)">/home/nice</code>），而无法看到父目录（如 <code style="color:var(--primary)">/home</code>）下的其他文件列表。</div>
+
+    <h3 id="perm-path"><i class="bi bi-pencil-square"></i> 权限配置</h3>
+    <p>管理员可以通过"权限设置"为任意路径定义规则。</p>
+    <img src="images/permission-edit.png" alt="编辑路径权限">
+    <img src="images/permission-edit-file.png" alt="编辑具体文件权限">
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>校验约束</strong>：为了防止权限配置冲突，系统要求高权限的角色范围必须是低权限角色范围的子集（例如：允许删除的人必须同时也允许读取）。</div>
+
+    <h3 id="perm-tree"><i class="bi bi-diagram-3-fill"></i> 权限树管理</h3>
+    <p>通过可视化树形结构，管理员可以直观地查看整个系统的权限分布，快速定位并修改特定子目录的权限。</p>
+    <img src="images/permission-tree.png" alt="权限树管理">
+    <img src="images/permission-tree-detail.png" alt="权限树详情视图">
+
+    <h3 id="perm-protect"><i class="bi bi-shield-fill-check"></i> 路径保护机制</h3>
+    <p>在权限编辑界面勾选"受保护"后，该路径将被锁定。受保护路径在文件管理界面会显示特殊标识，且所有删除请求将被直接拦截。</p>
+
+    <!-- ==================== 用户管理 ==================== -->
+    <h2 id="user-list"><i class="bi bi-people"></i> 用户管理</h2>
+    <p>提供全方位的账户生命周期管理，包括角色切换、状态控制和有效期监控。</p>
+    <img src="images/user-list.png" alt="用户管理列表">
+
+    <h3 id="user-edit"><i class="bi bi-pencil-square"></i> 账户编辑</h3>
+    <p>管理员可随时修改用户的角色（Admin/User/Guest）、昵称及密码。对于访客账号，可单独覆盖其注册有效期。</p>
+    <img src="images/user-edit.png" alt="用户编辑弹窗">
+
+    <h3 id="user-status"><i class="bi bi-toggle-on"></i> 状态控制</h3>
+    <p>支持一键封禁/解封。被封禁用户在尝试登录时会触发解封申请流程，管理员在用户列表页可实时收到申请提醒并进行处理。</p>
+
+    <h3 id="user-expiry"><i class="bi bi-calendar-event"></i> 访客有效期管理</h3>
+    <p>在用户管理设置中，可配置访客账号的默认有效期（天数）。系统后台任务会定期扫描过期账号并自动执行封禁操作。</p>
+
+    <!-- ==================== AI 聊天 ==================== -->
+    <h2 id="chat-session"><i class="bi bi-chat-dots-fill"></i> AI 智能对话</h2>
+    <p>集成多种本地与远程大模型，提供生产级别的对话体验。</p>
+    <img src="images/chat-main.png" alt="聊天主界面">
+    <p>AI 聊天页面提供完整的对话管理能力：</p>
+    <ul class="step-list">
+        <li><strong>新建对话</strong><span>点击左侧"新建对话"按钮开始新的会话</span></li>
+        <li><strong>加载历史</strong><span>点击左侧会话列表中的任一会话即可加载历史消息</span></li>
+        <li><strong>删除会话</strong><span>右键或长按会话条目可删除</span></li>
+        <li><strong>重命名</strong><span>可自定义会话名称</span></li>
+        <li><strong>置顶会话</strong><span>将常用会话置顶，方便快速访问</span></li>
+    </ul>
+
+    <h3 id="chat-attach"><i class="bi bi-paperclip"></i> 附件上传</h3>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>多模态能力说明</strong>：当前版本多模态能力<strong>仅支持图片</strong>，不支持音频和视频输入。</div>
+    <p>支持多种附件上传方式，方便将文件内容提交给 AI 进行分析：</p>
+    <ul class="step-list">
+        <li><strong>图片上传</strong><span>支持直接上传截图或图片文件，AI 可识别图片中的文字内容（OCR）。</span></li>
+        <li><strong>文本文件上传</strong><span>支持上传常见文本格式文件（如 .txt, .java, .py, .js 等），系统自动提取文本内容供 AI 分析。</span></li>
+        <li><strong>文件夹上传</strong><span>支持将整个文件夹上传。若当前模型支持图片输入，上传的文件夹将包含图片文件；否则仅包含纯文本文件。</span></li>
+        <li><strong>粘贴文件路径</strong><span>在输入框中粘贴文件路径，系统会自动识别并上传对应文件。</span></li>
+        <li><strong>复制文件粘贴</strong><span>在文件管理器或 IDE 中复制图片或文本文件后，直接在聊天输入框粘贴即可上传，支持批量复制粘贴。</span></li>
+    </ul>
+    <img src="images/chat-attachment.png" alt="附件上传菜单">
+    <img src="images/chat-image-ocr.png" alt="图片 OCR 识别">
+    <img src="images/chat-bulk-upload.png" alt="批量文件上传">
+    <img src="images/chat-project-analysis.png" alt="项目代码分析">
+
+    <h3 id="chat-code"><i class="bi bi-code-slash"></i> 开发者友好</h3>
+    <p>AI 生成的代码块支持一键复制以及直接保存为本地文件。对于长代码，支持折叠显示以优化阅读体验。</p>
+    <img src="images/chat-code-gen.png" alt="代码生成详情">
+
+    <h3 id="chat-config"><i class="bi bi-gear"></i> 系统级对话配置</h3>
+    <p>管理员可对对话体验进行深度定制：</p>
+    <ul class="step-list">
+        <li><strong>OpenAPI 接入</strong><span>配置外部 API 端点和 Key，扩展模型库。</span></li>
+        <li><strong>模型功能定义</strong><span>通过精确匹配或正则表达式匹配模型名称，定义多模态功能、思考模式与可见范围，并可覆盖自动检测出的模型配置（详见下方"模型功能定义与思考模式配置"）。</span></li>
+        <li><strong>配额管理</strong><span>按角色限制附件大小、最大消息数等，防止资源滥用。</span></li>
+    </ul>
+    <img src="images/chat-system-config.png" alt="系统配置总览">
+    <img src="images/chat-api-config.png" alt="编辑 API 配置">
+    <img src="images/chat-model-func-config.png" alt="模型功能配置">
+    <img src="images/chat-session-settings.png" alt="会话设置">
+    <img src="images/chat-personal-config.png" alt="个人设置">
+
+    <h3 id="model-thinking"><i class="bi bi-lightbulb-fill"></i> 模型功能定义与思考模式配置</h3>
+    <p>模型功能定义用于为匹配特定名称的模型定义多模态功能（图片/视频/音频）、思考模式与可见范围，支持精确匹配和正则表达式匹配。对于支持"深度思考"（推理）能力的模型，可在此灵活配置思考模式；通过<strong>覆盖自动检测</strong>选项，还可强制以本条配置覆盖系统自动检测出的模型配置（详见下文）。</p>
+
+    <h4>GGUF 元数据自动检测</h4>
+    <p>启动本地 GGUF 模型时，系统会自动解析模型的 <code style="color:var(--primary)">tokenizer.chat_template</code> 元数据，检测思考相关参数。如果聊天模板中包含 <code style="color:var(--primary)">thinking_mode</code>、<code style="color:var(--primary)">enable_thinking</code>、<code style="color:var(--primary)">thinking</code> 或 <code style="color:var(--primary)">reasoning_effort</code> 等关键词，系统将自动填充思考模式配置，无需手动设置。</p>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>自动检测逻辑</strong>：系统扫描 GGUF 文件的聊天模板，识别已知的参数关键词和思考等级值（如 <code>thinking_mode</code> 的三态值 <code>disabled</code> / <code>adaptive</code> / <code>enabled</code>，以及 <code>reasoning_effort</code> 的等级值 <code>no_think</code>、<code>low</code>、<code>high</code>、<code>max</code> 等）。检测优先级：<code>thinking_mode</code> > 其他参数组合。根据检测到的参数，自动确定适用的思考模式和可用等级。</div>
+
+    <h4>思考模式类型</h4>
+    <p>系统支持四种思考模式，分别适用于不同能力的模型：</p>
+    <table>
+        <tr><th>模式</th><th>使用参数</th><th>说明</th><th>适用模型</th></tr>
+        <tr><td><strong>单独思考模式</strong></td><td><code>enable_thinking</code> / <code>thinking</code></td><td>使用单个布尔参数（<code>enable_thinking</code> 或 <code>thinking</code>）控制思考的开关（<code>true</code> / <code>false</code>），只有开关没有强度档。</td><td>聊天模板使用布尔思考参数的模型，如 Qwen3.5、Qwen3.6 系列</td></tr>
+        <tr><td><strong>多阶段思考模式</strong></td><td><code>reasoning_effort</code></td><td>使用 <code>reasoning_effort</code> 同时控制思考的开关和强度。参数值范围包含关闭档（<code>no_think</code>）和强度档（<code>low</code>、<code>medium</code>、<code>high</code>、<code>xhigh</code>、<code>max</code>），需至少勾选一个强度档。</td><td>使用 <code>reasoning_effort</code> 控制思考的模型，如 hy3 系列</td></tr>
+        <tr><td><strong>混合模式</strong></td><td><code>enable_thinking</code> / <code>thinking</code> + <code>reasoning_effort</code></td><td>同时使用两个参数：布尔型参数（<code>enable_thinking</code> 或 <code>thinking</code>）控制开关状态，<code>reasoning_effort</code> 控制思考强度。选择关闭档时仅发送布尔参数，选择强度档时同时发送两个参数。</td><td>需要分离开关和强度控制的模型，如 Qwen3.8 系列、DeepSeek V4 Flash</td></tr>
+        <tr><td><strong>思考模式</strong>（<code>thinking_mode</code>）</td><td><code>thinking_mode</code></td><td>使用单个参数控制思考模式，支持三态值：<code>disabled</code>（关闭思考）、<code>adaptive</code>（自适应，由模型决定是否思考）和 <code>enabled</code>（强制开启思考）。此模式在 GGUF 元数据中具有最高检测优先级。</td><td>原生支持 thinking_mode 参数的模型，如 MiniMax M3</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>默认等级差异</strong>：<code>thinking_mode</code> 模式的默认选取逻辑与其他模式不同。模型启动配置页面中，<code>thinking_mode</code> 默认取最高等级（如 <code>enabled</code>），确保模型启动时思考能力最大化；而聊天页面中默认取最低等级（如 <code>disabled</code>），兼顾日常聊天的响应速度。</div>
+
+    <h4>思考等级</h4>
+    <p>思考等级决定了模型推理过程的强度，从低到高可选等级如下：</p>
+    <table>
+        <tr><th>等级</th><th>标识值</th><th>说明</th></tr>
+        <tr><td><strong>关闭</strong></td><td><code>no_think</code> / <code>false</code></td><td>关闭思考，模型直接回复，不输出推理过程（响应最快）</td></tr>
+        <tr><td><strong>低</strong></td><td><code>low</code></td><td>最少推理，适合简单问题</td></tr>
+        <tr><td><strong>中</strong></td><td><code>medium</code></td><td>适度推理，速度与质量平衡</td></tr>
+        <tr><td><strong>高</strong></td><td><code>high</code></td><td>深度推理，适合复杂问题求解</td></tr>
+        <tr><td><strong>极高</strong></td><td><code>xhigh</code></td><td>非常深度推理，适合高复杂度任务</td></tr>
+        <tr><td><strong>最大</strong></td><td><code>max</code></td><td>最大推理强度，响应时间最长</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>配置规则</strong>：思考等级<strong>至少选择一个强度档</strong>，关闭档（<code>no_think</code>/<code>false</code>/<code>disabled</code>）不再强制要求（部分模型不提供非思考模式）。其中 <code>thinking_mode</code> 模式的强度档为 <code>adaptive</code>/<code>enabled</code>（<code>disabled</code> 可选）；混合模式的开关状态由布尔参数控制，只需配置强度档。</div>
+
+    <h4>参数映射</h4>
+    <p>系统将思考模式配置转换为 <code style="color:var(--primary)">--chat-template-kwargs</code> 参数传递给 llama.cpp。以下表格展示了不同模式下的实际参数映射：</p>
+    <table>
+        <tr><th>模式</th><th>选择等级</th><th>发送参数</th></tr>
+        <tr><td rowspan="2"><strong>单独模式</strong></td><td>关闭（<code>false</code>）</td><td><code>enable_thinking=false</code>（或 <code>thinking=false</code>）</td></tr>
+        <tr><td>开启（<code>true</code>）</td><td><code>enable_thinking=true</code>（或 <code>thinking=true</code>）</td></tr>
+        <tr><td rowspan="2"><strong>多阶段模式</strong></td><td>关闭档（<code>no_think</code>）</td><td><code>reasoning_effort="no_think"</code></td></tr>
+        <tr><td>强度档（<code>high</code>）</td><td><code>reasoning_effort="high"</code></td></tr>
+        <tr><td rowspan="2"><strong>混合模式</strong></td><td>关闭档（<code>no_think</code>）</td><td><code>enable_thinking=false</code></td></tr>
+        <tr><td>强度档（<code>high</code>）</td><td><code>enable_thinking=true</code> + <code>reasoning_effort="high"</code></td></tr>
+        <tr><td rowspan="3"><strong>思考模式</strong>（<code>thinking_mode</code>）</td><td><code>disabled</code></td><td><code>thinking_mode="disabled"</code></td></tr>
+        <tr><td><code>adaptive</code></td><td><code>thinking_mode="adaptive"</code></td></tr>
+        <tr><td><code>enabled</code></td><td><code>thinking_mode="enabled"</code></td></tr>
+    </table>
+    <h4>覆盖自动检测</h4>
+    <p>本地启动的模型会被系统自动检测出实际的功能与思考配置（来源为启动参数与 GGUF 聊天模板解析）。模型功能定义中的"覆盖自动检测"选项决定两者冲突时以谁为准：</p>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong style="color:#dc2626">"覆盖自动检测"默认不勾选：勾选后，本条配置中的多模态功能与思考模式将强制覆盖自动检测出来的模型配置信息</strong>（若思考模式选择"不支持"，将同时清除自动检测出的思考配置）；不勾选时，自动检测出的本地模型以检测结果为准，本条配置仅可见范围生效。</div>
+    <ul>
+        <li><strong>自动检测的模型</strong>（系统本地启动的 llama.cpp 模型）：不勾选该选项时以自动检测结果为准；勾选时以本条配置为准。</li>
+        <li><strong>OpenAPI 接入扫描的模型</strong>：不存在自动检测信息，模型功能定义始终生效，该选项对其无影响。</li>
+        <li><strong>可见范围</strong>：无论该选项是否勾选，始终生效。</li>
+    </ul>
+
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>配置作用范围</strong>：思考模式配置通过精确名称匹配或正则表达式匹配到模型。配置仅对匹配的模型生效，未匹配的模型不会启用思考模式。</div>
+
+    <!-- ==================== 模型管理 ==================== -->
+    <h2 id="model-list"><i class="bi bi-cpu"></i> 模型管理</h2>
+    <p>提供对本地 GGUF 模型的全生命周期管理，从扫描、配置到运行监控。</p>
+    <img src="images/model-list-overview.png" alt="模型列表总览">
+    <p>运行中的模型将显示为绿色状态，管理员可随时停止运行中的模型：</p>
+    <img src="images/model-running-active.png" alt="模型运行中状态">
+
+    <h3 id="model-llama-guide"><i class="bi bi-book"></i> llama.cpp 使用指南</h3>
+    <p>系统深度集成 llama.cpp，支持 GGUF 格式模型的本地推理。以下是模型文件组织、命名规范和相关功能的详细说明。</p>
+
+    <h4>目录结构</h4>
+    <p>模型目录推荐采用以下结构组织文件：</p>
+    <table>
+        <tr><th>路径</th><th>用途</th><th>说明</th></tr>
+        <tr><td><code>&lt;模型目录&gt;/</code></td><td>主模型文件</td><td>存放所有主模型 <code>*.gguf</code> 文件</td></tr>
+        <tr><td><code>&lt;模型目录&gt;/mmproj/</code></td><td>多模态投影文件</td><td>存放视觉-语言模型的 mmproj 文件，系统自动匹配加载</td></tr>
+        <tr><td><code>&lt;模型目录&gt;/mtp/</code></td><td>MTP Draft 模型</td><td>存放 MTP 加速用的 draft 模型文件（仅当主模型文件未内置 MTP 层时需要）</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>示例目录结构</strong><br>
+        <code>models/qwen3.6_Q5_1.gguf</code><br>
+        <code>models/mmproj/mmproj-qwen3.6-f32.gguf</code><br>
+        <code>models/mtp/mtp-qwen3.6-f32.gguf</code></div>
+
+    <h4>支持的量化类型</h4>
+    <p>系统支持 llama.cpp 全部量化格式，按精度从高到低分类如下：</p>
+    <table>
+        <tr><th>精度等级</th><th>支持的量化格式</th><th>推荐场景</th></tr>
+        <tr><td><strong>高精度</strong></td><td><code>F32</code> <code>BF16</code> <code>F16</code> <code>IQ8</code></td><td>最高精度推理，占用显存最大</td></tr>
+        <tr><td><strong>Q8</strong></td><td><code>Q8_0</code> <code>Q8_K</code> <code>Q8_K_P</code> <code>UD_Q8_K_XL</code></td><td>接近 FP16 精度，显存减半</td></tr>
+        <tr><td><strong>Q6</strong></td><td><code>Q6_K</code> <code>Q6_K_L</code> <code>Q6_K_P</code> <code>UD_Q6_K</code> <code>UD_Q6_K_XL</code></td><td>精度与显存的平衡选择</td></tr>
+        <tr><td><strong>Q5</strong></td><td><code>Q5_0</code> <code>Q5_1</code> <code>Q5_K</code> <code>Q5_K_S</code> <code>Q5_K_M</code> <code>Q5_K_P</code> 等</td><td>日常推理推荐，精度损失极小</td></tr>
+        <tr><td><strong>Q4</strong></td><td><code>Q4_0</code> <code>Q4_1</code> <code>Q4_K</code> <code>Q4_K_S</code> <code>Q4_K_M</code> <code>IQ4_NL</code> <code>IQ4_XS</code> <code>IQ4_KS</code> 等</td><td>显存受限场景首选，性价比高</td></tr>
+        <tr><td><strong>Q3</strong></td><td><code>Q3_K</code> <code>Q3_K_S</code> <code>Q3_K_M</code> <code>IQ3_XXS</code> <code>IQ3_XS</code> <code>IQ3_S</code> <code>IQ3_M</code> 等</td><td>极端显存受限场景</td></tr>
+        <tr><td><strong>Q2</strong></td><td><code>Q2_K</code> <code>Q2_K_S</code> <code>Q2_K_L</code> <code>IQ2_XXS</code> <code>IQ2_XS</code> <code>IQ2_S</code> <code>IQ2_M</code> 等</td><td>极限压缩，精度损失较大</td></tr>
+        <tr><td><strong>IQ1/TQ</strong></td><td><code>IQ1_S</code> <code>IQ1_M</code> <code>TQ1_0</code> <code>TQ2_0</code></td><td>实验性极低比特量化</td></tr>
+        <tr><td><strong>MoE</strong></td><td><code>MXFP4_MOE</code></td><td>混合专家模型专用量化</td></tr>
+    </table>
+
+    <h4>主模型文件命名规范</h4>
+    <p>主模型文件需遵循统一命名格式，便于系统自动识别和匹配：</p>
+    <table>
+        <tr><th>规则</th><th>说明</th></tr>
+        <tr><td><strong>格式</strong></td><td><code>模型名_量化类型.gguf</code></td></tr>
+        <tr><td><strong>分隔符</strong></td><td>模型名与量化类型之间使用下划线 <code>_</code> 连接</td></tr>
+        <tr><td><strong>基础名</strong></td><td>第一个下划线之前的部分视为模型基础名，用于匹配 mmproj 和 MTP 文件</td></tr>
+        <tr><td><strong>示例</strong></td><td><code>qwen3.6_Q5_1.gguf</code> → 基础名 <code>qwen3.6</code>，量化类型 <code>Q5_1</code></td></tr>
+    </table>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>重要限制</strong>：模型名称部分<strong>不能包含下划线（<code>_</code>）</strong>。因为系统使用第一个下划线作为分隔符来区分模型名称和量化类型。如果模型名本身包含下划线，系统将错误地将其截断，导致模型无法正确识别。例如：<code>qwen_3.6_Q5_1.gguf</code> 会被解析为基础名 <code>qwen</code>、量化类型 <code>3.6_Q5_1</code>，这是错误的。</div>
+
+    <h4>多模态文件 (mmproj) 命名规范</h4>
+    <p>mmproj 文件用于视觉-语言多模态模型，需放置在模型目录下的 <code>mmproj/</code> 子目录中。文件名<strong>必须以 <code>mmproj-</code> 开头</strong>，系统会自动根据主模型文件名进行匹配：</p>
+    <table>
+        <tr><th>优先级</th><th>匹配规则</th><th>示例</th></tr>
+        <tr><td><strong>优先级 1</strong></td><td>全量名称匹配</td><td><code>mmproj/mmproj-qwen3.6_Q5_1.gguf</code></td></tr>
+        <tr><td><strong>优先级 2</strong></td><td rowspan="2">基础名 + 精度后缀匹配<br><code>mmproj/mmproj-{基础名}-{精度}.gguf</code></td><td><code>mmproj/mmproj-qwen3.6-f32.gguf</code></td></tr>
+        <tr><td></td><td><code>mmproj/mmproj-qwen3.6-bf16.gguf</code> 等</td></tr>
+        <tr><td><strong>优先级 3</strong></td><td>基础名兜底匹配</td><td><code>mmproj/mmproj-qwen3.6.gguf</code></td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> 精度后缀大小写不敏感（如 <code>F32</code> / <code>f32</code> 均可识别）。支持的精度后缀包括：<code>F32</code>、<code>BF16</code>、<code>F16</code>、<code>Q8_0</code>。</div>
+
+    <h4>MTP Draft 模型文件命名规范</h4>
+    <p>MTP (Multi-Token Prediction) 是 llama.cpp 的多 Token 预测加速功能。如果主模型文件自身已包含 MTP 层，则无需额外的 Draft 模型文件；仅当主模型不包含 MTP 层时，才需要将 Draft 模型放置在模型目录下的 <code>mtp/</code> 子目录中，文件名<strong>必须以 <code>mtp-</code> 开头</strong>：</p>
+    <table>
+        <tr><th>优先级</th><th>匹配规则</th><th>示例</th></tr>
+        <tr><td><strong>优先级 1</strong></td><td rowspan="2">基础名 + 精度后缀匹配<br><code>mtp/mtp-{基础名}-{精度}.gguf</code></td><td><code>mtp/mtp-qwen3.6-f32.gguf</code></td></tr>
+        <tr><td></td><td><code>mtp/mtp-qwen3.6-bf16.gguf</code> 等</td></tr>
+        <tr><td><strong>优先级 2</strong></td><td>基础名兜底匹配</td><td><code>mtp/mtp-qwen3.6.gguf</code></td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> 启动模型时在「预测推理」中选择 MTP 类型即可启用 MTP 加速：主模型文件内置 MTP 层时直接生效，无需任何额外配置；否则系统会自动从 mtp/ 子目录探测并加载对应的 draft 模型。DFlash/DSpark 类型需手动指定独立的 draft 模型文件路径。</div>
+
+    <h4>GGUF 分片合并</h4>
+    <p>大模型下载后可能被拆分为多个分片文件（如 <code>model-00001-of-00002.gguf</code>）。系统提供自动识别和一键合并功能：</p>
+    <ul class="step-list">
+        <li><strong>自动检测</strong><span>点击"模型命名与分片合并"按钮，系统自动扫描模型目录中的分片文件</span></li>
+        <li><strong>一键合并</strong><span>点击"一键重命名"按钮，系统将自动合并分片并删除原始分片文件</span></li>
+        <li><strong>命名规范</strong><span>合并后的文件自动重命名为 <code>模型名_量化类型.gguf</code> 格式</span></li>
+    </ul>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>注意</strong>：合并操作将删除原始分片文件，请确保已做好备份。</div>
+
+    <h3 id="model-launch"><i class="bi bi-play-circle-fill"></i> 启动配置与底层参数映射</h3>
+    <p>启动模型前可进行精细化参数调优。系统将 UI 配置转换为 llama.cpp 的命令行参数，实现高性能推理。</p>
+
+    <h4>一、文本采样参数（控制"说什么"）</h4>
+    <p>这些参数直接作用于模型输出下一个 Token 时的概率分布（Logits），决定生成文本的创造性、多样性和连贯性。</p>
+    <table>
+        <tr><th>UI 配置项</th><th>底层参数</th><th>详细说明</th></tr>
+        <tr><td><strong>温度</strong></td><td><code>--temp</code></td><td>控制生成的随机性。在 Softmax 层对 Logits 进行缩放：<br>• 值越低（如 0.2），模型越倾向于选择概率最高的词，输出稳定但死板<br>• 值越高（如 0.8-1.2），分布越平滑，输出更具创造性，但可能产生幻觉<br>• 设为 0 代表贪婪解码（Greedy Decoding），每次选择概率最高的词<br><strong>范围：</strong>0.00-2.00，<strong>默认：</strong>0.80</td></tr>
+        <tr><td><strong>Top K</strong></td><td><code>--top-k</code></td><td>绝对数量截断。预测下一个词时，仅保留概率排名前 K 个的词，直接丢弃其他所有词：<br>• 设为 40，模型只会在最有可能的 40 个词中采样<br>• 有效防止模型在温度较高时抽出极其离谱的"长尾乱码"<br>• 设为 -1 代表完全禁用此功能（等同于设为词表大小）<br><strong>范围：</strong>-1-1024，<strong>默认：</strong>40</td></tr>
+        <tr><td><strong>Top P</strong></td><td><code>--top-p</code></td><td>累积概率截断（Nucleus Sampling / 核采样）。将候选词按概率从高到低排序，累加概率，当累加值达到 P 时截断：<br>• 设为 0.9 意味着只在占据 90% 概率总和的核心词汇中采样<br>• 比 topK 更动态：如果某个词绝对领先，候选池可能只有 1 个词；如果概率分散，候选池可能有几十个<br>• 设为 1.0 表示禁用<br><strong>范围：</strong>0.00-1.00，<strong>默认：</strong>0.95</td></tr>
+        <tr><td><strong>Min P</strong></td><td><code>--min-p</code></td><td>相对概率阈值截断（llama.cpp 推荐的现代采样方法）。设置相对于当前概率最高 Token 的底线阈值：<br>• 假设最可能的词概率是 50%，minP 设为 0.1，则阈值 = 50% × 0.1 = 5%，低于 5% 的词被丢弃<br>• 能完美平衡高置信度（少选）和低置信度（多选）场景，通常可替代 topP 使用<br><strong>范围：</strong>0.00-1.00，<strong>默认：</strong>0.05</td></tr>
+        <tr><td><strong>重复惩罚</strong></td><td><code>--repeat-penalty</code></td><td>对已出现过的 Token 的概率直接打折：<br>• 1.0 是中立值（不惩罚也不鼓励）<br>• 设为 1.1-1.2 可有效防止模型像复读机一样重复同一句话<br>• 过高（如 1.5+）会导致模型强行拼凑生僻词，语言支离破碎<br><strong>范围：</strong>0.10-2.00，<strong>默认：</strong>1.00</td></tr>
+        <tr><td><strong>重复最后 N</strong></td><td><code>--repeat-last-n</code></td><td>决定重复惩罚向前追溯多少个 Token：<br>• 设为 64 代表只惩罚最近 64 个 Token 中的重复词<br>• 设为 -1 代表追溯整个当前上下文长度（Context Size）<br>• 设为 0 禁用此功能<br><strong>可选值：</strong>0/16/32/64/128/256/512/1024/-1，<strong>默认：</strong>64</td></tr>
+        <tr><td><strong>存在惩罚</strong></td><td><code>--presence-penalty</code></td><td>只要一个词在上下文中出现过（无论几次），就给予固定数值的惩罚：<br>• 主要用于鼓励模型转换话题，避免反复讨论同一内容<br>• 正数鼓励聊新事物，负数鼓励聚焦当前话题<br><strong>范围：</strong>-2.00-2.00，<strong>默认：</strong>0.00</td></tr>
+        <tr><td><strong>频率惩罚</strong></td><td><code>--frequency-penalty</code></td><td>根据一个词在上下文中出现的次数成比例地给予惩罚：<br>• 出现得越多，惩罚越重<br>• 主要用于抑制词频过高的常用词（如"然后"、"所以"），让用词更丰富<br><strong>范围：</strong>-2.00-2.00，<strong>默认：</strong>0.00</td></tr>
+    </table>
+
+    <h4>二、硬件与系统调度参数（控制"怎么算"）</h4>
+    <p>这些参数决定了引擎如何利用 CPU、内存和 GPU，对推理性能（Tokens/s）的影响极大。</p>
+    <table>
+        <tr><th>UI 配置项</th><th>底层参数</th><th>详细说明</th></tr>
+        <tr><td><strong>上下文大小</strong></td><td><code>-c</code></td><td>设置 KV Cache 大小，影响模型记忆长度。上下文越长，模型能记住的历史信息越多，但内存占用也越大。建议根据实际对话长度设置，避免浪费资源。</td></tr>
+        <tr><td><strong>GPU 加载层数</strong></td><td><code>-ngl</code></td><td>指定加载至显存的层数，层数越多推理越快。<strong style="color:#dc2626;">特别注意：设置为 0 表示采用纯 CPU 推理，不使用任何 GPU 加速。</strong></td></tr>
+        <tr><td><strong>生成线程</strong></td><td><code>--threads</code></td><td>逐字生成阶段（Decoding）使用的 CPU 线程数。<strong>并非越大越好</strong>：在多路 CPU（如双路 Xeon）上，跨 NUMA 节点调用线程会导致严重的内存带宽瓶颈，反而拖慢速度。通常设置为不超过单颗 CPU 的物理核心数即可。</td></tr>
+        <tr><td><strong>逻辑批处理</strong></td><td><code>-b</code></td><td>处理长 Prompt 时（Prefill 阶段），系统一次性并行处理的 Token 数量上限。默认通常为 512 或 2048。较大的值能加快长文本的前置计算速度，但会显著增加显存/内存峰值占用。</td></tr>
+        <tr><td><strong>物理批处理</strong></td><td><code>-ub</code></td><td>llama.cpp 在底层将 BatchSize 进一步切分为多个微批次（Micro-batch）进行循环处理。这是一种内存优化手段，通常 UbatchSize ≤ BatchSize。合理设置可避免大批量 Prompt 计算时显存溢出（OOM）。</td></tr>
+        <tr><td><strong>批处理线程</strong></td><td><code>--threads-batch</code></td><td>前置 Prompt 处理阶段（Prefill）使用的 CPU 线程数。由于 Prefill 是计算密集型任务（矩阵乘法为主），对多线程的扩展性比 Decoding 好。此值通常可以设置得比生成线程更高，甚至可以等于系统总物理核心数。</td></tr>
+        <tr><td><strong>GPU 选择</strong></td><td><code>selectedGpuIds</code></td><td>指定将模型权重卸载（Offload）到哪些具体的 GPU 上。格式为逗号分隔的 GPU 序号（如 "0,1,2,3"）。在异构多卡阵列（如混合不同显存容量的显卡）时，可精准切分模型层到指定设备，避免被短板显卡的显存上限卡死。</td></tr>
+        <tr><td><strong>张量分割</strong></td><td><code>--tensor-split</code></td><td>定义多 GPU 间的显存分配比例，与 GPU 选择配合使用，实现精细的显存管理。</td></tr>
+        <tr><td><strong>主 GPU</strong></td><td><code>CUDA_VISIBLE_DEVICES</code> 重排</td><td>指定主 GPU 序号，系统自动将其重排到 <code>CUDA_VISIBLE_DEVICES</code> 首位（对应 llama.cpp 逻辑设备 0），无需额外的 <code>-mg</code> 参数。</td></tr>
+        <tr><td><strong>张量并行</strong></td><td><code>-sm tensor/graph</code></td><td>启用 SM Tensor 调度，实现多卡并行加速，大幅提升大模型的推理吞吐量。</td></tr>
+        <tr><td><strong>模型加载模式</strong></td><td><code>--load-mode</code></td><td>模型权重加载方式，<strong>仅 LLAMACPP 启动方式支持</strong>（IK_LLAMACPP 固定使用 <code>--mlock</code>，配合默认开启的 mmap，等效 mmap+mlock），<strong>默认：</strong>mmap+mlock：<br>• <code>mmap+mlock</code>：内存映射加载并附加 mlock<br>• <code>mlock</code>：全量加载到 RAM 并锁定内存页，不换出、不压缩，性能最高<br>• <code>mmap</code>：内存映射加载，由系统按需换入权重<br>• <code>auto</code>：除非设备不支持，否则使用 mmap<br>• <code>none</code>：不使用特殊加载模式，常规读入 RAM<br>• <code>dio</code>：可用时使用 Direct I/O 直读 RAM</td></tr>
+        <tr><td><strong>懒加载模式</strong></td><td><code>--lazy-mode</code></td><td>特定张量（如逐层嵌入）按需读盘，<strong>仅 LLAMACPP 启动方式支持</strong>，<strong>默认：</strong>off：<br>• <code>off</code>：全部张量常驻内存<br>• <code>auto</code>：仅大于 4 GiB 的张量按需从磁盘读取<br>• <code>on</code>：全部支持的张量按需从磁盘读取，速度明显变慢<br><strong>搭配规则：</strong><code>auto</code> / <code>on</code> 仅在模型加载模式为 <code>auto</code> 或 <code>mmap</code> 时可用；<code>mlock</code>、<code>mmap+mlock</code>、<code>none</code>、<code>dio</code> 只能使用 <code>off</code>。界面上选到非法组合时，懒加载模式会自动切回 <code>off</code>。</td></tr>
+        <tr><td><strong>预测推理 (Speculative Decoding)</strong></td><td><code>--spec-type</code> / <code>--spec-draft-n-max</code> / <code>--spec-draft-n-min</code> / <code>--spec-draft-p-min</code> / <code>--gpu-layers-draft</code> / <code>--model-draft</code></td><td>启用预测推理（投机解码）加速，支持 MTP / DFlash / DSpark 三种类型：Draft 模型提前预测多个 Token，主模型一次性校验接受，减少推理步数，显著提升生成速度。各类型的差异及完整参数配置详见下方「预测推理参数说明」。</td></tr>
+    </table>
+
+    <h4>预测推理（Speculative Decoding）参数说明</h4>
+    <p>预测推理（又称投机解码）通过 Draft 模型提前预测后续多个 Token，再由主模型一次性校验，从而减少推理步数、显著提升生成速度。启动配置中的「预测推理」配置项支持以下加速类型：</p>
+    <table>
+        <tr><th>类型</th><th>说明</th><th>Draft 模型要求</th></tr>
+        <tr><td><strong>关闭</strong></td><td>不启用预测推理，按常规逐 Token 解码</td><td>—</td></tr>
+        <tr><td><strong>MTP</strong>（Multi-Token Prediction）</td><td>多 Token 预测加速，利用模型的 MTP 能力进行草稿预测</td><td>主模型文件内置 MTP 层时无需额外文件；否则自动探测模型目录下 <code>mtp/</code> 子目录中的 Draft 模型（命名规则见上文「MTP Draft 模型文件命名规范」）</td></tr>
+        <tr><td><strong>DFlash</strong></td><td>DFlash 草稿模型预测加速</td><td>必须手动指定独立的 Draft 模型文件</td></tr>
+        <tr><td><strong>DSpark</strong></td><td>DSpark 草稿模型预测加速</td><td>必须手动指定独立的 Draft 模型文件</td></tr>
+    </table>
+    <p>选择类型后，可配置以下参数：</p>
+    <table>
+        <tr><th>UI 配置项</th><th>底层参数</th><th>详细说明</th></tr>
+        <tr><td><strong>类型</strong></td><td><code>--spec-type</code></td><td>选择预测推理类型（MTP / DFlash / DSpark）。LLAMACPP 启动方式对应 <code>--spec-type draft-&lt;类型&gt;</code>；IK_LLAMACPP 启动方式使用 <code>--spec-type &lt;类型&gt;:n_max=N,n_min=N,p_min=P</code> 内联语法。</td></tr>
+        <tr><td><strong>n-max</strong></td><td><code>--spec-draft-n-max</code></td><td>每次 Draft 预测的 Token 数，<strong>范围：</strong>≥1，<strong>默认：</strong>3。值越大单次校验的 Token 数越多，加速效果越明显，但校验失败回退的代价也越高。</td></tr>
+        <tr><td><strong>n-min</strong></td><td><code>--spec-draft-n-min</code></td><td>Draft 最小 Token 数：每步 Draft 模型至少生成这么多 Token（在此之前 p-min 不会提前终止草稿），<strong>范围：</strong>≥0 且 ≤ n-max，<strong>默认：</strong>0。调高该值可在草稿置信度提前下降时仍保证每步有最低数量的 Token 参与校验。</td></tr>
+        <tr><td><strong>p-min</strong></td><td><code>--spec-draft-p-min</code></td><td>最小接受概率，<strong>范围：</strong>0.00-1.00，<strong>默认：</strong>0.00。用于控制 Draft Token 的接受标准，在加速效果与输出质量之间取得平衡。</td></tr>
+        <tr><td><strong>draft-ngl</strong></td><td><code>--gpu-layers-draft</code></td><td>Draft 模型加载到 GPU 的层数。LLAMACPP 启动方式支持数值 / <code>auto</code> / <code>all</code>（<strong>默认：</strong>auto）；IK_LLAMACPP 启动方式仅支持数值。GPU 层数越多，草稿预测越快，校验失败回退的延迟也越低。</td></tr>
+        <tr><td><strong>Draft 模型</strong></td><td><code>--model-draft</code></td><td>Draft 模型文件路径，选择 DFlash / DSpark 类型后显示该配置项，文件不存在时拒绝启动。MTP 类型无需手动指定：主模型文件内置 MTP 层时直接生效；否则系统自动探测 <code>mtp/</code> 子目录中的 Draft 模型。</td></tr>
+    </table>
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> <strong>框架语法差异</strong>：LLAMACPP 启动方式下，参数以 <code style="color:var(--primary)">--spec-type draft-&lt;类型&gt; --spec-draft-n-max N --spec-draft-n-min N --spec-draft-p-min P --gpu-layers-draft &lt;层数&gt; --model-draft &lt;路径&gt;</code> 传递；IK_LLAMACPP 启动方式下，n_max / n_min / p_min 仅支持内联语法 <code style="color:var(--primary)">--spec-type &lt;类型&gt;:n_max=N,n_min=N,p_min=P</code>（Draft 模型通过 <code style="color:var(--primary)">--model-draft</code> 指定，Draft 模型 GPU 层数通过 <code style="color:var(--primary)">--gpu-layers-draft</code> 指定）。</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>注意</strong>：DFlash / DSpark 类型必须指定 Draft 模型文件，文件不存在时系统将拒绝启动；MTP 类型若主模型文件未内置 MTP 层，且 <code style="color:var(--primary)">mtp/</code> 子目录中也未探测到 Draft 模型，则不加载 Draft 模型，不影响模型启动。</div>
+
+    <h4>三、缓存与状态参数</h4>
+    <p>这些参数控制内存使用和会话状态管理。</p>
+    <table>
+        <tr><th>UI 配置项</th><th>底层参数</th><th>详细说明</th></tr>
+        <tr><td><strong>缓存大小</strong></td><td><code>--cache-ram</code></td><td>限定或预分配上下文缓存（KV Cache）的容量（单位：MiB）。上下文越长，占用的 KV Cache 越大。对于巨型 MoE 模型，长文本带来的缓存膨胀非常可观，通过此参数可限制内存溢出。</td></tr>
+        <tr><td><strong>KV Cache 量化</strong></td><td><code>-ctk / -ctv</code></td><td>设置 KV 缓存量化类型（如 f16, q8_0, q4_0 等）。量化 KV Cache 可以显著减少内存占用，但可能轻微影响推理精度。显存受限时推荐使用 q8_0 或 q4_0。</td></tr>
+        <tr><td><strong>检查点步长</strong></td><td><code>--checkpoint-min-step</code></td><td>上下文检查点的最小间隔步长。检查点用于会话状态的持久化：将特定 Prompt 的 KV 缓存落盘保存，下次可直接读取而无需重新推理。此参数控制检查点创建的频率。</td></tr>
+        <tr><td><strong>检查点数量</strong></td><td><code>--ctx-checkpoints</code></td><td>每个 slot 最大检查点数量。配合检查点步长使用，管理状态文件的生成数量，避免磁盘空间被大量检查点文件占满。</td></tr>
+    </table>
+
+    <h4>四、其他服务参数</h4>
+    <table>
+        <tr><th>UI 配置项</th><th>底层参数</th><th>详细说明</th></tr>
+        <tr><td><strong>端口号</strong></td><td><code>--port</code></td><td>模型服务监听的 HTTP 端口号，默认 8080。确保端口未被其他服务占用。</td></tr>
+        <tr><td><strong>并行任务数</strong></td><td><code>--parallel</code></td><td>支持同时处理的并发请求数。增加此值可提升多用户场景下的吞吐量，但会增加内存占用。</td></tr>
+        <tr><td><strong>Jinja 模板</strong></td><td><code>--jinja</code></td><td>启用 Jinja2 聊天模板支持。部分模型（如 Qwen、Llama 3）使用 Jinja 模板格式，启用后可正确解析系统提示词和用户消息。</td></tr>
+        <tr><td><strong>MOE 层数</strong></td><td><code>--n-cpu-moe</code></td><td>指定 CPU 加载的 MOE（Mixture of Experts）专家层数。适用于 MoE 架构模型（如 Mixtral），控制专家路由的计算方式。</td></tr>
+    </table>
+    <div class="main-gpu-box"><i class="bi bi-star-fill"></i> <strong>主 GPU 说明</strong>：设置主 GPU 后，系统会将其移动到 <code>CUDA_VISIBLE_DEVICES</code> 的第一位，使 llama.cpp 自然以该显卡作为主卡（逻辑设备 0），无需额外的 <code>-mg</code> 参数。<br><strong>张量分割（Tensor Split）</strong>：显存分配会按重排后的物理显卡顺序依次对应，无需手动调整顺序，避免显存分配错位。</div>
+    <img src="images/model-config-form.png" alt="模型配置表单">
+    <img src="images/model-launch-config.png" alt="启动参数实时调整">
+    <img src="images/model-config-gpu.png" alt="GPU 配置">
+
+
+    <h3 id="model-gpu"><i class="bi bi-gpu-card"></i> GPU 监控</h3>
+    <p>内置 GPU 监控面板，每 10 秒同步一次数据，记录最近 60 个样本的趋势图。</p>
+    <img src="images/model-gpu-overview.png" alt="GPU 监控概览">
+    <div class="tip-box"><i class="bi bi-info-circle-fill"></i> 监控数据基于 <code style="color:var(--primary)">nvidia-smi</code> 实时解析，可直观查看每张显卡类型和显存占用情况。</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>macOS 不支持 GPU 监控</strong>：GPU 监控依赖 <code style="color:var(--primary)">nvidia-smi</code> 工具，该工具仅适用于 NVIDIA 显卡。macOS 系统使用 Apple Silicon (M 系列) 或集成显卡，不提供类似 NVIDIA 的独立 GPU 监控接口，因此 macOS 下不提供 GPU 监控面板。</div>
+
+    <h3 id="model-mem"><i class="bi bi-memory"></i> 内存监控</h3>
+    <p>内存监控面板展示系统内存使用情况：</p>
+    <img src="images/model-mem.png" alt="内存监控面板">
+    <ul class="step-list">
+        <li><strong>概览卡片</strong><span>实时显示总内存、已用内存、可用内存及整体使用率百分比。</span></li>
+        <li><strong>趋势图表</strong><span>绘制近 3 分钟的内存使用波动曲线，帮助分析模型加载时的内存峰值。</span></li>
+        <li><strong>状态进度条</strong><span>以可视化进度条形式直观呈现当前内存占用情况。</span></li>
+    </ul>
+
+    <h3 id="model-merge"><i class="bi bi-puzzle-fill"></i> 模型文件维护</h3>
+    <p>针对大模型分片文件，提供自动化处理工具：</p>
+    <ul class="step-list">
+        <li><strong>自动合并</strong><span>识别 <code style="color:var(--primary)">model-00001-of-00002.gguf</code> 等分片并一键合并为单文件。</span></li>
+        <li><strong>规范化重命名</strong><span>将杂乱的文件名统一为 <code style="color:var(--primary)">模型名_量化类型.gguf</code> 格式。</span></li>
+    </ul>
+    <img src="images/model-naming-merge.png" alt="模型命名与分片合并">
+    <img src="images/model-merge-process.png" alt="合并过程">
+    <img src="images/model-merge-success.png" alt="合并成功">
+
+    <h3 id="model-setting"><i class="bi bi-gear"></i> 底层环境设置</h3>
+    <p>配置 llama.cpp 执行路径和模型存放根目录。</p>
+    <img src="images/model-setting-detailed.png" alt="系统设置-详细">
+    <img src="images/model-setting-path.png" alt="路径配置详情">
+
+    <!-- ==================== 定时关机 ==================== -->
+    <h2 id="reboot-add"><i class="bi bi-power"></i> 定时重启管理</h2>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>兼容性说明</strong>：定时关机/重启功能依赖于底层操作系统的指令集及硬件支持，并非所有机型均能正常运行。当前测试系统情况：双路 X99 (Ubuntu 22.04, E5-2696 v4) 和 Mac M1 Pro 关机/重启均正常；Windows 10 64位 (z690 主板, i7-13700K) 关机功能正常，但自动唤醒重启受主板 BIOS 限制，自测无法唤醒。</div>
+    <div class="warn-box"><i class="bi bi-exclamation-triangle-fill"></i> <strong>macOS 重启特别说明</strong>：macOS 系统执行定时重启时，<strong>必须连接电源适配器</strong>。未连接电源的情况下，系统可能拒绝执行重启操作或重启后无法正常唤醒，请确保设备处于供电状态。</div>
+    <p>为降低能耗和维护系统稳定性，提供灵活的定时开关机方案。</p>
+    <img src="images/reboot-add-detailed.png" alt="添加定时任务-详细">
+
+    <h3 id="reboot-manage"><i class="bi bi-list-check"></i> 任务调度与预警</h3>
+    <p>支持两种任务模式：</p>
+    <table>
+        <tr><th>模式</th><th>特点</th><th>适用场景</th></tr>
+        <tr><td><strong>一次性任务</strong></td><td>执行一次后自动删除</td><td>临时维护、单次实验</td></tr>
+        <tr><td><strong>周期性任务</strong></td><td>可指定工作日，到期后自动计算下一周期</td><td>每日定时关机/唤醒</td></tr>
+    </table>
+    <p><strong>任务管理</strong>：管理员可查看所有已创建的任务，包括执行时间、状态（待执行/执行中/已过期）以及实时倒计时。支持对任务进行删除或推迟执行（Postpone）。</p>
+    <p><strong>预警机制</strong>：当任务距离执行时间不足 10 分钟时，系统会在页面顶部弹出倒计时警告卡片。</p>
+    <img src="images/reboot-warning.png" alt="重启预警提示">
+
+    <!-- ==================== 页脚 ==================== -->
+    <div style="margin-top:60px; padding-top:24px; border-top:1px solid var(--border); text-align:center; color:var(--text-muted); font-size:13px;">
+        <p>混合大模型管理系统 <span id="appVersion">-</span></p>
+        <p style="margin-top:4px;">安全 &nbsp;·&nbsp; 高效 &nbsp;·&nbsp; 便捷</p>
+    </div>
+
+</main>
+
+<script>
+    function toggleLangDropdown() {
+        document.getElementById('langDropdown').classList.toggle('active');
+    }
+    function switchLang(lang) {
+        var target = lang === 'zh' ? 'main_zh.html' : 'main_en.html';
+        if (window.location.pathname.endsWith(target)) return;
+        localStorage.setItem('appLang', lang);
+        window.location.href = target + window.location.hash;
+    }
+    document.addEventListener('click', function(e) {
+        var dropdown = document.getElementById('langDropdown');
+            if (!e.target.closest('.lang-selector')) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    function toggleNav(el) {
+        el.classList.toggle('expanded');
+        var group = el.nextElementSibling;
+        if (group && group.classList.contains('nav-l2-group')) {
+            group.style.display = el.classList.contains('expanded') ? 'block' : 'none';
+        }
+    }
+
+    // 获取所有导航链接和对应的章节
+    var navLinks = document.querySelectorAll('.nav-l2');
+    var sectionIds = {};
+    navLinks.forEach(function(link) {
+        var href = link.getAttribute('href');
+        if (href && href.startsWith('#')) {
+            sectionIds[href.substring(1)] = link;
+        }
+    });
+
+    // 获取所有章节元素
+    var sectionHeadings = [];
+    Object.keys(sectionIds).forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) sectionHeadings.push(el);
+    });
+
+    // 滚动到指定章节
+    function scrollToSection(id) {
+        var target = document.getElementById(id);
+        if (target) {
+            var headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h'));
+            window.scrollTo({
+                top: target.getBoundingClientRect().top + window.scrollY - headerHeight - 16,
+                behavior: 'instant'
+            });
+
+            // 立即设置高亮状态
+            setActiveNav(id);
+        }
+    }
+
+    // 设置指定导航项为激活状态
+    function setActiveNav(activeId) {
+        navLinks.forEach(function(link) {
+            link.classList.remove('active');
+        });
+
+        if (activeId && sectionIds[activeId]) {
+            sectionIds[activeId].classList.add('active');
+
+            // 确保对应的导航组是展开的
+            var navGroup = sectionIds[activeId].closest('.nav-l2-group');
+            if (navGroup) {
+                var navL1 = navGroup.previousElementSibling;
+                if (navL1 && !navL1.classList.contains('expanded')) {
+                    navL1.classList.add('expanded');
+                    navGroup.style.display = 'block';
+                }
+            }
+
+            // 将激活的导航项滚动到可见区域
+            sectionIds[activeId].scrollIntoView({ block: 'nearest' });
+        }
+    }
+
+    // 根据滚动位置更新激活的导航项
+    function updateActiveNav() {
+        var headerHeight = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--header-h'));
+        var scrollPosition = window.scrollY;
+        var currentId = null;
+
+        // 从后往前遍历，找到最后一个位于视口上方的章节
+        for (var i = sectionHeadings.length - 1; i >= 0; i--) {
+            var section = sectionHeadings[i];
+            var sectionTop = section.getBoundingClientRect().top + scrollPosition - headerHeight - 20;
+
+            if (scrollPosition >= sectionTop) {
+                currentId = section.id;
+                break;
+            }
+        }
+
+        // 如果没有找到当前章节，默认选择第一个
+        if (!currentId && sectionHeadings.length > 0) {
+            currentId = sectionHeadings[0].id;
+        }
+
+        // 更新激活状态
+        setActiveNav(currentId);
+    }
+
+    // 初始化滚动监听
+    var scrollTimeout;
+    window.addEventListener('scroll', function() {
+        // 使用节流来提高性能
+        if (scrollTimeout) {
+            window.cancelAnimationFrame(scrollTimeout);
+        }
+        scrollTimeout = window.requestAnimationFrame(updateActiveNav);
+    });
+
+    // 窗口大小改变时更新激活状态
+    window.addEventListener('resize', function() {
+        updateActiveNav();
+    });
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 延迟执行以确保所有元素都已加载
+        setTimeout(updateActiveNav, 100);
+    });
+
+    // 从后端获取版本号
+    (function() {
+        var el = document.getElementById('appVersion');
+        if (!el) return;
+        fetch('/command/file/version')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data && data.success && data.data) {
+                    el.textContent = data.data;
+                }
+            })
+            .catch(function() {});
+    })();
+
+    // 为导航链接添加点击事件
+    navLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var href = this.getAttribute('href');
+            var id = href.substring(1);
+
+            // 滚动到对应章节
+            scrollToSection(id);
+
+            // 立即设置高亮状态
+            setActiveNav(id);
+        });
+    });
+</script>
+
+</body>
+</html>

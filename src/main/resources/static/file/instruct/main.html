@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+    <script>
+        (function() {
+            var saved = localStorage.getItem('appLang');
+            if (saved === 'zh' || saved === 'en') {
+                window.location.href = saved === 'zh' ? 'main_zh.html' : 'main_en.html';
+                return;
+            }
+            if (saved) localStorage.removeItem('appLang');
+            var navLang = navigator.language || navigator.userLanguage || '';
+            var langs = navigator.languages || [navLang];
+            for (var i = 0; i < langs.length; i++) {
+                if (langs[i].toLowerCase().indexOf('zh') === 0) {
+                    window.location.href = 'main_zh.html';
+                    return;
+                }
+            }
+            window.location.href = 'main_en.html';
+        })();
+    </script>
+</head>
+<body style="text-align:center;padding:60px;font-family:sans-serif;color:#64748b;">
+    <p>Redirecting...</p>
+    <p><a href="main_zh.html">中文</a> | <a href="main_en.html">English</a></p>
+</body>
+</html>

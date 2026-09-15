@@ -1,0 +1,15 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 300MB # 单个文件大小
+      max-request-size: 300MB # 总上传的数据大小
+
+#配置swagger配置
+knife4j:
+  basic:
+    username: admin
+    password: admin
+    #开启认证
+    enable: true
+  #是否开启swagger
+  enable: false

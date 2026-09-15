@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-i18n-title="register.page_title">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <link rel="stylesheet" href="vendor/bootstrap-icons/1.11.3/bootstrap-icons.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary-color: #6366f1;
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            --border-color: #e2e8f0;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-primary: #334155;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --hover-bg: rgba(99, 102, 241, 0.08);
+            --shadow-lg: 0 10px 30px rgba(0,0,0,0.08);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .lang-switch {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            display: flex;
+            gap: 4px;
+            z-index: 100;
+        }
+        .lang-switch button {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 13px;
+            color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .lang-switch button.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .register-container {
+            width: 100%;
+            max-width: 420px;
+        }
+        .register-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
+        }
+        .logo-area { text-align: center; margin-bottom: 16px; }
+        .logo-icon {
+            width: 52px; height: 52px;
+            background: var(--primary-gradient);
+            border-radius: 14px;
+            display: inline-flex; align-items: center; justify-content: center;
+            margin-bottom: 14px;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+        }
+        .logo-icon i { font-size: 26px; color: white; }
+        .logo-area h1 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .logo-area p { font-size: 14px; color: var(--text-muted); }
+        .duration-notice {
+            text-align: center; background: rgba(245,158,11,0.08);
+            border: 1px solid rgba(245,158,11,0.2);
+            color: #d97706; font-size: 13px; font-weight: 500;
+            padding: 9px 12px; border-radius: 8px;
+            margin-bottom: 18px; line-height: 1.5; visibility: hidden; min-height: 41px;
+        }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 13px; font-weight: 500; }
+        .form-control { width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; background: var(--bg-color); color: var(--text-primary); outline: none; transition: all 0.2s; }
+        .form-control::placeholder { color: var(--text-muted); }
+        .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px var(--hover-bg); }
+        .form-control.error { border-color: #ef4444; }
+        .form-control.success { border-color: #10b981; }
+        .btn-register {
+            width: 100%; padding: 10px; background: var(--primary-gradient);
+            color: white; border: none; border-radius: 8px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s; margin-top: 18px;
+        }
+        .btn-register:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(99,102,241,0.35); }
+        .btn-register:active { transform: translateY(0); }
+        .btn-register:disabled { opacity: 0.55; cursor: not-allowed; }
+        .btn-register .spinner {
+            display: none; width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3); border-top-color: white;
+            border-radius: 50%; animation: spin 0.6s linear infinite;
+            margin-right: 6px;
+        }
+        .btn-register.loading .spinner { display: inline-block; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .msg-error {
+            color: #ef4444; text-align: center; margin-top: 12px;
+            font-size: 12px;
+            background: rgba(239,68,68,0.06); padding: 9px; border-radius: 8px;
+            min-height: 37px; line-height: 19px;
+        }
+        .msg-error:empty { visibility: hidden; padding: 0; border-radius: 0; min-height: 0; background: transparent; }
+        .msg-success {
+            color: #10b981; text-align: center; margin-top: 12px;
+            font-size: 12px;
+            background: rgba(16,185,129,0.06); padding: 9px; border-radius: 8px;
+            min-height: 37px; line-height: 19px;
+        }
+        .msg-success:empty { visibility: hidden; padding: 0; border-radius: 0; min-height: 0; background: transparent; }
+        .error-msg { color: #ef4444; font-size: 11px; margin-top: 4px; font-weight: 500; min-height: 14px; line-height: 14px; }
+        .error-msg:empty { visibility: hidden; min-height: 0; }
+            .back-link {
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+            margin-top: 12px; color: var(--text-muted); text-decoration: none;
+            font-size: 13px; transition: color 0.2s;
+        }
+         .back-link:hover { color: var(--primary-color); }
+        .bottom-links { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+        .help-link-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            color: var(--primary-color); text-decoration: none;
+            font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 8px;
+            background: var(--hover-bg); border: 1px dashed var(--primary-color);
+            transition: all 0.2s;
+        }
+        .help-link-btn:hover { background: rgba(99, 102, 241, 0.15); }
+    </style>
+
+</head>
+<body>
+    <div class="lang-switch">
+        <button data-lang="zh" onclick="setLang('zh')">中</button>
+        <button data-lang="en" onclick="setLang('en')">EN</button>
+    </div>
+    <div class="register-container">
+        <div class="register-card">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="bi bi-person-plus-fill"></i></div>
+                <h1 data-i18n="register.app_name"></h1>
+                <p data-i18n="register.app_desc"></p>
+            </div>
+            <div class="duration-notice" id="durationNotice"></div>
+            <form id="registerForm">
+                <div class="form-group"><label><span data-i18n="register.username_label"></span><span class="username-hint" data-i18n="register.username_hint" style="color:var(--text-muted); font-weight:normal;"></span></label><input type="text" class="form-control" id="username" name="username" data-i18n="register.username_placeholder" data-i18n-attr="placeholder" placeholder="" onblur="validateUsername()" required autocomplete="username"><div class="error-msg" id="usernameError"></div></div>
+                <div class="form-group"><label><span data-i18n="register.nickname_label"></span><span class="nickname-hint" data-i18n="register.nickname_hint" style="color:var(--text-muted); font-weight:normal;"></span></label><input type="text" class="form-control" id="nickname" name="nickname" data-i18n="register.nickname_placeholder" data-i18n-attr="placeholder" placeholder="" onblur="validateNickname()"><div class="error-msg" id="nicknameError"></div></div>
+                <div class="form-group"><label><span data-i18n="register.password_label"></span><span class="password-hint" data-i18n="register.password_hint" style="color:var(--text-muted); font-weight:normal;"></span></label><input type="password" class="form-control" id="password" name="password" data-i18n="register.password_placeholder" data-i18n-attr="placeholder" placeholder="" oninput="validatePassword()" required autocomplete="new-password"><div class="error-msg" id="passwordError"></div></div>
+                <div class="form-group" style="margin-bottom:0;"><label><span data-i18n="register.confirm_password_label"></span><span class="confirm-hint" data-i18n="register.confirm_password_hint" style="color:var(--text-muted); font-weight:normal;"></span></label><input type="password" class="form-control" id="confirmPassword" name="confirmPassword" data-i18n="register.confirm_password_placeholder" data-i18n-attr="placeholder" placeholder="" oninput="validateConfirmPassword()" required autocomplete="new-password"><div class="error-msg" id="confirmPasswordError"></div></div>
+                <button type="submit" class="btn-register" id="btnRegister" disabled><span class="spinner"></span><span data-i18n="register.submit"></span></button>
+                <p class="msg-error" id="errorMsg"></p>
+                <p class="msg-success" id="successMsg"></p>
+            </form>
+            <div class="bottom-links">
+                <a class="back-link" href="login.html"><i class="bi bi-arrow-left"></i> <span data-i18n="register.back_login"></span></a>
+                <a class="help-link-btn" href="/command/static/file/instruct/main.html" target="_blank" title="" data-i18n="register.help_text" data-i18n-attr="title"><i class="bi bi-question-circle"></i> <span data-i18n="register.help_text"></span></a>
+            </div>
+        </div>
+    </div>
+
+    <script src="common/messages.js"></script>
+    <script src="common/i18n.js"></script>
+    <script>
+        function updateLangButtons() {
+            var current = getLang();
+            document.querySelectorAll('.lang-switch button').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === current);
+            });
+        }
+        window.onLangChange = function() { updateLangButtons(); applyI18n(); updateDurationNotice(); };
+
+        const API_BASE = '/command';
+        const STATIC_BASE = '/command/static/file';
+        var deviceFingerprint = null;
+        var guestDays = null;
+
+        function updateDurationNotice() {
+            if (guestDays) {
+                var el = document.getElementById('durationNotice');
+                el.textContent = '\u26a0\ufe0f ' + t('register.duration_notice', {days: guestDays});
+                el.style.visibility = 'visible';
+            }
+        }
+
+        fetch(API_BASE + '/file/guest-register-info')
+            .then(res => res.json())
+            .then(result => {
+                if (!result.success || !result.data || !result.data.enabled) {
+                    window.location.href = STATIC_BASE + '/login.html';
+                }
+                guestDays = result.data.durationDays;
+                updateDurationNotice();
+                updateLangButtons();
+                applyI18n();
+            })
+            .catch(() => { window.location.href = STATIC_BASE + '/login.html'; });
+
+        function setFieldStatus(id, valid, errorMsg) {
+            var input = document.getElementById(id);
+            var error = document.getElementById(id + 'Error');
+            input.classList.remove('error', 'success');
+            if (valid === null) { error.textContent = ''; return; }
+            if (valid) { input.classList.add('success'); error.textContent = ''; }
+            else { input.classList.add('error'); error.textContent = errorMsg; }
+        }
+
+        function validateUsername() {
+            var val = document.getElementById('username').value;
+            if (!val) { setFieldStatus('username', null); return false; }
+            if (!/^[a-zA-Z][a-zA-Z0-9_]{2,31}$/.test(val)) {
+                setFieldStatus('username', false, t('register.username_invalid'));
+                return false;
+            }
+            setFieldStatus('username', true);
+            return true;
+        }
+
+        function validateNickname() {
+            var val = document.getElementById('nickname').value;
+            if (!val) { setFieldStatus('nickname', null); return true; }
+            if (val.length > 8) {
+                setFieldStatus('nickname', false, t('register.nickname_too_long'));
+                return false;
+            }
+            setFieldStatus('nickname', true);
+            return true;
+        }
+
+        function validatePassword() {
+            var val = document.getElementById('password').value;
+            if (!val) { setFieldStatus('password', null); setFieldStatus('confirmPassword', null); return false; }
+            if (val.length < 8) { setFieldStatus('password', false, t('register.password_short')); return false; }
+            if (val.length > 20) { setFieldStatus('password', false, t('register.password_long')); return false; }
+            if (!/[A-Za-z]/.test(val) || !/[0-9]/.test(val)) {
+                setFieldStatus('password', false, t('register.password_format'));
+                return false;
+            }
+            setFieldStatus('password', true);
+            if (document.getElementById('confirmPassword').value) validateConfirmPassword();
+            return true;
+        }
+
+        function validateConfirmPassword() {
+            var pw = document.getElementById('password').value;
+            var val = document.getElementById('confirmPassword').value;
+            if (!val) { setFieldStatus('confirmPassword', null); return false; }
+            if (val !== pw) {
+                setFieldStatus('confirmPassword', false, t('register.password_mismatch'));
+                return false;
+            }
+            setFieldStatus('confirmPassword', true);
+            return true;
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            var v1 = validateUsername();
+            var v2 = validateNickname();
+            var v3 = validatePassword();
+            var v4 = validateConfirmPassword();
+
+            var errorMsg = document.getElementById('errorMsg');
+            var successMsg = document.getElementById('successMsg');
+            errorMsg.textContent = '';
+            successMsg.textContent = '';
+
+            if (!v1 || !v2 || !v3 || !v4) {
+                errorMsg.textContent = t('register.form_error');
+                return;
+            }
+
+            if (!deviceFingerprint) {
+                errorMsg.textContent = t('register.loading_wait');
+                return;
+            }
+
+            var username = document.getElementById('username').value;
+            var nickname = document.getElementById('nickname').value;
+            var password = document.getElementById('password').value;
+            var confirmPassword = document.getElementById('confirmPassword').value;
+            var btn = document.getElementById('btnRegister');
+            btn.classList.add('loading');
+            btn.disabled = true;
+
+            try {
+                var response = await fetch(API_BASE + '/file/user/register-guest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username, nickname: nickname, password: password, confirmPassword: confirmPassword, deviceFingerprint: deviceFingerprint })
+                });
+                var result = await response.json();
+                if (result.success) {
+                    window.location.href = STATIC_BASE + '/login.html';
+                } else {
+                    errorMsg.textContent = resultMsg(result, 'register.register_failed');
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                }
+            } catch (err) {
+                errorMsg.textContent = t('login.network_error');
+                btn.classList.remove('loading');
+                btn.disabled = false;
+            }
+        });
+    </script>
+    <script src="vendor/fingerprintjs.min.js"></script>
+    <script>
+        FingerprintJS.load().then(function(fp) {
+            return fp.get();
+        }).then(function(result) {
+            deviceFingerprint = result.visitorId;
+            document.getElementById('btnRegister').disabled = false;
+        });
+    </script>
+</body>
+</html>

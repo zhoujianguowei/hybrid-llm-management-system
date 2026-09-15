@@ -1,0 +1,25 @@
+spring:
+  profiles:
+    active: sit
+  servlet:
+    multipart:
+      max-file-size: 200MB
+      max-request-size: 10MB
+
+server:
+  port: 8098
+  servlet:
+    context-path: /command
+  tomcat:
+    max-swallow-size: 10MB
+    max-http-post-size: 10MB
+
+
+swagger:
+  enable: true
+
+llm:
+  version: v1.13_release_base
+
+
+

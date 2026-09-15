@@ -1,0 +1,190 @@
+buildscript {
+    ext {
+        springBootVersion = '2.1.8.RELEASE'
+    }
+    repositories {
+        // 远程镜像优先，保证下载速度与稳定性；如需代理或私仓可在 init script 中另行声明
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    maven { url 'https://mirrors.cloud.tencent.com/nexus/repository/maven-public/' }
+    mavenCentral()
+}
+
+apply plugin: 'java'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.grw.xiaobai.hybrid.llm'
+version = 'v1.13'
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+dependencyManagement {
+    resolutionStrategy { cacheChangingModulesFor 0, 'seconds' }
+}
+
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.projectlombok:lombok:1.18.22'
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    implementation group: 'com.alibaba', name: 'fastjson', version: '1.2.83'
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    compile group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.0'
+    annotationProcessor "org.springframework.boot:spring-boot-configuration-processor"
+
+    implementation group: 'cn.hutool', name: 'hutool-all', version: '5.8.12'
+    implementation group: 'io.springfox', name: 'springfox-boot-starter', version: '3.0.0'
+    // springfox 3.0.0 运行时依赖 2.0.0 的 PluginRegistry API,需显式覆盖 springfox-core 声明的 1.2.0
+    implementation 'org.springframework.plugin:spring-plugin-core:2.0.0.RELEASE'
+    implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.5.2'
+    implementation("ma.glasnost.orika:orika-core:1.5.4")
+    implementation("org.reflections:reflections:0.9.9")
+    implementation 'org.apache.commons:commons-collections4:4.4'
+    implementation 'net.coobird:thumbnailator:0.4.20'
+    implementation 'com.google.guava:guava:25.1-jre'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    // GuavaCache (org.springframework.cache.guava) 仅存在于 4.3.x 的 spring-context-support
+    compile 'org.springframework:spring-context-support:4.3.7.RELEASE'
+
+    // Apache Commons IO
+    implementation 'commons-io:commons-io:2.11.0'
+
+    // WebSocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // OkHttp for streaming
+    compile('com.squareup.okhttp3:okhttp:4.12.0') {
+        exclude group: 'org.jetbrains.kotlin'
+    }
+    compile('org.jetbrains.kotlin:kotlin-stdlib:1.9.0')
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// 在 build.gradle 的末尾添加以下内容
+def getLlmVersion() {
+    def llmVersion = 'v1'
+    try {
+        def ymlFile = file('src/main/resources/application.yml')
+        if (ymlFile.exists()) {
+            def inLlm = false
+            ymlFile.eachLine { line ->
+                if (line =~ /^\s*llm\s*:/) {
+                    inLlm = true; return
+                }
+                if (inLlm && line =~ /^\s*version\s*:\s*(.+)/) {
+                    llmVersion = line.replaceAll(/\s*version\s*:\s*/, '').trim()
+                }
+            }
+        }
+    } catch (e) {
+    }
+    return llmVersion
+}
+def llmVersion = getLlmVersion()
+
+bootJar {
+    mainClassName = 'com.grw.xiaobai.hybrid.llm.HybridLlmApplication'
+    archiveFileName = "hybridLLM-${llmVersion}.jar"
+}
+
+// ===== Startup Script Generation =====
+task generateStartScripts(dependsOn: bootJar) {
+    doLast {
+        def libsDir = file("${buildDir}/libs")
+        def jarName = "hybridLLM-${llmVersion}.jar"
+
+        // start.sh - Linux/macOS
+        def startSh = file("${libsDir}/start.sh")
+        startSh.text = """#!/bin/bash
+JAR="${jarName}"
+
+if [ ! -f "./\$JAR" ]; then
+    echo "Jar not found: \$JAR"
+    exit 1
+fi
+
+java -Xmx2g -jar "\$JAR"
+"""
+        startSh.setExecutable(true)
+
+        // start.bat - Windows
+        def startBat = file("${libsDir}/start.bat")
+        startBat.text = "@echo off\njava -Xmx2g -jar \"${jarName}\"\npause\n"
+
+        println "Startup scripts generated: start.sh, start.bat"
+    }
+}
+
+// ===== Package Archives (3 platforms) =====
+task buildJar(dependsOn: generateStartScripts) {
+    group = 'build'
+    description = 'Package jar with start scripts for windows/linux/darwin'
+    doLast {
+        def libsDir = file("${buildDir}/libs")
+        def fullVersion = getLlmVersion()
+
+        def edition = ""
+        if (fullVersion.contains("ultimate")) {
+            edition = "ultimate"
+        } else if (fullVersion.contains("base")) {
+            edition = "base"
+        }
+
+        def cleanVersion = fullVersion.replaceAll(/(_release_)?(ultimate|base)/, "").trim()
+        def prefix = edition ? "${edition}-" : ""
+        def jarName = "hybridLLM-${llmVersion}.jar"
+
+        def targets = [
+            [os: 'windows', arch: 'amd64', ext: 'zip',    script: 'start.bat'],
+            [os: 'linux',   arch: 'amd64', ext: 'tar.gz', script: 'start.sh'],
+            [os: 'darwin',  arch: 'arm64', ext: 'tar.gz', script: 'start.sh']
+        ]
+
+        targets.each { t ->
+            def archiveName = "${prefix}hybridLLM-${cleanVersion}-${t.os}-${t.arch}.${t.ext}"
+            def tmpDir = file("${buildDir}/pkg-tmp/${t.os}-${t.arch}")
+            tmpDir.mkdirs()
+
+            copy {
+                from libsDir
+                into tmpDir
+                include jarName, t.script
+            }
+
+            println "Creating archive: ${archiveName}"
+            if (t.ext == 'zip') {
+                ant.zip(destFile: file("${libsDir}/${archiveName}"), basedir: tmpDir)
+            } else {
+                exec {
+                    commandLine 'tar', '-czf', "${libsDir}/${archiveName}", '-C', tmpDir.absolutePath, '.'
+                }
+            }
+        }
+        delete file("${buildDir}/pkg-tmp")
+    }
+}
+
+// ===== Clean additional outputs =====
+clean.delete += [
+    "${buildDir}/pkg-tmp"
+]

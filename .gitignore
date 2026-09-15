@@ -1,3 +1,12 @@
+### Gradle ###
+HELP.md
+.gradle
+build/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
 ### IntelliJ IDEA ###
 out/
 !**/src/main/**/out/
@@ -30,3 +39,14 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+
+### App runtime ###
+/logs/
+.webui_secret_key
+llama_server.pid
+*.log
+/.opencode/
+/arthas-output/
+### Demo raw recordings / 原始录屏不入库(压缩预览 demo-preview.mp4 保留) ###
+simplescreenrecorder-*.mp4
+*.mov
