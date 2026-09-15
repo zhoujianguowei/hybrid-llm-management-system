@@ -367,6 +367,7 @@ Layering: `controller → service → manager → entity`. The system has no dat
 - Security recommendations & known items: [SECURITY.md](SECURITY.md)
 - Release changelog: [CHANGELOG.md](CHANGELOG.md)
 - llama.cpp parameter reference: [docs/llama-cpp-parameters.md](docs/llama-cpp-parameters.md)
+- AI-generated content statement: [docs/AI-CONTENT.md](docs/AI-CONTENT.md)
 - Third-party components & licenses: [NOTICE](NOTICE)
 
 ---
