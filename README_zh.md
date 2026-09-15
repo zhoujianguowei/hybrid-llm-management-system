@@ -10,6 +10,8 @@
 [![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+> 📺 **完整演示视频**(时长 5 分 25 秒，720p，约 6.6MB)：[demo-preview.mp4](demo-preview.mp4)
+
 **📖 目录**
 
 - [📋 项目简介](#-项目简介)
@@ -47,10 +49,8 @@
 | 🛡️ **细粒度路径权限** | 基于路径继承的权限校验机制，涵盖读取、执行、上传、下载、删除五类核心权限，支持角色最小权限限制及特定用户额外授权，确保私有数据的绝对安全 |
 | 📂 **项目级 AI 代码分析** | 支持文件批量上传并自动提取文本内容，可将整个源代码目录中的关键文件一次性提交给 AI，实现跨文件的项目级代码分析与重构建议 |
 | ⚙️ **GGUF 自动化生命周期管理** | 自动识别 GGUF 分片文件并支持一键合并，内置严格的命名规范检查，确保模型文件统一且易于检索调度 |
-| 📊 **实时资源监控面板** | 集成 `nvidia-smi` 实现毫秒级实时监控，提供 GPU 显存使用率和系统内存的动态趋势图表，帮助管理员在启动模型前精准评估资源可用性 |
+| 📊 **实时资源监控面板** | 集成 `nvidia-smi` 实现实时监控，提供 GPU 显存使用率和系统内存的动态趋势图表，帮助管理员在启动模型前精准评估资源可用性 |
 | ⏰ **智能定时开关机** | 支持一次性及周期性（按工作日）定时关机/唤醒任务，内置任务冲突检测与到期预警，是无人值守服务器环境的理想选择 |
-
-> 📺 **完整演示视频**(时长 5 分 25 秒，720p，约 6.6MB)：[demo-preview.mp4](demo-preview.mp4)
 
 ![主界面](imgs/base_main.png)
 ![模型启动思考模式](imgs/model-launch-thinking.png)
@@ -77,7 +77,50 @@
   - 自动识别分片文件（如 `model-00001-of-00002.gguf`）并一键合并
   - 内置命名规范检查，确保模型文件命名统一（格式：`模型名_量化类型.gguf`）
   - 自动匹配 `mmproj` 多模态投影文件和 `mtp` Draft 模型文件
-- **精细化启动参数**：支持上下文大小、GPU 加载层数、并行任务数、张量分割、KV Cache 量化、温度、线程数、批处理大小等 18+ 参数调优，并支持通过 `--load-mode`、`--lazy-mode` 配置模型加载模式（仅适用于 llama.cpp，不适用于 ik_llama.cpp）。
+- **精细化启动参数**：UI 配置自动映射为 llama.cpp 命令行参数，支持上下文大小、GPU 加载层数、并行任务数、张量分割、KV Cache 量化、温度、线程数、批处理大小、模型加载模式（`--load-mode` / `--lazy-mode`，仅适用于 llama.cpp，不适用于 ik_llama.cpp）等全面调优。
+- **思考模式参数映射**：思考模式配置自动转换为 `--chat-template-kwargs`，向 llama.cpp server 下发 `enable_thinking` / `reasoning_effort` / `thinking_mode` 等参数。
+
+<details>
+<summary><b>支持的 llama.cpp 启动参数一览</b></summary>
+
+| 分类 | UI 配置项 | llama.cpp 参数 | 说明 |
+|----|--------|------------|----|
+| 文本采样 | 温度 | `--temp` | 控制生成随机性，0 为贪婪解码 |
+| 文本采样 | Top K | `--top-k` | 概率排名前 K 截断，-1 禁用 |
+| 文本采样 | Top P | `--top-p` | 核采样，累积概率截断 |
+| 文本采样 | Min P | `--min-p` | 相对最高概率的相对阈值截断 |
+| 文本采样 | 重复惩罚 | `--repeat-penalty` | 对已出现 Token 打折 |
+| 文本采样 | 重复最后 N | `--repeat-last-n` | 重复惩罚追溯窗口 |
+| 文本采样 | 存在惩罚 | `--presence-penalty` | 出现即惩罚，鼓励换话题 |
+| 文本采样 | 频率惩罚 | `--frequency-penalty` | 按出现次数成比例惩罚 |
+| 硬件调度 | 上下文大小 | `-c` | KV Cache 长度 |
+| 硬件调度 | GPU 加载层数 | `-ngl` | 0 表示纯 CPU 推理 |
+| 硬件调度 | 生成线程 | `--threads` | Decoding 阶段 CPU 线程数 |
+| 硬件调度 | 批处理线程 | `--threads-batch` | Prefill 阶段 CPU 线程数 |
+| 硬件调度 | 逻辑批处理 | `-b` | Prefill 单次并行 Token 上限 |
+| 硬件调度 | 物理批处理 | `-ub` | 微批次大小，防显存溢出 |
+| 硬件调度 | GPU 选择 | `selectedGpuIds` | 指定权重卸载到哪些 GPU |
+| 硬件调度 | 张量分割 | `--tensor-split` | 多 GPU 显存分配比例 |
+| 硬件调度 | 主 GPU | `CUDA_VISIBLE_DEVICES` 重排 | 主卡置于逻辑设备 0，无需 `-mg` |
+| 硬件调度 | 张量并行 | `-sm tensor/graph` | SM Tensor 多卡并行加速 |
+| 硬件调度 | 模型加载模式 | `--load-mode` | mmap+mlock / mlock / mmap / auto / none / dio（仅 llama.cpp） |
+| 硬件调度 | 懒加载模式 | `--lazy-mode` | off / auto / on，需配合 auto 或 mmap 加载模式（仅 llama.cpp） |
+| 预测推理 | 类型 | `--spec-type` | MTP / DFlash / DSpark |
+| 预测推理 | n-max / n-min / p-min | `--spec-draft-n-max` / `--spec-draft-n-min` / `--spec-draft-p-min` | 草稿 Token 数与接受阈值 |
+| 预测推理 | draft-ngl | `--gpu-layers-draft` | Draft 模型 GPU 层数，支持数值 / auto / all |
+| 预测推理 | Draft 模型 | `--model-draft` | DFlash/DSpark 手动指定；MTP 自动探测 mtp/ 目录 |
+| 缓存与状态 | 缓存大小 | `--cache-ram` | 上下文缓存容量上限 (MiB) |
+| 缓存与状态 | KV Cache 量化 | `-ctk` / `-ctv` | K/V 缓存量化类型（f16 / q8_0 / q4_0 等） |
+| 缓存与状态 | 检查点步长 | `--checkpoint-min-step` | KV 检查点最小间隔 |
+| 缓存与状态 | 检查点数量 | `--ctx-checkpoints` | 每 slot 最大检查点数 |
+| 其他服务 | 端口号 | `--port` | 模型服务监听端口 |
+| 其他服务 | 并行任务数 | `--parallel` | 并发请求数 |
+| 其他服务 | Jinja 模板 | `--jinja` | 启用 Jinja2 聊天模板解析 |
+| 其他服务 | MOE 层数 | `--n-cpu-moe` | CPU 加载的 MoE 专家层数 |
+| 思考模式 | 思考模式配置 | `--chat-template-kwargs` | 自动下发 enable_thinking / reasoning_effort / thinking_mode |
+
+</details>
+
 ![GPU 配置](imgs/model-gpu-config.png)
 
 ### 2. 智能 AI 对话
@@ -98,6 +141,38 @@
 - **深度思考模式**：支持 unsloth 量化的 qwen3.8 系列、gemma4、hy3、deepseek-v4-flash-0731、inkling-small、minimax-m3 等模型的深度思考功能。
 - **系统级配置**：管理员可配置 OpenAI API 接入、模型功能定义（正则匹配开启/关闭思考模式，支持覆盖本地模型自动检测的功能/思考模式），按角色限制附件大小和最大消息数。
 - **对话统计**：实时显示 prompt prefill 速度、decode 速度、缓存命中 token 数、当前对话上下文占比等性能指标（**仅 llama.cpp 引擎提供完整统计**，其他引擎目前仅显示已使用的 token 数）。
+
+#### 系统设置
+
+管理员在 AI 对话页打开"系统设置"弹窗，包含三个配置标签页：
+
+| 标签页 | 功能 |
+|----|----|
+| **OpenAI 接入** | 配置 OpenAI 兼容 API 端点与 Key（支持连接测试），开源版模型库的主要来源 |
+| **模型配置** | 模型功能定义与思考模式配置（见下文） |
+| **会话设置** | 按角色限制附件大小、最大消息数等配额，防止资源滥用 |
+
+#### 模型功能定义与思考模式
+
+"模型配置"标签页用于为匹配特定名称的模型定义多模态能力、思考模式与可见范围：
+
+- **匹配方式**：支持**精确匹配**与**正则匹配**模型名称，一条配置可覆盖一个模型或一整个模型系列（如 `qwen3\.8.*`）。
+- **多模态能力定义**：按模型声明图片 / 视频 / 音频输入能力，决定聊天附件入口（当前版本实际多模态能力仅支持图片）。
+- **可见范围**：可设置模型对全部用户、普通用户及以上或仅管理员可见。
+- **思考模式配置**：为支持"深度思考"的模型选择以下四种模式之一，并勾选可用的思考档位：
+
+| 模式 | 使用参数 | 说明 | 适用示例 |
+|----|----|----|----|
+| 单独思考模式 | `enable_thinking` / `thinking` | 布尔开关，只有开/关没有强度档 | qwen3.5 / qwen3.6 |
+| 多阶段思考模式 | `reasoning_effort` | 单参数同时控制开关与强度（`no_think` / `low` / `medium` / `high` / `xhigh` / `max`） | hy3 |
+| 混合模式 | `enable_thinking` + `reasoning_effort` | 布尔参数控制开关，`reasoning_effort` 控制强度 | qwen3.8、deepseek-v4-flash |
+| Thinking 模式 | `thinking_mode` | 三态值 `disabled` / `adaptive` / `enabled`，GGUF 元数据中检测优先级最高 | minimax-m3 |
+
+- **GGUF 自动检测（完全版）**：本地启动 GGUF 模型时自动解析聊天模板元数据，检测 `thinking_mode` / `enable_thinking` / `reasoning_effort` 等思考参数并自动填充配置，通常无需手动定义。
+- **覆盖自动检测**：模型功能定义中的该开关决定与自动检测结果的优先级——开启后本配置强制覆盖自动检测出的功能与思考配置；关闭时自动检测的本地模型以检测结果为准（可见范围始终生效）。开源版无本地模型自动检测，功能定义直接生效。
+- **参数映射**：思考模式配置在发送给模型请求时自动转换为 llama.cpp 的 `--chat-template-kwargs` 参数（如 `enable_thinking=true,reasoning_effort="high"`）。
+
+更多操作截图与细节见应用内使用指南（登录页"使用指南"入口）。
 
 ### 3. 文件管理
 
@@ -190,7 +265,7 @@
 | **对话统计数据** | 完整的对话统计（prefill / decode 速度、cached tokens 等指标）**仅适用于 llama.cpp 启动的模型**；其他推理引擎（Ollama、vLLM、sglang 等）当前仅显示已使用的 token 数。 |
 | **定时关机/重启** | 该功能依赖于底层操作系统的指令集及硬件支持，并非所有机型均能正常运行。已测试环境：双路 X99 (Ubuntu 22.04, E5-2696 v4) 和 Mac M1 Pro 关机/重启均正常；Windows 10 64位 (z690 主板, i7-13700K) 关机功能正常，但自动唤醒重启受主板 BIOS 限制，自测无法唤醒。 |
 | **GPU 监控** | GPU 监控功能依赖 `nvidia-smi` 工具，**仅支持搭载 NVIDIA 显卡的系统**。macOS 系统使用 Apple Silicon (M 系列) 或集成显卡，无对应监控接口，因此 macOS 下不提供 GPU 监控面板（内存监控不受影响）。 |
-| **思考模式自动检测** | GGUF 思考模式自动检测目前基于正则匹配解析内置 Jinja 模板，个别模型可能存在检测不准的情况；此时可在 AI 聊天的系统设置 → 模型管理设置中手动配置思考等级以覆盖自动检测结果（详见 [常见问题](#-常见问题-faq)）。 |
+| **思考模式自动检测** | GGUF 思考模式自动检测目前基于正则匹配解析内置 Jinja 模板，个别模型可能存在检测不准的情况；此时可在 AI 聊天的系统设置 → 模型配置中手动配置思考等级以覆盖自动检测结果（详见 [常见问题](#-常见问题-faq)）。 |
 | **依赖与安全基线** | 为保持 JDK 8 兼容性，当前依赖锁定于 Spring Boot 2.1.x / fastjson 1.2.83 等版本；已知依赖风险、安全建议（默认口令、Swagger 开关等）与升级计划详见 [SECURITY.md](SECURITY.md)，生产部署前请务必阅读。 |
 
 ---
@@ -264,7 +339,7 @@ Jar 包启动完成后，浏览器打开 [http://localhost:8098/command/static/f
 
 **9. 开始 AI 对话**
 
-**v1.1 及以上版本的完全版支持本地部署模型自动检测，无需配置 OpenAI API 和模型思考等级参数；若使用 v1.0 或基础版则需要配置 OpenAI API。**
+**v1.1 及以上版本的完全版支持本地部署模型自动检测，无需配置 OpenAI API 和模型思考等级参数；开源版则需在系统设置中配置 OpenAI 兼容 API。**
 ![AI对话演示](imgs/install-chat-demo.png)
 ![AI深度思考模式](imgs/install-chat-thinking.png)
 
@@ -392,7 +467,7 @@ A：开源版作为标准 API 客户端使用 AI 对话，需要在系统设置�
 
 **Q：模型思考模式自动检测不正确怎么办？**
 
-A：完全版的 GGUF 思考模式自动检测目前采用正则匹配实现，对部分模型可能存在检测错误。这种情况下可在 AI 聊天的系统设置中的模型管理设置里手动配置思考等级进行覆盖（支持"覆盖本地检测"）。
+A：完全版的 GGUF 思考模式自动检测目前采用正则匹配实现，对部分模型可能存在检测错误。这种情况下可在 AI 聊天的系统设置中的模型配置里手动配置思考等级进行覆盖（支持"覆盖自动检测"）。
 
 ---
 

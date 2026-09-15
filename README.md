@@ -10,6 +10,8 @@
 [![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
+> 📺 **Full demo video** (5:25, 720p, ~6.6MB): [demo-preview.mp4](demo-preview.mp4)
+
 **📖 Table of Contents**
 
 - [📋 Project Overview](#-project-overview)
@@ -47,10 +49,8 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 | 🛡️ **Fine-Grained Path Permissions** | Path-inheritance based validation mechanism covering five core permissions: Read, Execute, Upload, Download, and Delete. Supports minimum role restrictions and per-user authorization to ensure absolute data security |
 | 📂 **Project-Level AI Code Analysis** | Supports bulk file upload with automatic text extraction. Key files from an entire source directory can be submitted to the AI at once for cross-file project analysis and refactoring suggestions |
 | ⚙️ **GGUF Automated Lifecycle Management** | Automatically recognizes sharded GGUF files with one-click merge support. Built-in naming convention checks ensure model files are uniform and easy to retrieve or schedule |
-| 📊 **Real-Time Resource Monitoring Panel** | Integrated `nvidia-smi` for millisecond-level monitoring, providing dynamic trend charts of GPU VRAM and system memory usage to help administrators accurately assess resource availability before launching models |
+| 📊 **Real-Time Resource Monitoring Panel** | Integrated `nvidia-smi` for real-time monitoring, providing dynamic trend charts of GPU VRAM and system memory usage to help administrators accurately assess resource availability before launching models |
 | ⏰ **Intelligent Scheduled Shutdown/Reboot** | Supports one-time and periodic (workday-based) scheduled shutdown/wake tasks, with built-in task conflict detection and expiry warnings — ideal for unattended server environments |
-
-> 📺 **Full demo video** (5:25, 720p, ~6.6MB): [demo-preview.mp4](demo-preview.mp4)
 
 ![Main Interface](imgs/base_main.png)
 ![Model Launch Thinking Mode](imgs/model-launch-thinking.png)
@@ -77,7 +77,50 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
   - Automatically recognizes sharded files (e.g., `model-00001-of-00002.gguf`) with one-click merge
   - Built-in naming convention checks keep model file names uniform (format: `model_name_quantization.gguf`)
   - Automatically matches `mmproj` multimodal projection files and `mtp` draft model files
-- **Fine-Grained Startup Parameters**: 18+ tunable parameters including context size, GPU offload layers, parallel task count, tensor split, KV cache quantization, temperature, thread count, and batch size, plus `--load-mode` and `--lazy-mode` model load modes (only applicable to llama.cpp, not applicable to ik_llama.cpp).
+- **Fine-Grained Startup Parameters**: UI settings are automatically mapped to llama.cpp command-line arguments, covering context size, GPU offload layers, parallel task count, tensor split, KV cache quantization, temperature, thread count, batch size, model load modes (`--load-mode` / `--lazy-mode`, only applicable to llama.cpp, not applicable to ik_llama.cpp), and more.
+- **Thinking Mode Parameter Mapping**: Thinking mode settings are automatically converted into `--chat-template-kwargs`, sending `enable_thinking` / `reasoning_effort` / `thinking_mode` parameters to the llama.cpp server.
+
+<details>
+<summary><b>Supported llama.cpp startup parameters</b></summary>
+
+| Category | UI Setting | llama.cpp Argument | Description |
+|----|--------|------------|----|
+| Sampling | Temperature | `--temp` | Generation randomness; 0 = greedy decoding |
+| Sampling | Top K | `--top-k` | Truncate to top-K tokens; -1 disables |
+| Sampling | Top P | `--top-p` | Nucleus sampling by cumulative probability |
+| Sampling | Min P | `--min-p` | Relative threshold vs. max token probability |
+| Sampling | Repeat penalty | `--repeat-penalty` | Discount already-generated tokens |
+| Sampling | Repeat last N | `--repeat-last-n` | Lookback window for repeat penalty |
+| Sampling | Presence penalty | `--presence-penalty` | Flat penalty for seen tokens |
+| Sampling | Frequency penalty | `--frequency-penalty` | Penalty proportional to occurrence count |
+| Hardware | Context size | `-c` | KV cache length |
+| Hardware | GPU layers | `-ngl` | 0 = CPU-only inference |
+| Hardware | Threads | `--threads` | CPU threads for decoding |
+| Hardware | Batch threads | `--threads-batch` | CPU threads for prefill |
+| Hardware | Batch size | `-b` | Logical batch size |
+| Hardware | UBatch size | `-ub` | Micro-batch size, avoids VRAM OOM |
+| Hardware | GPU selection | `selectedGpuIds` | Choose which GPUs hold offloaded weights |
+| Hardware | Tensor split | `--tensor-split` | Per-GPU memory allocation ratio |
+| Hardware | Main GPU | `CUDA_VISIBLE_DEVICES` reorder | Main GPU becomes logical device 0, no `-mg` needed |
+| Hardware | Tensor parallelism | `-sm tensor/graph` | SM Tensor multi-GPU acceleration |
+| Hardware | Load mode | `--load-mode` | mmap+mlock / mlock / mmap / auto / none / dio (llama.cpp only) |
+| Hardware | Lazy mode | `--lazy-mode` | off / auto / on, requires auto or mmap load mode (llama.cpp only) |
+| Speculative | Type | `--spec-type` | MTP / DFlash / DSpark |
+| Speculative | n-max / n-min / p-min | `--spec-draft-n-max` / `--spec-draft-n-min` / `--spec-draft-p-min` | Draft token count and acceptance thresholds |
+| Speculative | draft-ngl | `--gpu-layers-draft` | GPU layers for the draft model; value / auto / all |
+| Speculative | Draft model | `--model-draft` | Manual for DFlash/DSpark; MTP auto-detects the mtp/ directory |
+| Cache & State | Cache size | `--cache-ram` | Context cache limit (MiB) |
+| Cache & State | KV cache quantization | `-ctk` / `-ctv` | K/V cache types (f16 / q8_0 / q4_0, etc.) |
+| Cache & State | Checkpoint step | `--checkpoint-min-step` | Minimum interval between KV state checkpoints |
+| Cache & State | Checkpoints | `--ctx-checkpoints` | Max checkpoints per slot |
+| Service | Port | `--port` | Model service port |
+| Service | Parallel | `--parallel` | Concurrent request count |
+| Service | Jinja | `--jinja` | Enable Jinja2 chat template parsing |
+| Service | MOE layers | `--n-cpu-moe` | Number of MoE expert layers loaded to CPU |
+| Thinking | Thinking mode config | `--chat-template-kwargs` | Sends enable_thinking / reasoning_effort / thinking_mode automatically |
+
+</details>
+
 ![GPU Configuration](imgs/model-gpu-config.png)
 
 ### 2. Intelligent AI Chat
@@ -97,6 +140,38 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 - **Deep Thinking Mode**: Supports deep thinking for models such as unsloth-quantized qwen3.8 series, gemma4, hy3, deepseek-v4-flash-0731, inkling-small, and minimax-m3.
 - **System-Level Configuration**: Administrators can configure OpenAI API integration, model capability definitions (regex-based thinking mode on/off, with an option to override auto-detected capabilities/thinking modes of local models), and per-role limits on attachment size and maximum message count.
 - **Conversation Statistics**: Real-time display of prompt prefill speed, decode speed, cached-token count, current context usage ratio, and other performance metrics (**full statistics are only available for the llama.cpp engine**; other engines currently show only the number of tokens used).
+
+#### System Settings
+
+Administrators open the "System Settings" dialog from the AI chat page, which contains three configuration tabs:
+
+| Tab | Purpose |
+|----|----|
+| **OpenAI Integration** | Configure OpenAI-compatible API endpoints and keys (with connection testing); the primary model source for the open-source edition |
+| **Model Configuration** | Model capability definitions and thinking-mode configuration (see below) |
+| **Session Settings** | Per-role quotas such as attachment size and maximum message count to prevent resource abuse |
+
+#### Model Capability Definition & Thinking Mode
+
+The "Model Configuration" tab defines multimodal capabilities, thinking modes, and visibility for models matching specific names:
+
+- **Match Type**: Supports **exact match** and **regex match** on model names, so one rule can cover a single model or a whole family (e.g. `qwen3\.8.*`).
+- **Multimodal Capabilities**: Declare image / video / audio input support per model, which drives the attachment entry in chat (in the current version, multimodal capability is actually limited to images).
+- **Visibility**: A model can be visible to all users, normal users and above, or administrators only.
+- **Thinking Mode**: Choose one of the four modes for models with "deep thinking" support, and select the available levels:
+
+| Mode | Parameters | Description | Examples |
+|----|----|----|----|
+| Boolean thinking | `enable_thinking` / `thinking` | Boolean switch only; on/off without intensity levels | qwen3.5 / qwen3.6 |
+| Multi-stage thinking | `reasoning_effort` | Single parameter controls both switch and intensity (`no_think` / `low` / `medium` / `high` / `xhigh` / `max`) | hy3 |
+| Hybrid mode | `enable_thinking` + `reasoning_effort` | Boolean parameter controls the switch; `reasoning_effort` controls intensity | qwen3.8, deepseek-v4-flash |
+| Thinking mode | `thinking_mode` | Tri-state `disabled` / `adaptive` / `enabled`; highest detection priority in GGUF metadata | minimax-m3 |
+
+- **GGUF Auto-Detection (Ultimate Edition)**: When a local GGUF model starts, the system parses chat-template metadata to detect `thinking_mode` / `enable_thinking` / `reasoning_effort` parameters and fills the configuration automatically, so manual definitions are usually unnecessary.
+- **Override Auto-Detection**: This switch decides the precedence against auto-detection — when enabled, this definition forcibly overrides the auto-detected capabilities/thinking configuration; when disabled, auto-detected local models follow the detection result (visibility always applies). The open-source edition has no local auto-detection, so capability definitions take effect directly.
+- **Parameter Mapping**: Thinking-mode settings are automatically converted into llama.cpp `--chat-template-kwargs` parameters in requests (e.g. `enable_thinking=true,reasoning_effort="high"`).
+
+For more screenshots and details, see the in-app usage guide (linked from the login page).
 
 ### 3. File Management
 
@@ -189,7 +264,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 | **Conversation Statistics** | Full conversation statistics (prefill / decode speed, cached tokens, etc.) are **only available for models launched with the llama.cpp engine**; other inference engines (Ollama, vLLM, sglang, etc.) currently show only the number of tokens used. |
 | **Scheduled Shutdown/Reboot** | This feature depends on the underlying OS command set and hardware support; not all machines can run it properly. Tested environments: dual X99 (Ubuntu 22.04, E5-2696 v4) and Mac M1 Pro — shutdown/reboot work normally; Windows 10 64-bit (z690 motherboard, i7-13700K) — shutdown works, but automatic wake-up reboot is limited by motherboard BIOS and could not be woken up in self-testing. |
 | **GPU Monitoring** | GPU monitoring depends on the `nvidia-smi` tool and **only supports systems with NVIDIA GPUs**. macOS uses Apple Silicon (M series) or integrated graphics with no corresponding monitoring interface, so no GPU monitoring panel is provided on macOS (memory monitoring is unaffected). |
-| **Thinking Mode Auto-Detection** | Automatic GGUF thinking-mode detection currently parses the embedded Jinja template via regex matching, so a few models may be detected incorrectly. In that case, thinking levels can be configured manually in the model management settings under system settings in AI chat to override the automatic detection (see [FAQ](#-faq)). |
+| **Thinking Mode Auto-Detection** | Automatic GGUF thinking-mode detection currently parses the embedded Jinja template via regex matching, so a few models may be detected incorrectly. In that case, thinking levels can be configured manually in the model configuration tab under system settings in AI chat to override the automatic detection (see [FAQ](#-faq)). |
 | **Dependency & Security Baseline** | To keep JDK 8 compatibility, current dependencies are pinned to Spring Boot 2.1.x / fastjson 1.2.83 and related versions; for known dependency risks, security recommendations (default credentials, Swagger switch, etc.) and the upgrade plan, see [SECURITY.md](SECURITY.md) before deploying to production. |
 
 ---
@@ -391,7 +466,7 @@ A: The open-source edition uses AI chat as a standard API client: configure an O
 
 **Q: What should I do if a model's thinking mode is detected incorrectly?**
 
-A: Automatic GGUF thinking-mode detection in the Ultimate Edition currently relies on regex matching and may produce incorrect results for some models. In that case, you can override the thinking levels manually via the model management settings under system settings in AI chat (an "override local detection" option is supported).
+A: Automatic GGUF thinking-mode detection in the Ultimate Edition currently relies on regex matching and may produce incorrect results for some models. In that case, you can override the thinking levels manually via the model configuration tab under system settings in AI chat (an "Override Auto-Detection" option is supported).
 
 ---
 
