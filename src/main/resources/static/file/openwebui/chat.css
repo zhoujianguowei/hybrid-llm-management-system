@@ -707,6 +707,8 @@ body {
     border-top-color: #ef4444;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    will-change: transform;
+    backface-visibility: hidden;
     flex-shrink: 0;
 }
 
@@ -1489,11 +1491,13 @@ body {
     border-top-color: var(--primary-color);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% { transform: rotate3d(0, 0, 1, 0deg); }
+    100% { transform: rotate3d(0, 0, 1, 360deg); }
 }
 
 .message-content pre {
@@ -2652,11 +2656,8 @@ body.html-preview-resizing {
 .spinner-rotate {
     display: inline-block;
     animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    will-change: transform;
+    backface-visibility: hidden;
 }
 
 .empty-state {
@@ -2876,6 +2877,8 @@ body.html-preview-resizing {
     border-top-color: var(--primary-color);
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
+    will-change: transform;
+    backface-visibility: hidden;
     flex-shrink: 0;
 }
 
@@ -2983,11 +2986,6 @@ body.html-preview-resizing {
 
 .thinking-content p:last-child {
     margin-bottom: 0;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
 }
 
 .image-lightbox {
