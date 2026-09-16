@@ -261,10 +261,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             session.close(SESSION_EXPIRED);
             return;
         }
-        RunningChatApiParamWrapper wrapper = chatIdRunningChatApiParamWrapperMap.computeIfAbsent(chatId, k -> {
-            RunningChatApiParamWrapper newWrapper = new RunningChatApiParamWrapper();
-            return newWrapper;
-        });
+        RunningChatApiParamWrapper wrapper = chatIdRunningChatApiParamWrapperMap.computeIfAbsent(chatId, k -> new RunningChatApiParamWrapper());
         ReentrantLock lock = getLock(chatId.hashCode());
         try {
             lock.lock();
@@ -502,6 +499,7 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             initChatStartDialog(runningChatApiParamWrapper);
             OpenApiClient
                     openApiClient = new OpenApiClient(chatModel.getModelName(), config.getBaseUrl(), chatHistory);
+            openApiClient.setModelType(chatModel.getModelTypeEnum());
             openApiClient.setApiKey(config.getApiKey());
             ChatRuntimeConfig chatRuntimeConfig = Optional.ofNullable(request.getChatRuntimeConfig()).orElseGet(ChatRuntimeConfig::new);
             openApiClient.setChatRuntimeConfig(chatRuntimeConfig);
