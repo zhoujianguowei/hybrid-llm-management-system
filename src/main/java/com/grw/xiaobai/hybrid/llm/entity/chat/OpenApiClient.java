@@ -270,7 +270,8 @@ public class OpenApiClient {
                 openApiStats = parseExl3Usage(completionJSONObject.getJSONObject("usage"));
                 break;
             case VLLM:
-                openApiStats = parseVllmUsage(completionJSONObject.getJSONObject("usage"));
+            case SGLANG:
+                openApiStats = parseVllmSglangUsage(completionJSONObject.getJSONObject("usage"));
                 if (openApiStats != null) {
                     openApiStats.setTimings(buildClientTimings(openApiStats.getUsage()));
                 }
@@ -322,7 +323,7 @@ public class OpenApiClient {
         return openApiStats;
     }
 
-    private OpenApiStats parseVllmUsage(JSONObject usageJSONObj) {
+    private OpenApiStats parseVllmSglangUsage(JSONObject usageJSONObj) {
         if (usageJSONObj == null) {
             return null;
         }
