@@ -2,6 +2,14 @@
 
 本文件记录开源版（Base Edition，本仓库）的发布变更。产品整体版本概览见 README「版本信息」；完全版（Ultimate）的完整变更见发布包内说明。
 
+## [v1.14] - 2026-09-17
+
+**新增：**
+
+- 新增 ExLlamaV3（tabbyapi）推理引擎支持：OpenAI 兼容模型列表解析、上下文长度解析，并对重复模型条目去重
+- 支持 vLLM / SGLANG / ExLlamaV3 流式对话 usage/timings 详细数据解析；引擎未提供 timings 时由客户端测量首 token 延迟、生成速度等指标（注：vLLM 的 OpenAI 响应 usage 中无缓存 token 统计）
+- 兼容 `reasoning_content` 与 `reasoning` 两种思考返回字段，支持 vLLM 思考模式显示
+
 ## [v1.13] - 2026-09-15
 
 **发布形态变更：**
