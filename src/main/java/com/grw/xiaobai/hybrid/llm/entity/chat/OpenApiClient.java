@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
 import com.grw.xiaobai.hybrid.llm.constant.ThinkingConstants;
+import com.grw.xiaobai.hybrid.llm.enums.ModelTypeEnum;
 import com.grw.xiaobai.hybrid.llm.utils.image.ImageProcessor;
 
 import java.io.BufferedReader;
@@ -52,6 +53,9 @@ public class OpenApiClient {
     private Call currentCall;
     private ChatThinkConfig chatThinkConfig;
     private ChatRuntimeConfig chatRuntimeConfig = new ChatRuntimeConfig();
+    private ModelTypeEnum modelType;
+    private long streamStartTimeMillis;
+    private long firstTokenTimeMillis;
     private static final MediaType JSON_MEDIA_TYPE = MediaType.parse("application/json; charset=utf-8");
 
 
@@ -155,6 +159,8 @@ public class OpenApiClient {
 
     public void sendStreamRequest(List<Map<String, Object>> messages, boolean formatJson, BiConsumer<Throwable, String> biChunkConsumer,
                                   BiConsumer<Throwable, String> biThinkingConsumer, BiConsumer<Throwable, OpenApiStats> openApiStatsBiConsumer) {
+        streamStartTimeMillis = System.currentTimeMillis();
+        firstTokenTimeMillis = 0;
         String jsonPayload = buildRequestPayload(messages, formatJson, true);
         String requestUrl = String.format("%s/v1/chat/completions", baseUrl);
         log.info("发送流式请求到 MLLM 服务器，包含 {} 条历史消息...", messages.size());
@@ -220,7 +226,7 @@ public class OpenApiClient {
                     while ((line = reader.readLine()) != null) {
                         detectError(line, requestUrl);
                         if (line.startsWith("data: ")) {
-                            String jsonStr = line.substring(6);
+                            String jsonStr = line.substring("data: ".length());
                             detectError(jsonStr, requestUrl);
                             if (jsonStr.equals("[DONE]")) {
                                 chatHistory.addAssistantMessage(contentBuilder.toString(),thinkingBuilder.toString());
@@ -255,6 +261,106 @@ public class OpenApiClient {
             log.error("流式请求被中断", e);
             Thread.currentThread().interrupt();
         }
+    }
+
+    private OpenApiStats parseCompletionChatUsage(JSONObject completionJSONObject) {
+        OpenApiStats openApiStats;
+        switch (modelType) {
+            case EXLLAMAV3:
+                openApiStats = parseExl3Usage(completionJSONObject.getJSONObject("usage"));
+                break;
+            case VLLM:
+            case SGLANG:
+                openApiStats = parseVllmSglangUsage(completionJSONObject.getJSONObject("usage"));
+                if (openApiStats != null) {
+                    openApiStats.setTimings(buildClientTimings(openApiStats.getUsage()));
+                }
+                break;
+            default:
+                openApiStats = JSONObject.parseObject(completionJSONObject.toJSONString(), OpenApiStats.class);
+                if (openApiStats != null && openApiStats.getTimings() == null) {
+                    openApiStats.setTimings(buildClientTimings(openApiStats.getUsage()));
+                }
+                break;
+        }
+        return openApiStats;
+    }
+
+    private OpenApiStats parseExl3Usage(JSONObject usageJSONObj) {
+        if (usageJSONObj == null) {
+            return null;
+        }
+        OpenApiStats.Usage usage = new OpenApiStats.Usage();
+        usage.setPromptTokens(usageJSONObj.getInteger("prompt_tokens"));
+        usage.setCompletionTokens(usageJSONObj.getInteger("completion_tokens"));
+        usage.setTotalTokens(usageJSONObj.getInteger("total_tokens"));
+        JSONObject promptDetailsJSONObj = usageJSONObj.getJSONObject("prompt_tokens_details");
+        if (promptDetailsJSONObj != null) {
+            OpenApiStats.Usage.PromptTokensDetails promptTokensDetails = new OpenApiStats.Usage.PromptTokensDetails();
+            promptTokensDetails.setCachedTokens(promptDetailsJSONObj.getInteger("cached_tokens"));
+            usage.setPromptTokensDetails(promptTokensDetails);
+        }
+        OpenApiStats.Timings timings = new OpenApiStats.Timings();
+        Double promptTimeSec = usageJSONObj.getDouble("prompt_time");
+        if (promptTimeSec != null) {
+            timings.setPromptMs(promptTimeSec * 1000);
+            if (usage.getPromptTokens() != null && usage.getPromptTokens() > 0) {
+                timings.setPromptPerTokenMs(timings.getPromptMs() / usage.getPromptTokens());
+            }
+        }
+        timings.setPromptPerSecond(usageJSONObj.getDouble("prompt_tokens_per_sec"));
+        Double completionTimeSec = usageJSONObj.getDouble("completion_time");
+        if (completionTimeSec != null) {
+            timings.setPredictedMs(completionTimeSec * 1000);
+            if (usage.getCompletionTokens() != null && usage.getCompletionTokens() > 0) {
+                timings.setPredictedPerTokenMs(timings.getPredictedMs() / usage.getCompletionTokens());
+            }
+        }
+        timings.setPredictedPerSecond(usageJSONObj.getDouble("completion_tokens_per_sec"));
+        OpenApiStats openApiStats = new OpenApiStats();
+        openApiStats.setUsage(usage);
+        openApiStats.setTimings(timings);
+        return openApiStats;
+    }
+
+    private OpenApiStats parseVllmSglangUsage(JSONObject usageJSONObj) {
+        if (usageJSONObj == null) {
+            return null;
+        }
+        OpenApiStats openApiStats = new OpenApiStats();
+        openApiStats.setUsage(JSONObject.parseObject(usageJSONObj.toJSONString(), OpenApiStats.Usage.class));
+        return openApiStats;
+    }
+
+    private OpenApiStats.Timings buildClientTimings(OpenApiStats.Usage usage) {
+        OpenApiStats.Timings timings = new OpenApiStats.Timings();
+        if (streamStartTimeMillis <= 0) {
+            return timings;
+        }
+        long now = System.currentTimeMillis();
+        long firstTokenTime = firstTokenTimeMillis > 0 ? firstTokenTimeMillis : now;
+        double promptMs = firstTokenTime - streamStartTimeMillis;
+        double decodeMs = now - firstTokenTime;
+        timings.setPromptMs(promptMs);
+        timings.setPredictedMs(decodeMs);
+        if (usage == null) {
+            return timings;
+        }
+        if (usage.getPromptTokens() != null) {
+            timings.setPromptN(usage.getPromptTokens());
+            if (promptMs > 0) {
+                timings.setPromptPerSecond(usage.getPromptTokens() / (promptMs / 1000.0));
+                timings.setPromptPerTokenMs(promptMs / usage.getPromptTokens());
+            }
+        }
+        if (usage.getCompletionTokens() != null) {
+            timings.setPredictedN(usage.getCompletionTokens());
+            if (decodeMs > 0) {
+                timings.setPredictedPerSecond(usage.getCompletionTokens() / (decodeMs / 1000.0));
+                timings.setPredictedPerTokenMs(decodeMs / usage.getCompletionTokens());
+            }
+        }
+        return timings;
     }
 
     private static Map<String, Object> constructJsonMap(String part, Object val) {
@@ -345,13 +451,19 @@ public class OpenApiClient {
         return JSONObject.toJSONString(payload);
     }
 
+    private void markFirstTokenTime() {
+        if (firstTokenTimeMillis == 0) {
+            firstTokenTimeMillis = System.currentTimeMillis();
+        }
+    }
+
     private void processStreamChunk(String jsonStr, BiConsumer<Throwable, String> biChunkConsumer,
                                     BiConsumer<Throwable, String> biThinkingConsumer, BiConsumer<Throwable, OpenApiStats> openApiStatsBiConsumer) {
         int stage = 1;
         try {
             JSONObject json = JSONObject.parseObject(jsonStr);
-            if (json.containsKey("usage") || json.containsKey("timings")) {
-                openApiStatsBiConsumer.accept(null, JSONObject.parseObject(jsonStr, OpenApiStats.class));
+            if (json.containsKey("usage") ) {
+                openApiStatsBiConsumer.accept(null, parseCompletionChatUsage(json));
             }
             JSONArray choicesArray = json.getJSONArray("choices");
             if (CollectionUtils.isEmpty(choicesArray)) {
@@ -362,13 +474,19 @@ public class OpenApiClient {
                     .getJSONObject("delta");
             if (delta != null) {
                 String content = delta.getString("content");
-                if (content != null && !content.isEmpty() && biChunkConsumer != null) {
-                    biChunkConsumer.accept(null, content);
-                    stage = 2;
+                if (content != null && !content.isEmpty()) {
+                    markFirstTokenTime();
+                    if (biChunkConsumer != null) {
+                        biChunkConsumer.accept(null, content);
+                        stage = 2;
+                    }
                 }
-                String thinking = delta.getString("reasoning_content");
-                if (thinking != null && !thinking.isEmpty() && biThinkingConsumer != null) {
-                    biThinkingConsumer.accept(null, thinking);
+                String thinking = Optional.ofNullable(delta.getString("reasoning_content")).orElse(delta.getString("reasoning"));
+                if (StringUtils.isNotBlank(thinking)) {
+                    markFirstTokenTime();
+                    if (biThinkingConsumer != null) {
+                        biThinkingConsumer.accept(null, thinking);
+                    }
                 }
             }
         } catch (Exception e) {

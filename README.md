@@ -7,7 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-Java%20Web-6DB33F?logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Inference](https://img.shields.io/badge/Inference-llama.cpp%20%7C%20OpenAI%20API-blue)](https://github.com/ggml-org/llama.cpp)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#)
-[![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
+[![Release](https://img.shields.io/badge/Release-v1.14-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ![Demo](imgs/demo.gif)
@@ -103,7 +103,7 @@ Built on **Java + Spring Boot** (with Bootstrap 5 on the frontend), the system s
 - **Message Rendering**: Supports Markdown syntax highlighting, LaTeX formula rendering, and a sandboxed HTML preview pane, with the current model name shown for assistant replies.
 - **Deep Thinking Mode**: Supports deep thinking for models such as unsloth-quantized qwen3.8 series, gemma4, hy3, deepseek-v4-flash-0731, inkling-small, and minimax-m3.
 - **System-Level Configuration**: Administrators can configure OpenAI API integration, model capability definitions (regex-based thinking mode on/off, with an option to override auto-detected capabilities/thinking modes of local models), and per-role limits on attachment size and maximum message count.
-- **Conversation Statistics**: Real-time display of prompt prefill speed, decode speed, cached-token count, current context usage ratio, and other performance metrics (**full statistics are only available for the llama.cpp engine**; other engines currently show only the number of tokens used).
+- **Conversation Statistics**: Real-time display of prompt prefill speed, decode speed, cached-token count, current context usage ratio, and other performance metrics (full statistics are provided by the llama.cpp engine; since v1.14, vLLM / SGLANG / ExLlamaV3 also support detailed usage/timings data parsing, with first-token latency and generation speed measured on the client side when the engine does not provide timings — note that vLLM has no cached-token statistics; other engines such as Ollama currently show only the number of tokens used).
 
 #### System Settings
 
@@ -210,6 +210,7 @@ For more screenshots and details, see the in-app usage guide (linked from the lo
 
 | Version | Changes |
 | :--- | :--- |
+| **v1.14** | 1. Added ExLlamaV3 (tabbyapi) engine support: OpenAI-compatible model list parsing with duplicate model deduplication<br />2. Added detailed stream chat usage/timings parsing for vLLM / SGLANG / ExLlamaV3; client-side measurement of first-token latency and generation speed when the engine does not provide timings (note: usage in vLLM's OpenAI response does not include cached token statistics)<br />3. Compatible with both `reasoning_content` and `reasoning` thinking fields, enabling thinking-mode display for vLLM |
 | **v1.13** | 1. Added --load-mode and --lazy-mode launch parameters (only applicable to llama.cpp, not applicable to ik_llama.cpp)<br />2. Speculative Decoding enhancements: added n-min and draft-ngl parameters; MTP draft file supports manual selection (auto-detects the mtp/ directory when left blank); DFlash/DSpark require a .gguf draft with real-time validation and file existence check before launch<br />3. AI chat enhancements: model feature configuration can override the auto-detected capabilities/thinking modes of local models; relaxed thinking level validation (a non-thinking level is no longer required); hover tooltips added to the thinking mode dropdown; new sandboxed HTML preview pane, LaTeX formula rendering, and the model name is now shown in message rendering<br />4. Fixed issues including model restart port reuse, hardened model stop flow, session titles overwritten by auto-titling, missing per-turn speed display, scroll jitter on session switch, message rendering wrongly splitting prose as lists, chunked upload interrupted by file changes, and large directory deletion timeout<br />5. Extended login session lifetime from 2 to 12 hours and WebSocket idle timeout from 1 to 10 hours |
 | **v1.12** | 1. Added llama.cpp Speculative Decoding support covering DSpark, DFlash, and MTP types, with configurable n-max and p-min parameters<br />2. AI Chat enhancements: Markdown syntax highlighting, toggle for including thinking content in OpenAI requests, and runtime modification of temperature, top-p, and other parameters<br />3. Enhanced OpenAI request compatibility: expanded from llama.cpp-only to mainstream engines such as Ollama, kTransformer, and sglang (detailed data such as decode/prefill speed is currently only available for llama.cpp)<br />4. Fixed known issues including file list upload and AI chat special character escaping errors |
 | **v1.11** | 1. Fixed a model thinking-mode auto-detection bug and added auto-detection support for inkling-small, minimax-m3, and deepseek-v4-flash-0731 models<br />2. Fixed a model parameter import bug and code rendering issues on the AI chat page<br />3. UI display optimization for the AI chat page |
@@ -225,7 +226,7 @@ For more screenshots and details, see the in-app usage guide (linked from the lo
 | Item | Description |
 | :--- | :--- |
 | **Multimodal Capability** | The current version's multimodal capability **only supports image input**; audio and video input are not supported. |
-| **Conversation Statistics** | Full conversation statistics (prefill / decode speed, cached tokens, etc.) are **only available for models launched with the llama.cpp engine**; other inference engines (Ollama, vLLM, sglang, etc.) currently show only the number of tokens used. |
+| **Conversation Statistics** | Full conversation statistics (prefill / decode speed, cached tokens, etc.) are available for models launched with the llama.cpp engine; since v1.14, detailed usage/timings data for vLLM / SGLANG / ExLlamaV3 are also parsed and displayed, with first-token latency and generation speed measured on the client side when the engine does not provide timings (note: the vLLM OpenAI response does not include cached-token statistics); other inference engines such as Ollama currently show only the number of tokens used. |
 | **Scheduled Shutdown/Reboot** | This feature depends on the underlying OS command set and hardware support; not all machines can run it properly. Tested environments: dual X99 (Ubuntu 22.04, E5-2696 v4) and Mac M1 Pro — shutdown/reboot work normally; Windows 10 64-bit (z690 motherboard, i7-13700K) — shutdown works, but automatic wake-up reboot is limited by motherboard BIOS and could not be woken up in self-testing. |
 | **GPU Monitoring** | GPU monitoring depends on the `nvidia-smi` tool and **only supports systems with NVIDIA GPUs**. macOS uses Apple Silicon (M series) or integrated graphics with no corresponding monitoring interface, so no GPU monitoring panel is provided on macOS (memory monitoring is unaffected). |
 | **Thinking Mode Auto-Detection** | Automatic GGUF thinking-mode detection currently parses the embedded Jinja template via regex matching, so a few models may be detected incorrectly. In that case, thinking levels can be configured manually in the model configuration tab under system settings in AI chat to override the automatic detection (see [FAQ](#-faq)). |
@@ -318,15 +319,15 @@ Use `where nvidia-smi` (Windows) or `which nvidia-smi` (Linux/macOS) to find the
 ### Build from Source
 
 ```bash
-# Compile and produce the executable jar: build/libs/hybridLLM-v1.13_release_base.jar
+# Compile and produce the executable jar: build/libs/hybridLLM-v1.14_release_base.jar
 ./gradlew bootJar
 
 # Package release archives (jar + launcher scripts):
-# base-hybridLLM-v1.13-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
+# base-hybridLLM-v1.14-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
 ./gradlew buildJar
 
 # Run
-java -jar build/libs/hybridLLM-v1.13_release_base.jar
+java -jar build/libs/hybridLLM-v1.14_release_base.jar
 ```
 
 Then open `http://localhost:8098/command/static/file/login.html` in your browser. Default credentials are `admin` / `admin` (**change them immediately after first login**).
@@ -341,7 +342,7 @@ Configuration lives in `src/main/resources/application.yml` (the `sit` profile i
 | `server.servlet.context-path` | `/command` | Context path |
 | `spring.servlet.multipart.max-file-size` | `200MB` | Max upload size per file |
 | `swagger.enable` | `true` | Swagger docs switch, **recommended `false` in production** |
-| `llm.version` | `v1.13_release_base` | Version identifier (fixed to `release_base` for the open-source edition) |
+| `llm.version` | `v1.14_release_base` | Version identifier (fixed to `release_base` for the open-source edition) |
 
 Running-time settings such as file storage directories, AI feature definitions, and attachment size limits are maintained in the system settings page after login (persisted to the data directory; no external database required).
 

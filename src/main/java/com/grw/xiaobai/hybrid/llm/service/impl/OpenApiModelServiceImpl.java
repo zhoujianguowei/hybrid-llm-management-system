@@ -22,14 +22,18 @@ import com.grw.xiaobai.hybrid.llm.utils.CompletableFutureUtil;
 
 import java.net.ConnectException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import javax.annotation.Resource;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +52,8 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
     private static final String OWNED_BY_HUGGINGFACE = "huggingface";
     private static final String OWNED_BY_TGI = "text-generation-inference";
     private static final String OWNED_BY_LIBRARY = "library";
+    private static final String OWNED_BY_EXV3 = "tabbyapi";
+    private static final String EXV3_MODEL_SUFFIX = "-exl3";
 
     @Resource
     private ModelFuncConfigManager modelFuncConfigManager;
@@ -81,6 +87,25 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
         if (serverEngine == ModelTypeEnum.OLLAMA) {
             ollamaContextLengthMap = fetchOllamaContextLengths(openApiLLMConfig, dataArray);
         }
+        //if serve engine is exllamav3 ,need remove duplicate
+        if (serverEngine == ModelTypeEnum.EXLLAMAV3) {
+            Collection<JSONObject> jsonObjectList = IntStream.range(0, dataArray.size()).boxed().map(dataArray::getJSONObject)
+                    .collect(Collectors.toMap(var -> var.getLong("created") + var.getJSONObject("meta").toJSONString(),
+                            Function.identity(), (v1, v2) -> {
+                                String id1 = v1.getString("id");
+                                String id2 = v2.getString("id");
+                                JSONObject jsonObject = id1.length() >= id2.length() ? v1 : v2;
+                                if (id1.endsWith(EXV3_MODEL_SUFFIX)) {
+                                    if (id2.endsWith(EXV3_MODEL_SUFFIX)) {
+                                        return jsonObject;
+                                    }
+                                    return v1;
+                                }
+                                return jsonObject;
+                            })).values();
+            dataArray.clear();
+            dataArray.addAll(jsonObjectList);
+        }
 
         List<ChatModel> result = new ArrayList<>();
         for (int i = 0; i < dataArray.size(); i++) {
@@ -91,13 +116,12 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
             if (engine == ModelTypeEnum.OLLAMA) {
                 int contentLength = ollamaContextLengthMap == null ? DEFAULT_CONTENT_LENGTH
                         : ollamaContextLengthMap.getOrDefault(modelObj.getString("id"), DEFAULT_CONTENT_LENGTH);
-                chatModel = parseOllama(modelObj, openApiLLMConfig, contentLength);
+                chatModel = parseOllama(modelObj, contentLength);
             } else {
-                chatModel = parseByEngine(engine, modelObj, openApiLLMConfig);
+                chatModel = parseByEngine(modelObj, engine);
             }
-            if (chatModel != null) {
-                result.add(enrichWithFuncConfig(chatModel));
-            }
+            chatModel.setOpenApiLLMConfig(openApiLLMConfig);
+            result.add(enrichWithFuncConfig(chatModel));
         }
         return result;
     }
@@ -132,41 +156,58 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
                 return ModelTypeEnum.TGI;
             case OWNED_BY_LIBRARY:
                 return ModelTypeEnum.OLLAMA;
+            case OWNED_BY_EXV3:
+                return ModelTypeEnum.EXLLAMAV3;
             default:
                 return ModelTypeEnum.OPENAI;
         }
     }
 
-    private ChatModel parseByEngine(ModelTypeEnum engine, JSONObject modelObj, OpenApiLLMConfig config) {
+    private ChatModel parseByEngine(JSONObject modelObj, ModelTypeEnum engine) {
+        ChatModel chatModel;
         switch (engine) {
             case VLLM:
             case SGLANG:
-                return parseVllmSglang(modelObj, config, engine);
+                chatModel = parseVllmSglang(modelObj);
+                break;
             case LLAMACPP:
-                return parseLlamaCpp(modelObj, config);
+                chatModel = parseLlamaCpp(modelObj);
+                break;
             case TGI:
-                return parseTgi(modelObj, config);
+                chatModel = parseTgi(modelObj);
+                break;
             case KTRANSFORMERS:
-                return parseKtransformers(modelObj, config);
+                chatModel = parseKtransformers(modelObj);
+                break;
+            case EXLLAMAV3:
+                chatModel = parseExllamav3(modelObj);
+                break;
             case OPENAI:
             default:
-                return parseOpenAi(modelObj, config);
+                chatModel = parseOpenAi(modelObj);
         }
+        chatModel.setModelTypeEnum(engine);
+        return chatModel;
     }
 
-    private ChatModel parseVllmSglang(JSONObject modelObj, OpenApiLLMConfig config, ModelTypeEnum engine) {
+    private ChatModel parseExllamav3(JSONObject modelObj) {
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName(modelObj.getString("id"));
-        chatModel.setOpenApiLLMConfig(config);
-        chatModel.setModelTypeEnum(engine);
+        JSONObject metaJSONObj = modelObj.getJSONObject("meta");
+        chatModel.setContentLength(metaJSONObj.getInteger("n_ctx_train"));
+        return chatModel;
+    }
+
+    private ChatModel parseVllmSglang(JSONObject modelObj) {
+        ChatModel chatModel = new ChatModel();
+        chatModel.setModelName(modelObj.getString("id"));
         chatModel.setContentLength(getIntField(modelObj, "max_model_len"));
         return chatModel;
     }
 
-    private ChatModel parseLlamaCpp(JSONObject modelObj, OpenApiLLMConfig config) {
+    private ChatModel parseLlamaCpp(JSONObject modelObj) {
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName(modelObj.getString("id"));
-        chatModel.setOpenApiLLMConfig(config);
         chatModel.setModelTypeEnum(ModelTypeEnum.LLAMACPP);
         int contentLength = DEFAULT_CONTENT_LENGTH;
         JSONObject meta = modelObj.getJSONObject("meta");
@@ -181,19 +222,17 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
         return chatModel;
     }
 
-    private ChatModel parseTgi(JSONObject modelObj, OpenApiLLMConfig config) {
+    private ChatModel parseTgi(JSONObject modelObj) {
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName(modelObj.getString("id"));
-        chatModel.setOpenApiLLMConfig(config);
         chatModel.setModelTypeEnum(ModelTypeEnum.TGI);
         chatModel.setContentLength(getIntField(modelObj, "max_total_tokens"));
         return chatModel;
     }
 
-    private ChatModel parseOllama(JSONObject modelObj, OpenApiLLMConfig config, int contentLength) {
+    private ChatModel parseOllama(JSONObject modelObj, int contentLength) {
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName(modelObj.getString("id"));
-        chatModel.setOpenApiLLMConfig(config);
         chatModel.setModelTypeEnum(ModelTypeEnum.OLLAMA);
         chatModel.setContentLength(contentLength);
         return chatModel;
@@ -319,19 +358,17 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
         return DEFAULT_CONTENT_LENGTH;
     }
 
-    private ChatModel parseKtransformers(JSONObject modelObj, OpenApiLLMConfig config) {
+    private ChatModel parseKtransformers(JSONObject modelObj) {
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName(modelObj.getString("id"));
-        chatModel.setOpenApiLLMConfig(config);
         chatModel.setModelTypeEnum(ModelTypeEnum.KTRANSFORMERS);
         chatModel.setContentLength(getIntField(modelObj, "max_model_len"));
         return chatModel;
     }
 
-    private ChatModel parseOpenAi(JSONObject modelObj, OpenApiLLMConfig config) {
+    private ChatModel parseOpenAi(JSONObject modelObj) {
         ChatModel chatModel = new ChatModel();
         chatModel.setModelName(modelObj.getString("id"));
-        chatModel.setOpenApiLLMConfig(config);
         chatModel.setModelTypeEnum(ModelTypeEnum.OPENAI);
         chatModel.setContentLength(DEFAULT_CONTENT_LENGTH);
         return chatModel;

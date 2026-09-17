@@ -7,7 +7,7 @@
 - 环境：JDK 8 及以上 + 仓库内置 Gradle Wrapper，无需本机安装 Gradle。
 - 构建：`./gradlew bootJar`；三平台发布包：`./gradlew buildJar`。
 - 测试：`./gradlew test`；单个测试类：`./gradlew test --tests "com.grw.xiaobai.hybrid.llm.utils.EnumUtilTest"`。
-- 启动开发实例：`java -jar build/libs/hybridLLM-v1.13_release_base.jar`，默认端口 8098。
+- 启动开发实例：`java -jar build/libs/hybridLLM-v1.14_release_base.jar`，默认端口 8098。
 
 ## 项目分层
 

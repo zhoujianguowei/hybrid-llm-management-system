@@ -7,7 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-Java%20Web-6DB33F?logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Inference](https://img.shields.io/badge/Inference-llama.cpp%20%7C%20OpenAI%20API-blue)](https://github.com/ggml-org/llama.cpp)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#)
-[![Release](https://img.shields.io/badge/Release-v1.13-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
+[![Release](https://img.shields.io/badge/Release-v1.14-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ![功能演示](imgs/demo.gif)
@@ -105,7 +105,7 @@
 - **消息渲染**：支持 Markdown 语法高亮、LaTeX 公式渲染与沙箱 HTML 预览面板，并在回复中显示当前模型名称。
 - **深度思考模式**：支持 unsloth 量化的 qwen3.8 系列、gemma4、hy3、deepseek-v4-flash-0731、inkling-small、minimax-m3 等模型的深度思考功能。
 - **系统级配置**：管理员可配置 OpenAI API 接入、模型功能定义（正则匹配开启/关闭思考模式，支持覆盖本地模型自动检测的功能/思考模式），按角色限制附件大小和最大消息数。
-- **对话统计**：实时显示 prompt prefill 速度、decode 速度、缓存命中 token 数、当前对话上下文占比等性能指标（**仅 llama.cpp 引擎提供完整统计**，其他引擎目前仅显示已使用的 token 数）。
+- **对话统计**：实时显示 prompt prefill 速度、decode 速度、缓存命中 token 数、当前对话上下文占比等性能指标（llama.cpp 提供完整统计；自 v1.14 起 vLLM / SGLANG / ExLlamaV3 亦支持详细 usage/timings 数据解析，引擎未提供 timings 时由客户端测量首 token 延迟与生成速度，注：vLLM 无缓存 token 统计；Ollama 等其他引擎目前仅显示已使用的 token 数）。
 
 #### 系统设置
 
@@ -212,6 +212,7 @@
 
 | 版本 | 变更内容 |
 | :--- | :--- |
+| **v1.14** | 1. 新增 ExLlamaV3（tabbyapi）推理引擎支持：OpenAI 兼容模型列表解析，并对重复模型去重<br />2. 新增 vLLM / SGLANG / ExLlamaV3 流式对话 usage/timings 详细数据解析，引擎未提供 timings 时由客户端测量首 token 延迟、生成速度等指标（注：vLLM 的 OpenAI 响应 usage 中无缓存 token 统计）<br />3. 兼容 `reasoning_content` 与 `reasoning` 两种思考返回字段，支持 vLLM 思考模式显示 |
 | **v1.13** | 1. 新增 --load-mode、--lazy-mode 两个启动参数（仅适用于 llama.cpp，不适用于 ik_llama.cpp）<br />2. 预测解码增强：新增 n-min、draft-ngl 参数；MTP draft 文件支持手动选择（留空自动检测 mtp/ 目录）；DFlash/DSpark 必填 .gguf draft 并实时校验，启动前校验文件存在性<br />3. AI 对话增强：模型功能配置支持覆盖本地自动检测的功能/思考模式；思考等级校验放宽（不再强制要求提供非思考等级）；思考模式下拉框新增悬浮说明；新增沙箱 HTML 预览面板、LaTeX 公式渲染，消息渲染中增加模型名称显示<br />4. 修复重启模型未复用上次成功端口、模型停止流程加固、会话标题被自动标题覆盖、每轮速度展示缺失、会话切换滚动抖动、消息渲染正文被误解析为列表、分片上传因文件被改动中断、大目录删除超时等问题<br />5. 登录会话有效期由 2 小时延长至 12 小时，WebSocket 空闲超时由 1 小时延长至 10 小时 |
 | **v1.12** | 1. 新增 llama.cpp Speculative Decoding（预测推理）支持，涵盖 DSpark、DFlash、MTP 三种类型，并支持设置 n-max 和 p-min 参数<br />2. AI 对话功能增强：支持 Markdown 语法高亮、OpenAI 请求携带思考内容开关，以及运行时动态修改 temperature、top-p 等参数<br />3. OpenAI 请求兼容性增强：由仅支持 llama.cpp 扩展至支持 Ollama、kTransformer、sglang 等主流推理引擎（非 llama.cpp 引擎暂不支持查看 decode/prefill 速度等详细数据）<br />4. 修复文件列表上传、AI 对话特殊字符转义错误等已知问题 |
 | **v1.11** | 1. 修复模型思考模式自动检测 bug，新增 inkling-small、minimax-m3 以及 deepseek-v4-flash-0731 模型的思考模式自动检测<br />2. 修复模型参数导入 bug、AI 对话页面代码渲染问题<br />3. AI 对话页面 UI 显示优化 |
@@ -227,7 +228,7 @@
 | 项目 | 说明 |
 | :--- | :--- |
 | **多模态能力** | 当前版本多模态能力 **仅支持图片输入**，不支持音频和视频输入。 |
-| **对话统计数据** | 完整的对话统计（prefill / decode 速度、cached tokens 等指标）**仅适用于 llama.cpp 启动的模型**；其他推理引擎（Ollama、vLLM、sglang 等）当前仅显示已使用的 token 数。 |
+| **对话统计数据** | 完整对话统计（prefill / decode 速度、cached tokens 等指标）适用于 llama.cpp 启动的模型；自 v1.14 起 vLLM / SGLANG / ExLlamaV3 的详细 usage/timings 数据同样支持解析展示，引擎未提供 timings 时由客户端测量首 token 延迟与生成速度（注：vLLM 的 OpenAI 响应中无缓存 token 统计）；Ollama 等其他推理引擎当前仅显示已使用的 token 数。 |
 | **定时关机/重启** | 该功能依赖于底层操作系统的指令集及硬件支持，并非所有机型均能正常运行。已测试环境：双路 X99 (Ubuntu 22.04, E5-2696 v4) 和 Mac M1 Pro 关机/重启均正常；Windows 10 64位 (z690 主板, i7-13700K) 关机功能正常，但自动唤醒重启受主板 BIOS 限制，自测无法唤醒。 |
 | **GPU 监控** | GPU 监控功能依赖 `nvidia-smi` 工具，**仅支持搭载 NVIDIA 显卡的系统**。macOS 系统使用 Apple Silicon (M 系列) 或集成显卡，无对应监控接口，因此 macOS 下不提供 GPU 监控面板（内存监控不受影响）。 |
 | **思考模式自动检测** | GGUF 思考模式自动检测目前基于正则匹配解析内置 Jinja 模板，个别模型可能存在检测不准的情况；此时可在 AI 聊天的系统设置 → 模型配置中手动配置思考等级以覆盖自动检测结果（详见 [常见问题](#-常见问题-faq)）。 |
@@ -320,15 +321,15 @@ Jar 包启动完成后，浏览器打开 [http://localhost:8098/command/static/f
 ### 从源码构建
 
 ```bash
-# 编译并生成可执行 jar: build/libs/hybridLLM-v1.13_release_base.jar
+# 编译并生成可执行 jar: build/libs/hybridLLM-v1.14_release_base.jar
 ./gradlew bootJar
 
 # 打包三平台发布包（jar + 启动脚本）:
-# base-hybridLLM-v1.13-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
+# base-hybridLLM-v1.14-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
 ./gradlew buildJar
 
 # 运行
-java -jar build/libs/hybridLLM-v1.13_release_base.jar
+java -jar build/libs/hybridLLM-v1.14_release_base.jar
 ```
 
 浏览器访问 `http://localhost:8098/command/static/file/login.html`，默认账号 `admin` / `admin`（**首次登录后请立即修改**）。
@@ -343,7 +344,7 @@ java -jar build/libs/hybridLLM-v1.13_release_base.jar
 | `server.servlet.context-path` | `/command` | 上下文路径 |
 | `spring.servlet.multipart.max-file-size` | `200MB` | 单文件上传大小上限 |
 | `swagger.enable` | `true` | Swagger 文档开关，**生产环境建议设为 false** |
-| `llm.version` | `v1.13_release_base` | 版本号标识（开源版固定为 `release_base`） |
+| `llm.version` | `v1.14_release_base` | 版本号标识（开源版固定为 `release_base`） |
 
 文件存储目录、AI 功能定义、附件大小限制等运行期配置在登录后的系统设置页面中维护（默认保存于数据目录，无外部数据库依赖）。
 
