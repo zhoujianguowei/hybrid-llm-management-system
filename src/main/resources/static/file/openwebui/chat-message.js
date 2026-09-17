@@ -1262,6 +1262,7 @@ function handleMessage(data, chatId) {
     
     switch (data.type) {
         case 'stream_start':
+            streamStartToken++;
             if (!isRecovering && !currentMessageElement) {
                 const existingAsstEls = document.querySelectorAll('#messagesContainer .message.assistant');
                 let foundExisting = null;
@@ -2296,6 +2297,9 @@ function createUserMessage(content, mediaList, saveToSession = true) {
     allMessages.push({
         role: 'user',
         content: content || '',
+        imageUrlList: (mediaList || []).filter(m => m.type === 'image').map(m => m.path),
+        videoUrlList: (mediaList || []).filter(m => m.type === 'video').map(m => m.path),
+        audioUrlList: (mediaList || []).filter(m => m.type === 'audio').map(m => m.path),
         chatMediaTextList: textFiles
     });
     container.appendChild(messageDiv);

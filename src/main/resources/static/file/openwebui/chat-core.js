@@ -65,6 +65,10 @@ let messageScrollLoading = false;
 // this counter moves, so switching sessions can never leave two retry loops
 // racing scrollToBottom on the same container (the source of switch-time shake).
 let sessionRenderToken = 0;
+// 每次 stream_start 自增: loadSession 在 load 请求发出前记录该值, 响应回来时若已变化,
+// 说明加载期间本 tab 已发起新一轮生成, 服务端快照已过期, 再渲染会销毁在途流的 DOM
+// (之后 stream_end 渲染到游离节点, 表现为只有全局 stats 更新、消息文本丢失)
+let streamStartToken = 0;
 const MESSAGE_RENDER_BATCH = 20;
 const MESSAGE_SENTINAL_OFFSET = 10;
 let messageSentinelObserver = null;

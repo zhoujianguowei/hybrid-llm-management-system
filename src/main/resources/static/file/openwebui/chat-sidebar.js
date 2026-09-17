@@ -506,6 +506,7 @@ async function loadSession(sessionId) {
     if (typeof closeHtmlPreview === 'function') closeHtmlPreview();
     // Invalidate any scroll-retry loop left running by the previous session.
     sessionRenderToken++;
+    const streamTokenAtLoadStart = streamStartToken;
     currentChatSessionId = sessionId;
     currentMessageElement = null;
     currentAssistantMessage = '';
@@ -548,6 +549,55 @@ async function loadSession(sessionId) {
         });
         // 用户可能在请求期间切换了会话，丢弃过期响应避免渲染错乱
         if (sessionId !== currentChatSessionId) return false;
+
+        // load 请求在途期间本会话已发起新一轮生成: 快照早于本轮消息, 但仍需渲染
+        // 会话的真实历史(否则会残留上一会话的消息)。allMessages 持有本轮本地消息
+        // (用户气泡 + 响应晚于 stream_end 时的已完成轮次), 合并后走标准路径重渲染,
+        // 再把在途流的气泡挂回容器尾。
+        if (streamStartToken !== streamTokenAtLoadStart) {
+            const snapMsgs = (result.data && result.data.messages) || [];
+            const pending = [...allMessages];
+            // 快照读取可能晚于本轮本地消息落库, 快照尾部可能已含它们:
+            // 1) 最长后缀-前缀匹配(role+content, 整轮完成时快照含 user+assistant)
+            // 2) 快照尾为空气泡 assistant 且其前一条匹配 pending[0]
+            //    (空响应轮: 前端 stream_end 不推空气泡, 但服务端仍落库了空 assistant)
+            // 丢弃已匹配的 pending 前缀, 避免重复渲染
+            let overlap = 0;
+            for (let k = Math.min(pending.length, snapMsgs.length); k > 0; k--) {
+                let matched = true;
+                for (let i = 0; i < k; i++) {
+                    const s = snapMsgs[snapMsgs.length - k + i];
+                    const p = pending[i];
+                    if ((s.role || '') !== (p.role || '') || (s.content || '') !== (p.content || '')) {
+                        matched = false;
+                        break;
+                    }
+                }
+                if (matched) {
+                    overlap = k;
+                    break;
+                }
+            }
+            if (overlap === 0 && pending.length > 0 && snapMsgs.length >= 2) {
+                const tail = snapMsgs[snapMsgs.length - 1];
+                const prev = snapMsgs[snapMsgs.length - 2];
+                const p0 = pending[0];
+                if (tail.role === 'assistant' && !(tail.content || '').trim() && !(tail.thinkingContent || '').trim()
+                        && (prev.role || '') === (p0.role || '') && (prev.content || '') === (p0.content || '')) {
+                    overlap = 1;
+                }
+            }
+            pending.splice(0, overlap);
+            renderMessages([...snapMsgs, ...pending]);
+            if (currentMessageElement && !currentMessageElement.isConnected) {
+                document.getElementById('messagesContainer').appendChild(currentMessageElement);
+            }
+            resetAutoScroll();
+            scrollToBottom();
+            // 跳过快照的模型/思考/stats 恢复与 check_recovery: 本轮请求已携带
+            // 用户 tab 内的选择(权威值), 在途流自己拥有渲染权, stats 由 stream_end 更新
+            return true;
+        }
 
      if (result.success && result.data) {
             // Sidebar active state was already rendered before the await; a
