@@ -44,9 +44,6 @@ public class OpenApiStats {
         @JSONField(name = "prompt_ms")
         private Double promptMs;
 
-        @JSONField(name = "prompt_per_token_ms")
-        private Double promptPerTokenMs;
-
         @JSONField(name = "prompt_per_second")
         private Double promptPerSecond;
 
@@ -55,9 +52,6 @@ public class OpenApiStats {
 
         @JSONField(name = "predicted_ms")
         private Double predictedMs;
-
-        @JSONField(name = "predicted_per_token_ms")
-        private Double predictedPerTokenMs;
 
         @JSONField(name = "predicted_per_second")
         private Double predictedPerSecond;
@@ -84,10 +78,8 @@ public class OpenApiStats {
         Timings timings = openApiStats.getTimings();
         if (timings != null) {
             stats.setPromptMs(timings.getPromptMs());
-            stats.setPromptPerTokenMs(timings.getPromptPerTokenMs());
             stats.setPromptPerSecond(timings.getPromptPerSecond());
             stats.setPredictedMs(timings.getPredictedMs());
-            stats.setPredictedPerTokenMs(timings.getPredictedPerTokenMs());
             stats.setPredictedPerSecond(timings.getPredictedPerSecond());
             stats.setNCtx(timings.getNCtx());
         }

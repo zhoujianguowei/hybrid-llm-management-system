@@ -304,17 +304,11 @@ public class OpenApiClient {
         Double promptTimeSec = usageJSONObj.getDouble("prompt_time");
         if (promptTimeSec != null) {
             timings.setPromptMs(promptTimeSec * 1000);
-            if (usage.getPromptTokens() != null && usage.getPromptTokens() > 0) {
-                timings.setPromptPerTokenMs(timings.getPromptMs() / usage.getPromptTokens());
-            }
         }
         timings.setPromptPerSecond(usageJSONObj.getDouble("prompt_tokens_per_sec"));
         Double completionTimeSec = usageJSONObj.getDouble("completion_time");
         if (completionTimeSec != null) {
             timings.setPredictedMs(completionTimeSec * 1000);
-            if (usage.getCompletionTokens() != null && usage.getCompletionTokens() > 0) {
-                timings.setPredictedPerTokenMs(timings.getPredictedMs() / usage.getCompletionTokens());
-            }
         }
         timings.setPredictedPerSecond(usageJSONObj.getDouble("completion_tokens_per_sec"));
         OpenApiStats openApiStats = new OpenApiStats();
@@ -349,15 +343,18 @@ public class OpenApiClient {
         if (usage.getPromptTokens() != null) {
             timings.setPromptN(usage.getPromptTokens());
             if (promptMs > 0) {
-                timings.setPromptPerSecond(usage.getPromptTokens() / (promptMs / 1000.0));
-                timings.setPromptPerTokenMs(promptMs / usage.getPromptTokens());
+                Integer cachedTokens = Optional.ofNullable(usage.getPromptTokensDetails()).
+                        map(OpenApiStats.Usage.PromptTokensDetails::getCachedTokens).orElse(null);
+                int computedTokens = usage.getPromptTokens() - (cachedTokens == null ? 0 : cachedTokens);
+                if (computedTokens > 0) {
+                    timings.setPromptPerSecond(computedTokens / (promptMs / 1000.0));
+                }
             }
         }
         if (usage.getCompletionTokens() != null) {
             timings.setPredictedN(usage.getCompletionTokens());
             if (decodeMs > 0) {
                 timings.setPredictedPerSecond(usage.getCompletionTokens() / (decodeMs / 1000.0));
-                timings.setPredictedPerTokenMs(decodeMs / usage.getCompletionTokens());
             }
         }
         return timings;

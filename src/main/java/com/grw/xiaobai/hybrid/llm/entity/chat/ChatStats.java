@@ -38,10 +38,6 @@ public class ChatStats implements Serializable {
      */
     private Double promptMs;
     /**
-     * 提示词每 token 耗时（ms）
-     */
-    private Double promptPerTokenMs;
-    /**
      * 提示词处理速度（token/s）
      */
     private Double promptPerSecond;
@@ -49,10 +45,6 @@ public class ChatStats implements Serializable {
      * 生成耗时（ms）
      */
     private Double predictedMs;
-    /**
-     * 每 token 耗时（ms）
-     */
-    private Double predictedPerTokenMs;
     /**
      * 生成速度（token/s）
      */
