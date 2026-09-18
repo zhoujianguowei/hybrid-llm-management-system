@@ -319,18 +319,26 @@ function normalizeMidLineBlocks(text) {
 // <iframe>/<xmp>/<noembed>/<noframes>/<noscript> as raw-text elements: when the
 // RENDERED html is parsed into a DOM, everything after such an opening tag
 // becomes the tag's text content until the matching closing tag or end of
-// document (marked additionally treats <pre> the same way). marked passes a
-// bare `<style>` mentioned in prose through un-escaped, so an unclosed one
-// makes the DOM parser swallow the entire rest of the message, which
-// stripDangerousHtml then deletes (the tags are in FORBID_TAGS / not on the
-// allowlist) — the message visibly ends mid-sentence. Escape the dangling
-// openers (no matching closer outside code) so they display literally and the
-// remaining text renders normally. Fence- and inline-code-span-aware so real
-// code samples are never touched.
+// document (marked additionally treats <pre> the same way). marked passes
+// bare `<style>`/`<!--` mentioned in prose through un-escaped, so:
+//   - an unclosed one makes the DOM parser swallow the entire rest of the
+//     message, which stripDangerousHtml then deletes (FORBID_TAGS) — the
+//     message visibly ends mid-sentence;
+//   - a matched pair swallows the span between the two tags into the element,
+//     and stripDangerousHtml deletes it together with the tag (DOMPurify
+//     drops FORBID_CONTENTS tags with their content) — a blank hole appears
+//     in the MIDDLE of the text, mid-stream the moment the closing tag
+//     arrives (e.g. an expanded thinking panel showing a blank gap with text
+//     above and below it).
+// Escape EVERY occurrence outside code (fences, indented code blocks and
+// inline code spans — openers, closers and HTML-comment delimiters) so these
+// tags always display literally and the surrounding text always renders.
+// Fence-, indented-code- and inline-code-span-aware so real code samples are
+// never touched (entities inside code are NOT decoded back by marked).
 function normalizeRawTextTags(text) {
     // Fast path: none of the swallow-prone tags appear at all, so nothing can
-    // dangle and the per-line scan can be skipped entirely.
-    if (!/<(script|pre|style|textarea|title|iframe|xmp|noembed|noframes|noscript)|<!--|-->/i.test(text)) return text;
+    // swallow and the per-line scan can be skipped entirely.
+    if (!/<\/?(script|pre|style|textarea|title|iframe|xmp|noembed|noframes|noscript)|<!--|-->/i.test(text)) return text;
     var RAW_TEXT_TAGS = ['script', 'pre', 'style', 'textarea', 'title', 'iframe', 'xmp', 'noembed', 'noframes', 'noscript'];
     var tagRe = new RegExp('</?(' + RAW_TEXT_TAGS.join('|') + ')(?=[\\s>/])', 'gi');
     var commentRe = /<!--|-->/g;
@@ -338,11 +346,27 @@ function normalizeRawTextTags(text) {
     var inCode = false;
     var curFenceChar = '';
     var curFenceLen = 0;
+    // Indented code blocks (4+ columns after a blank line): marked escapes
+    // their content verbatim and does NOT decode entities, so a tag there
+    // must never be rewritten. A 4-indent line right after a non-blank line
+    // is a lazy paragraph continuation (renders as HTML) and still counts.
+    var inIndented = false;
+    var prevBlank = true;
     var events = [];
 
     for (var i = 0; i < lines.length; i++) {
         var line = lines[i];
         var trimmed = line.trim();
+        if (trimmed === '') {
+            prevBlank = true;
+            continue;
+        }
+        if (inIndented) {
+            if (leadingIndentCols(line) >= 4) continue;
+            inIndented = false;
+        }
+        var startsAfterBlank = prevBlank;
+        prevBlank = false;
         var fenceMatch = /^(`{3,}|~{3,})/.exec(trimmed);
         if (fenceMatch) {
             var fence = fenceMatch[1];
@@ -358,6 +382,10 @@ function normalizeRawTextTags(text) {
             continue;
         }
         if (inCode) continue;
+        if (startsAfterBlank && leadingIndentCols(line) >= 4) {
+            inIndented = true;
+            continue;
+        }
 
         // Blank out inline code spans (backtick runs) with same-length spaces
         // so tags inside backticks never count and column offsets stay aligned.
@@ -396,32 +424,30 @@ function normalizeRawTextTags(text) {
         }
     }
 
-    // Left-to-right matching (each closer closes the innermost opener);
-    // whatever is left on the stack has no closing tag and would swallow the
-    // rest of the document at DOM-parse time.
-    var dangling = [];
-    RAW_TEXT_TAGS.concat('comment').forEach(function (tag) {
-        var stack = [];
-        events.forEach(function (ev) {
-            if (ev.tag !== tag) return;
-            if (ev.close) stack.pop();
-            else stack.push(ev);
-        });
-        dangling = dangling.concat(stack);
-    });
-    if (!dangling.length) return text;
+    // Escape every event (opener, closer and comment delimiters), not just
+    // the dangling ones: a matched pair in prose is just as destructive as a
+    // dangling opener (its content is deleted together with the tag by
+    // stripDangerousHtml), and it only escapes the pair being parsed as real
+    // HTML when no occurrence remains raw.
+    if (!events.length) return text;
 
     var escapeCols = {};
-    dangling.forEach(function (ev) {
-        (escapeCols[ev.line] = escapeCols[ev.line] || []).push(ev.col);
+    events.forEach(function (ev) {
+        (escapeCols[ev.line] = escapeCols[ev.line] || []).push(ev);
     });
     var out = lines.slice();
     Object.keys(escapeCols).forEach(function (key) {
         var idx = Number(key);
         var s = out[idx];
-        var cols = escapeCols[idx].sort(function (a, b) { return b - a; });
-        for (var c = 0; c < cols.length; c++) {
-            s = s.substring(0, cols[c]) + '&lt;' + s.substring(cols[c] + 1);
+        var evs = escapeCols[idx].sort(function (a, b) { return b.col - a.col; });
+        for (var c = 0; c < evs.length; c++) {
+            var ev = evs[c];
+            if (ev.tag === 'comment' && ev.close) {
+                // `-->` has no `<` to escape: replace the whole delimiter.
+                s = s.substring(0, ev.col) + '--&gt;' + s.substring(ev.col + 3);
+            } else {
+                s = s.substring(0, ev.col) + '&lt;' + s.substring(ev.col + 1);
+            }
         }
         out[idx] = s;
     });
