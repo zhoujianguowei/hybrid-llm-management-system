@@ -24,7 +24,7 @@ apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 group = 'com.grw.xiaobai.hybrid.llm'
-version = 'v1.14'
+version = 'v1.15'
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8

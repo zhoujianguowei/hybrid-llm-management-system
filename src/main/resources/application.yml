@@ -19,7 +19,7 @@ swagger:
   enable: true
 
 llm:
-  version: v1.14_release_base
+  version: v1.15_release_base
 
 
 
