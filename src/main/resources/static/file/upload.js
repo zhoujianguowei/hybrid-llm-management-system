@@ -1,5 +1,20 @@
 let uploadFileQueue = [];
 const MAX_CONCURRENT_UPLOADS = 3;
+const CHUNK_UPLOAD_RETRY_BASE_DELAY_MS = 1000;
+const CHUNK_UPLOAD_RETRY_MAX_DELAY_MS = 16000;
+// 单次 chunk 请求超时，避免连接黑洞时 await fetch 永久挂起、放弃窗口失效
+const CHUNK_UPLOAD_ATTEMPT_TIMEOUT_MS = 120000;
+// 放弃任务前持续重试的窗口，自最后一个成功 chunk 起算。
+// 需大于后端超时策略最坏情况（UPLOAD_TIMEOUT_MINUTES=3min 无更新 + 60s 扫描 = 4min），
+// 确保前端判死时后端任务已终态；重试期间一旦收到后端终态状态则立即返回，不会耗满窗口。
+const UPLOAD_TASK_GIVEUP_MS = 270000;
+// 与 chunk 放弃窗口对齐：服务端槽位被僵尸任务占用最坏 4min（3min 超时 + 60s 扫描）后释放
+const INIT_CONCURRENT_MAX_WAIT_MS = 270000;
+const INIT_CONCURRENT_RETRY_INTERVAL_MS = 5000;
+const INIT_ATTEMPT_TIMEOUT_MS = 15000;
+// 后端全局异常兜底码 ERROR_SYSTEM_ERROR：任务仍为 PROCESSING，属可重试的瞬时错误
+const UPLOAD_SYSTEM_ERROR_CODE = 1002;
+const UPLOAD_FATAL_API_ERRORS = ['Session expired', 'Permission denied', 'User blocked', 'Validation failed', 'No session'];
 let activeUploads = 0;
 let currentListTab = 'active';
 let conflictChoice = '';
@@ -371,42 +386,214 @@ function uploadNextFromQueue() {
     }
 }
 
+function sleepWithAbort(ms, signal) {
+    return new Promise((resolve, reject) => {
+        if (signal && signal.aborted) {
+            const err = new Error('Aborted');
+            err.name = 'AbortError';
+            reject(err);
+            return;
+        }
+        const timer = setTimeout(() => {
+            if (signal) signal.removeEventListener('abort', onAbort);
+            resolve();
+        }, ms);
+        function onAbort() {
+            clearTimeout(timer);
+            const err = new Error('Aborted');
+            err.name = 'AbortError';
+            reject(err);
+        }
+        if (signal) signal.addEventListener('abort', onAbort, { once: true });
+    });
+}
+
+function makeHttpError(message, retryable) {
+    const err = new Error(message);
+    err.retryable = retryable;
+    return err;
+}
+
+async function withAttemptTimeout(run, signal, timeoutMs) {
+    const attemptController = new AbortController();
+    let timedOut = false;
+    const onAbort = () => attemptController.abort();
+    if (signal) signal.addEventListener('abort', onAbort, { once: true });
+    const timer = setTimeout(() => { timedOut = true; attemptController.abort(); }, timeoutMs);
+    try {
+        return await run(attemptController.signal);
+    } catch (err) {
+        if (err.name === 'AbortError' && timedOut && !(signal && signal.aborted)) {
+            throw makeHttpError('Request timeout', true);
+        }
+        throw err;
+    } finally {
+        clearTimeout(timer);
+        if (signal) signal.removeEventListener('abort', onAbort);
+    }
+}
+
+async function initUploadWithQueueWait(item, signal) {
+    const deadline = Date.now() + INIT_CONCURRENT_MAX_WAIT_MS;
+    for (;;) {
+        let initResult = null;
+        try {
+            initResult = await withAttemptTimeout(sig => api('/file/upload/init', {
+                method: 'POST',
+                body: 'fileName=' + encodeURIComponent(item.fileName) + '&targetPath=' + encodeURIComponent(item._targetPath) + '&totalSize=' + item.fileSize,
+                signal: sig
+            }), signal, INIT_ATTEMPT_TIMEOUT_MS);
+        } catch (err) {
+            if (err.name === 'AbortError' || UPLOAD_FATAL_API_ERRORS.includes(err.message)) throw err;
+            if (Date.now() >= deadline) throw err;
+        }
+        if (initResult && initResult.success) {
+            item.taskId = initResult.data.taskId;
+            item.errorMsg = '';
+            item._lastChunkSuccessTime = Date.now();
+            return true;
+        }
+        if (!initResult) {
+            await sleepWithAbort(INIT_CONCURRENT_RETRY_INTERVAL_MS, signal);
+            continue;
+        }
+        const concurrent = initResult.msgKey === 'upload.concurrent_limit' || initResult.code === 429;
+        if (!concurrent || Date.now() >= deadline) {
+            item.errorMsg = initResult.msg || t('upload.init_failed');
+            return false;
+        }
+        await sleepWithAbort(INIT_CONCURRENT_RETRY_INTERVAL_MS, signal);
+    }
+}
+
+async function finalizeFailedItem(item, index, options) {
+    const opts = options || {};
+    if (item.status === 'CANCELLED' || item.status === 'COMPLETED') return;
+    if (item.taskId) {
+        if (opts.queryServerFirst) {
+            try {
+                const result = await api('/file/upload/list');
+                if (item.status === 'CANCELLED' || item.status === 'COMPLETED') return;
+                if (result.success && Array.isArray(result.data)) {
+                    const serverTask = result.data.find(task => task.taskId === item.taskId);
+                    if (serverTask && serverTask.status === 'COMPLETED') {
+                        item.status = 'COMPLETED';
+                        item.progress = 100;
+                        updateUploadListItem(index);
+                        loadUploadTasks(true);
+                        return;
+                    }
+                    if (serverTask && serverTask.status !== 'PENDING' && serverTask.status !== 'PROCESSING') {
+                        item.status = serverTask.status === 'CANCELLED' ? 'CANCELLED' : 'FAILED';
+                        updateUploadListItem(index);
+                        renderUploadList();
+                        loadUploadTasks(true);
+                        return;
+                    }
+                }
+            } catch (err) { console.error('Query upload task status error:', err); }
+        }
+        if (opts.cancelTask !== false) {
+            if (await cancelUploadTask(item.taskId)) {
+                if (item.status !== 'CANCELLED') {
+                    item.status = 'CANCELLED';
+                }
+                updateUploadListItem(index);
+                renderUploadList();
+                loadUploadTasks(true);
+                return;
+            }
+        }
+    }
+    if (item.status === 'CANCELLED' || item.status === 'COMPLETED') return;
+    item.status = 'FAILED';
+    updateUploadListItem(index);
+    renderUploadList();
+    loadUploadTasks(true);
+}
+
 async function uploadSingleFile(item, index) {
-    const targetPath = document.getElementById('uploadTargetPath').value;
+    item._targetPath = document.getElementById('uploadTargetPath').value;
     item.chunkSize = 5 * 1024 * 1024;
     item.totalChunks = Math.ceil(item.file.size / item.chunkSize);
     item.uploadedSize = 0;
     item.progress = 0;
+    item.errorMsg = '';
+    item._reinitDone = false;
 
     try {
         item.controller = new AbortController();
         const signal = item.controller.signal;
 
-        const initResult = await api('/file/upload/init', {
-            method: 'POST',
-            body: 'fileName=' + encodeURIComponent(item.fileName) + '&targetPath=' + encodeURIComponent(targetPath) + '&totalSize=' + item.fileSize,
-            signal: signal
-        });
-        if (!initResult.success) {
-            item.status = 'FAILED';
-            item.errorMsg = initResult.msg || t('upload.init_failed');
-            updateUploadListItem(index);
-            renderUploadList();
+        if (!await initUploadWithQueueWait(item, signal)) {
+            await finalizeFailedItem(item, index, { cancelTask: false });
             return;
         }
 
-        item.taskId = initResult.data.taskId;
         await uploadNextChunk(item, index, signal);
     } catch (err) {
         if (err.name === 'AbortError') {
             item.status = 'CANCELLED';
-        } else if (item.status !== 'CANCELLED') {
-            item.status = 'FAILED';
+        } else if (item.status !== 'CANCELLED' && item.status !== 'COMPLETED') {
             item.errorMsg = t('upload.upload_failed');
+            await finalizeFailedItem(item, index);
+            return;
         }
         updateUploadListItem(index);
         renderUploadList();
     }
+}
+
+async function postChunkWithRetry(item, chunkIndex, chunkSize, offset, chunkBlob, signal) {
+    let lastErr = null;
+    let delay = CHUNK_UPLOAD_RETRY_BASE_DELAY_MS;
+    for (;;) {
+        try {
+            const formData = new FormData();
+            formData.append('taskId', item.taskId);
+            formData.append('chunkIndex', chunkIndex);
+            formData.append('chunkSize', chunkSize);
+            formData.append('offset', offset);
+            formData.append('totalChunks', item.totalChunks);
+            formData.append('file', chunkBlob);
+
+            const response = await withAttemptTimeout(sig => fetch(API_BASE + '/file/upload/chunk?' + getSessionParam(), {
+                method: 'POST',
+                body: formData,
+                signal: sig
+            }), signal, CHUNK_UPLOAD_ATTEMPT_TIMEOUT_MS);
+            if (!response.ok) {
+                throw makeHttpError('HTTP ' + response.status, response.status >= 500);
+            }
+            const result = await response.json();
+            if (result && result.success === false && result.code === UPLOAD_SYSTEM_ERROR_CODE) {
+                throw makeHttpError(result.msg || t('upload.upload_failed'), true);
+            }
+            if (result && result.success) {
+                item._lastChunkSuccessTime = Date.now();
+            }
+            return result;
+        } catch (err) {
+            if (err.name === 'AbortError') throw err;
+            if (err.retryable === false || err.message === 'Session expired') throw err;
+            lastErr = err;
+        }
+        if (Date.now() + delay >= item._lastChunkSuccessTime + UPLOAD_TASK_GIVEUP_MS) {
+            throw lastErr || makeHttpError(t('upload.upload_failed'), true);
+        }
+        await sleepWithAbort(delay, signal);
+        delay = Math.min(delay * 2, CHUNK_UPLOAD_RETRY_MAX_DELAY_MS);
+    }
+}
+
+async function reinitUploadTask(item, index, signal) {
+    if (item._reinitDone || signal.aborted) return false;
+    item._reinitDone = true;
+    item.taskId = null;
+    item.uploadedSize = 0;
+    item.progress = 0;
+    updateUploadListItem(index);
+    return await initUploadWithQueueWait(item, signal);
 }
 
 async function uploadNextChunk(item, index, signal) {
@@ -430,77 +617,71 @@ async function uploadNextChunk(item, index, signal) {
     try {
         chunkBlob = new Blob([await item.file.slice(start, end).arrayBuffer()]);
     } catch (err) {
-        item.status = 'FAILED';
         item.errorMsg = t('upload.file_changed');
-        updateUploadListItem(index);
-        renderUploadList();
+        await finalizeFailedItem(item, index);
         return;
     }
 
+    let result;
     try {
-        const formData = new FormData();
-        formData.append('taskId', item.taskId);
-        formData.append('chunkIndex', chunkIndex);
-        formData.append('chunkSize', end - start);
-        formData.append('offset', start);
-        formData.append('totalChunks', item.totalChunks);
-        formData.append('file', chunkBlob);
-
-        const response = await fetch(API_BASE + '/file/upload/chunk?' + getSessionParam(), {
-            method: 'POST',
-            body: formData,
-            signal: signal
-        });
-
-        if (!response.ok) {
-            item.status = 'FAILED';
-            item.errorMsg = 'HTTP ' + response.status;
-            updateUploadListItem(index);
-            renderUploadList();
-            return;
-        }
-
-        const result = await response.json();
-
-        if (result.success) {
-            const serverStatus = result.data && result.data.status;
-            if (serverStatus === 'CANCELLED' || serverStatus === 'FAILED') {
-                item.status = serverStatus;
-                if (serverStatus === 'FAILED') item.errorMsg = t('upload.upload_interrupted');
-                updateUploadListItem(index);
-                renderUploadList();
-                return;
-            }
-            if (serverStatus === 'COMPLETED') {
-                await completeUploadTask(item, index);
-                return;
-            }
-            const actualChunkSize = end - start;
-            item.uploadedSize = Math.min(item.uploadedSize + actualChunkSize, item.fileSize);
-            item.progress = Math.min(99, Math.round((item.uploadedSize / item.fileSize) * 100));
-            updateUploadListItem(index);
-
-            if (item.uploadedSize >= item.fileSize) {
-                await completeUploadTask(item, index);
-            } else if (!signal.aborted) {
-                await uploadNextChunk(item, index, signal);
-            }
-        } else {
-            item.status = 'FAILED';
-            item.errorMsg = result.msg || t('upload.chunk_failed');
-            updateUploadListItem(index);
-            renderUploadList();
-        }
+        result = await postChunkWithRetry(item, chunkIndex, end - start, start, chunkBlob, signal);
     } catch (err) {
         if (err.name === 'AbortError') {
             item.status = 'CANCELLED';
             await cancelUploadTask(item.taskId);
-        } else {
-            item.status = 'FAILED';
-            item.errorMsg = t('upload.upload_failed');
+            updateUploadListItem(index);
+            renderUploadList();
+            return;
         }
+        item.errorMsg = (err.retryable === false && err.message) ? err.message : t('upload.upload_failed');
+        await finalizeFailedItem(item, index, { queryServerFirst: true });
+        return;
+    }
+
+    if (!result.success) {
+        if (result.msgKey === 'upload.task_not_found' && await reinitUploadTask(item, index, signal)) {
+            await uploadNextChunk(item, index, signal);
+            return;
+        }
+        item.errorMsg = result.msg || t('upload.chunk_failed');
+        await finalizeFailedItem(item, index, { cancelTask: result.msgKey !== 'upload.task_not_found' });
+        return;
+    }
+
+    const serverStatus = result.data && result.data.status;
+    if (serverStatus === 'CANCELLED') {
+        item.status = 'CANCELLED';
         updateUploadListItem(index);
         renderUploadList();
+        loadUploadTasks(true);
+        return;
+    }
+    if (serverStatus === 'FAILED') {
+        if (await reinitUploadTask(item, index, signal)) {
+            await uploadNextChunk(item, index, signal);
+            return;
+        }
+        item.status = 'FAILED';
+        item.errorMsg = t('upload.upload_interrupted');
+        updateUploadListItem(index);
+        renderUploadList();
+        loadUploadTasks(true);
+        return;
+    }
+    if (serverStatus === 'COMPLETED') {
+        await completeUploadTask(item, index);
+        return;
+    }
+
+    const actualChunkSize = end - start;
+    item.uploadedSize = Math.min(item.uploadedSize + actualChunkSize, item.fileSize);
+    item.progress = Math.min(99, Math.round((item.uploadedSize / item.fileSize) * 100));
+    updateUploadListItem(index);
+
+    if (item.uploadedSize >= item.fileSize) {
+        await completeUploadTask(item, index);
+    } else if (!signal.aborted) {
+        await uploadNextChunk(item, index, signal);
     }
 }
 
@@ -513,16 +694,21 @@ async function completeUploadTask(item, index) {
         if (result.success) {
             item.status = 'COMPLETED';
             item.progress = 100;
+            updateUploadListItem(index);
+            loadUploadTasks(true);
         } else {
-            item.status = 'FAILED';
             item.errorMsg = result.msg || t('upload.complete_failed');
+            await finalizeFailedItem(item, index, { queryServerFirst: true });
         }
     } catch (err) {
-        item.status = 'FAILED';
+        if (err.name === 'AbortError' || item.status === 'CANCELLED') {
+            item.status = 'CANCELLED';
+            updateUploadListItem(index);
+            return;
+        }
         item.errorMsg = t('upload.complete_failed');
+        await finalizeFailedItem(item, index, { queryServerFirst: true });
     }
-    updateUploadListItem(index);
-    loadUploadTasks(true);
 }
 
 async function cancelUploadFile(index) {
@@ -541,11 +727,14 @@ async function cancelUploadFile(index) {
 
 async function cancelUploadTask(taskId) {
     try {
-        await api('/file/upload/cancel', {
+        const result = await api('/file/upload/cancel', {
             method: 'POST',
             body: 'taskId=' + encodeURIComponent(taskId)
         });
-    } catch (err) { }
+        return !!(result && result.success);
+    } catch (err) {
+        return false;
+    }
 }
 
 async function cancelServerTask(taskId) {
