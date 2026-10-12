@@ -54,6 +54,8 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
     private static final String OWNED_BY_LIBRARY = "library";
     private static final String OWNED_BY_EXV3 = "tabbyapi";
     private static final String EXV3_MODEL_SUFFIX = "-exl3";
+    private static final String OWNED_BY_STRATA = "strata";
+    private static final String STRATA_STATUS_LOADED = "loaded";
 
     @Resource
     private ModelFuncConfigManager modelFuncConfigManager;
@@ -78,8 +80,13 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
 
         String firstOwnedBy = dataArray.getJSONObject(0).getString("owned_by");
         ModelTypeEnum serverEngine = detectEngine(firstOwnedBy);
-        if (serverEngine == ModelTypeEnum.OPENAI && StringUtils.isNotBlank(firstOwnedBy) && isOllamaServer(openApiLLMConfig)) {
-            serverEngine = ModelTypeEnum.OLLAMA;
+        if (serverEngine == ModelTypeEnum.OPENAI) {
+            // strata 不返回 owned_by，按响应结构识别（status.value + meta.n_ctx），本地判断优先于 ollama 探测
+            if (isStrataModelObject(dataArray.getJSONObject(0))) {
+                serverEngine = ModelTypeEnum.STRATA;
+            } else if (StringUtils.isNotBlank(firstOwnedBy) && isOllamaServer(openApiLLMConfig)) {
+                serverEngine = ModelTypeEnum.OLLAMA;
+            }
         }
         LOGGER.debug("open api url={} detected engine={}, owned_by={}", openApiLLMConfig.getBaseUrl(), serverEngine, firstOwnedBy);
 
@@ -112,6 +119,9 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
             JSONObject modelObj = dataArray.getJSONObject(i);
             ModelTypeEnum engine = serverEngine == ModelTypeEnum.OLLAMA ? ModelTypeEnum.OLLAMA
                     : detectModelEngine(modelObj.getString("owned_by"), serverEngine);
+            if (engine == ModelTypeEnum.STRATA && !isStrataModelLoaded(modelObj)) {
+                continue;
+            }
             ChatModel chatModel;
             if (engine == ModelTypeEnum.OLLAMA) {
                 int contentLength = ollamaContextLengthMap == null ? DEFAULT_CONTENT_LENGTH
@@ -158,6 +168,8 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
                 return ModelTypeEnum.OLLAMA;
             case OWNED_BY_EXV3:
                 return ModelTypeEnum.EXLLAMAV3;
+            case OWNED_BY_STRATA:
+                return ModelTypeEnum.STRATA;
             default:
                 return ModelTypeEnum.OPENAI;
         }
@@ -182,11 +194,43 @@ public class OpenApiModelServiceImpl implements OpenApiModelService {
             case EXLLAMAV3:
                 chatModel = parseExllamav3(modelObj);
                 break;
+            case STRATA:
+                chatModel = parseStrata(modelObj);
+                break;
             case OPENAI:
             default:
                 chatModel = parseOpenAi(modelObj);
         }
         chatModel.setModelTypeEnum(engine);
+        return chatModel;
+    }
+
+    private boolean isStrataModelObject(JSONObject modelObj) {
+        JSONObject status = modelObj.getJSONObject("status");
+        JSONObject meta = modelObj.getJSONObject("meta");
+        return status != null && StringUtils.isNotBlank(status.getString("value"))
+                && meta != null && meta.get("n_ctx") != null;
+    }
+
+    private boolean isStrataModelLoaded(JSONObject modelObj) {
+        JSONObject status = modelObj.getJSONObject("status");
+        if (status == null) {
+            return true;
+        }
+        String value = status.getString("value");
+        return StringUtils.isBlank(value) || STRATA_STATUS_LOADED.equalsIgnoreCase(value);
+    }
+
+    private ChatModel parseStrata(JSONObject modelObj) {
+        ChatModel chatModel = new ChatModel();
+        chatModel.setModelName(modelObj.getString("id"));
+        chatModel.setModelTypeEnum(ModelTypeEnum.STRATA);
+        int contentLength = DEFAULT_CONTENT_LENGTH;
+        JSONObject meta = modelObj.getJSONObject("meta");
+        if (meta != null) {
+            contentLength = safeParseInt(meta.get("n_ctx"), DEFAULT_CONTENT_LENGTH);
+        }
+        chatModel.setContentLength(contentLength);
         return chatModel;
     }
 
