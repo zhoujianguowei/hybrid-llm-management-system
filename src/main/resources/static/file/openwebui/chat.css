@@ -1789,6 +1789,57 @@ body.html-preview-resizing {
     background: rgba(99, 102, 241, 0.12);
 }
 
+/* Mermaid diagram: inline pane that replaces the code block's <pre> while a
+   ```mermaid block is in diagram mode. Background follows the card surface so
+   the SVG (dark text on light themes, light text on theme-dark) stays legible.
+   It grows to the diagram's full height — no vertical cap, so the chat area is
+   what scrolls rather than the diagram. */
+.mermaid-diagram {
+    padding: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    background: var(--card-bg, #fff);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+    text-align: center;
+}
+
+.mermaid-diagram svg {
+    /* Mermaid sets an inline max-width + width:100% on the SVG root, so sizing
+       is handled there; only the height needs to follow the viewBox ratio. */
+    height: auto;
+}
+
+.mermaid-diagram-status,
+.mermaid-diagram-error {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 4px;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.mermaid-diagram-error {
+    color: #ef4444;
+}
+
+.mermaid-spin {
+    display: inline-block;
+    animation: mermaid-spin 0.9s linear infinite;
+}
+
+@keyframes mermaid-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Active diagram-mode button state (mirrors the HTML preview toggle) */
+.message-body .code-block-wrapper .code-header .code-btn.mermaid-preview-toggle.active {
+    color: var(--primary-color, #6366f1);
+    background: rgba(99, 102, 241, 0.12);
+}
+
 .message-body .code-block-wrapper .code-overlay {
     position: absolute;
     top: 0;

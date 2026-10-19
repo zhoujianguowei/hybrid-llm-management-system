@@ -2488,7 +2488,9 @@ const HLJS_AUTO_DETECT_LANGS = [
 const HLJS_AUTO_DETECT_MIN_RELEVANCE = 3;
 
 // Tags that mean "no highlighting" (plaintext itself plus its native aliases).
-const HLJS_PLAINTEXT_TAGS = new Set(['plaintext', 'text', 'txt']);
+// Mermaid source is diagram DSL, not code: leaving it plain keeps the source
+// readable and stops highlightAuto from mis-coloring it as some other grammar.
+const HLJS_PLAINTEXT_TAGS = new Set(['plaintext', 'text', 'txt', 'mermaid', 'mmd']);
 
 // highlightAuto is the most expensive highlight path (it tries every grammar
 // in the subset, ~1.6ms/line). Only auto-detect small untagged blocks; bigger
@@ -2719,6 +2721,7 @@ function wrapCodeBlock(preElement, lang, code, collapsed) {
     }
 
     const isHtmlPreviewable = /^(html|htm)$/i.test(lang);
+    const isMermaid = /^(mermaid|mmd)$/i.test(lang);
 
     const header = document.createElement('div');
     header.className = 'code-header';
@@ -2741,12 +2744,26 @@ function wrapCodeBlock(preElement, lang, code, collapsed) {
                 <i class="bi bi-eye"></i> ${t('chat.preview')}
             </button>
             ` : ''}
+            ${isMermaid ? `
+            <button class="code-btn mermaid-preview-toggle" onclick="toggleMermaidPreview(this)" title="${t('chat.mermaid_preview_title')}">
+                <i class="bi bi-diagram-3"></i> ${t('chat.show_diagram')}
+            </button>
+            ` : ''}
         </div>
     `;
 
     preElement.parentNode.insertBefore(wrapper, preElement);
     wrapper.appendChild(header);
     wrapper.appendChild(preElement);
+
+    // Mermaid blocks render their diagram by default; the header button then
+    // toggles back to the source. This reuses the manual path (busy guard,
+    // serialized queue, lazy load, error fallback), so a block that fails to
+    // render just stays as source with the button offering to retry.
+    if (isMermaid) {
+        const mermaidBtn = wrapper.querySelector('.mermaid-preview-toggle');
+        if (mermaidBtn) toggleMermaidPreview(mermaidBtn);
+    }
 }
 
 // HTML preview: an in-flow pane docked at the far right of the chat row
@@ -2916,6 +2933,207 @@ function closeHtmlPreview() {
         htmlPreviewPanel.classList.remove('open');
     }
     setTimeout(() => { skipAutoScroll = false; }, 200);
+}
+
+// Mermaid (flowchart/sequence/...) diagrams: a ```mermaid block toggles in
+// place between its source and the generated SVG. mermaid.min.js (~3MB) is
+// lazy-loaded the first time a diagram is opened, so ordinary chats never pay
+// for it on page load. Renders are serialized through a promise queue because
+// mermaid.render is not reentrant-safe (it measures text in a shared temp
+// node), and run with securityLevel 'strict' so labels/links cannot inject
+// scripts into the chat page. The theme follows the active app theme.
+let mermaidLoadPromise = null;
+let mermaidRenderQueue = Promise.resolve();
+let mermaidSeq = 0;
+
+// Yield to the event loop (macrotask) before each render. Chained promise
+// `.then`s are microtasks and would run back-to-back without a paint, so a
+// session opened with several diagrams would block; a setTimeout boundary lets
+// the browser paint between diagrams.
+function yieldToBrowser() {
+    return new Promise(function(resolve) { setTimeout(resolve, 0); });
+}
+
+function isDarkTheme() {
+    // Only theme-dark has a dark surface; ocean/sunset/forest keep white cards,
+    // so mermaid's dark theme (light text) would be unreadable on them.
+    return !!(typeof document !== 'undefined' && document.body && document.body.classList.contains('theme-dark'));
+}
+
+function currentMermaidTheme() {
+    return isDarkTheme() ? 'dark' : 'default';
+}
+
+function loadMermaid() {
+    if (window.mermaid) return Promise.resolve(window.mermaid);
+    if (mermaidLoadPromise) return mermaidLoadPromise;
+    mermaidLoadPromise = new Promise(function(resolve, reject) {
+        const base = (typeof STATIC_BASE !== 'undefined') ? STATIC_BASE : '/command/static/file';
+        const script = document.createElement('script');
+        script.src = base + '/vendor/mermaid/mermaid.min.js';
+        script.async = true;
+        // A stalled request fires neither onload nor onerror; without a bound
+        // the pending promise would wedge every queued render for the page. The
+        // timeout rejects and clears the promise so a later attempt can retry.
+        let settled = false;
+        const timer = setTimeout(function() {
+            if (settled) return;
+            settled = true;
+            script.remove();
+            mermaidLoadPromise = null;
+            reject(new Error('mermaid load timed out'));
+        }, 15000);
+        script.onload = function() {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            if (!window.mermaid) {
+                mermaidLoadPromise = null;
+                script.remove();
+                reject(new Error('mermaid global missing'));
+                return;
+            }
+            resolve(window.mermaid);
+        };
+        script.onerror = function() {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            mermaidLoadPromise = null;
+            script.remove();
+            reject(new Error('mermaid load failed'));
+        };
+        document.head.appendChild(script);
+    });
+    return mermaidLoadPromise;
+}
+
+// Common LLM typos that make an otherwise-valid diagram fail to parse but have
+// an unambiguous intended form. Only applied as a fallback after a strict parse
+// fails, so correct diagrams are never rewritten.
+function normalizeMermaid(code) {
+    // Repair an over-long arrow head, the most common LLM typo: ->>> -> ->>,
+    // -->>> -> -->>. Only runs whose head has 3+ '>' are touched, so normal
+    // arrows (->>, -->>) and valid long links (---->) are left intact.
+    return code.replace(/(-+)(>{3,})/g, function(_match, dashes, heads) {
+        return dashes.slice(0, 2) + heads.slice(0, 2);
+    });
+}
+
+// Render the source; if it fails to parse, retry once with the normalized form.
+// A synchronous throw is routed through the rejection path so both failure
+// modes fall back. If normalization changes nothing, the original error is
+// rethrown so the caller reports the real parse failure.
+function renderMermaidSource(m, code) {
+    return Promise.resolve().then(function() {
+        return m.render('mermaid-svg-' + (++mermaidSeq), code);
+    }).catch(function(err) {
+        const fixed = normalizeMermaid(code);
+        if (fixed === code) throw err;
+        return m.render('mermaid-svg-' + (++mermaidSeq), fixed);
+    });
+}
+
+function renderMermaidInto(diagram, code) {
+    return yieldToBrowser().then(function() { return loadMermaid(); }).then(function(m) {
+        // Re-initialize every render so a theme switch is picked up without a
+        // reload; initialize only stores config, so it is cheap. The theme used
+        // is recorded so a cached SVG can be re-rendered when it goes stale.
+        const theme = currentMermaidTheme();
+        m.initialize({
+            startOnLoad: false,
+            securityLevel: 'strict',
+            theme: theme,
+            // A concrete stack, not 'inherit': mermaid measures label text with a
+            // canvas font string, where 'inherit' is invalid and falls back to
+            // 10px sans-serif, sizing nodes for text that renders larger.
+            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif"
+        });
+        return renderMermaidSource(m, code).then(function(result) {
+            return { result: result, theme: theme };
+        });
+    }).then(function(pack) {
+        const result = pack.result;
+        const svg = result && (result.svg || result);
+        if (!svg) throw new Error('empty svg');
+        diagram.innerHTML = svg;
+        diagram.dataset.rendered = 'true';
+        diagram.dataset.theme = pack.theme;
+        if (result && typeof result.bindFunctions === 'function') {
+            try { result.bindFunctions(diagram); } catch (e) {}
+        }
+    });
+}
+
+function setMermaidButtonState(btn, showingDiagram) {
+    if (showingDiagram) {
+        btn.classList.add('active');
+        btn.innerHTML = '<i class="bi bi-code-slash"></i> ' + t('chat.show_code');
+    } else {
+        btn.classList.remove('active');
+        btn.innerHTML = '<i class="bi bi-diagram-3"></i> ' + t('chat.show_diagram');
+    }
+}
+
+function toggleMermaidPreview(btn) {
+    const wrapper = btn.closest('.code-block-wrapper');
+    if (!wrapper) return;
+    const pre = wrapper.querySelector('pre');
+    const codeEl = wrapper.querySelector('pre code');
+    if (!pre || !codeEl) return;
+
+    let diagram = wrapper.querySelector('.mermaid-diagram');
+
+    // Already rendered: flip between source and diagram, unless the theme
+    // changed since the SVG was captured — then re-render instead of showing a
+    // stale, unreadable diagram.
+    if (diagram && diagram.dataset.rendered === 'true') {
+        if (diagram.style.display !== 'none') {
+            // Currently showing the diagram: going back to the source.
+            diagram.style.display = 'none';
+            pre.style.display = '';
+            setMermaidButtonState(btn, false);
+            return;
+        }
+        if (diagram.dataset.theme === currentMermaidTheme()) {
+            diagram.style.display = '';
+            pre.style.display = 'none';
+            setMermaidButtonState(btn, true);
+            return;
+        }
+        diagram.dataset.rendered = 'false'; // theme changed: fall through to re-render
+    }
+
+    // First open (or a theme re-render): guard against re-entry while the
+    // (async) render is in flight.
+    if (btn.dataset.busy === '1') return;
+    btn.dataset.busy = '1';
+
+    if (!diagram) {
+        diagram = document.createElement('div');
+        diagram.className = 'mermaid-diagram';
+        pre.parentNode.insertBefore(diagram, pre.nextSibling);
+    }
+    diagram.dataset.rendered = 'false';
+    diagram.style.display = '';
+    pre.style.display = 'none';
+    setMermaidButtonState(btn, true);
+    diagram.innerHTML = '<div class="mermaid-diagram-status"><i class="bi bi-arrow-repeat mermaid-spin"></i> '
+        + escapeHtml(t('chat.diagram_rendering')) + '</div>';
+
+    const code = codeEl.textContent;
+    mermaidRenderQueue = mermaidRenderQueue
+        .then(function() { return renderMermaidInto(diagram, code); })
+        .catch(function(err) {
+            diagram.innerHTML = '<div class="mermaid-diagram-error"><i class="bi bi-exclamation-triangle-fill"></i> '
+                + escapeHtml(t('chat.diagram_render_failed')) + '</div>';
+            // Fall back to the source so the content is never lost.
+            diagram.style.display = 'none';
+            pre.style.display = '';
+            setMermaidButtonState(btn, false);
+            if (window.console) console.warn('mermaid render failed', err);
+        })
+        .then(function() { btn.dataset.busy = ''; });
 }
 
 function toggleCodeBlock(btn) {
