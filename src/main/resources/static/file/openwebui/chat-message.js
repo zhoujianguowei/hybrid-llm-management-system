@@ -656,6 +656,96 @@ function normalizeMathDelimiters(text) {
     return changed ? out.join('\n') : text;
 }
 
+// Models sometimes wrap a whole explanatory phrase in inline code even when
+// the phrase contains LaTeX math (e.g. `读取请求 $\rightarrow$ 处理业务`).
+// marked renders inline code literally, so the math leaks through as raw
+// source. When an inline code span contains a complete $...$ pair holding a
+// LaTeX backslash command, drop the span's backticks so the math extensions
+// render it; spans without such math (real code, `$HOME`) stay untouched.
+// Fence- and indented-code-aware.
+function normalizeMathInInlineCode(text) {
+    if (text.indexOf('`') < 0) return text;
+    var lines = text.split('\n');
+    var inCode = false;
+    var curFenceChar = '';
+    var curFenceLen = 0;
+
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i];
+        var trimmed = line.trim();
+
+        var fenceMatch = /^(`{3,}|~{3,})/.exec(trimmed);
+        if (fenceMatch) {
+            var fence = fenceMatch[1];
+            if (!inCode) {
+                inCode = true;
+                curFenceChar = fence.charAt(0);
+                curFenceLen = fence.length;
+            } else if (curFenceChar === fence.charAt(0) &&
+                       fence.length >= curFenceLen &&
+                       new RegExp('^' + fence.charAt(0) + '{' + curFenceLen + ',}\\s*$').test(trimmed)) {
+                inCode = false;
+            }
+            continue;
+        }
+        if (inCode || leadingIndentCols(line) >= 4) continue;
+
+        lines[i] = unwrapMathCodeSpans(line);
+    }
+    return lines.join('\n');
+}
+
+// Unwrap every inline code span on the line whose content holds math. Spans
+// are matched by backtick-run length per CommonMark; an unmatched opener is
+// left verbatim (it is not a code span at all).
+function unwrapMathCodeSpans(line) {
+    var out = '';
+    var i = 0;
+    while (i < line.length) {
+        if (line.charAt(i) !== '`') {
+            out += line.charAt(i);
+            i++;
+            continue;
+        }
+        var openStart = i;
+        while (i < line.length && line.charAt(i) === '`') i++;
+        var runLen = i - openStart;
+        var closeStart = -1;
+        var j = i;
+        while (j < line.length) {
+            if (line.charAt(j) !== '`') { j++; continue; }
+            var runStart = j;
+            while (j < line.length && line.charAt(j) === '`') j++;
+            if (j - runStart === runLen) { closeStart = runStart; break; }
+        }
+        if (closeStart < 0) {
+            out += line.substring(openStart);
+            break;
+        }
+        var content = line.substring(i, closeStart);
+        out += codeSpanHasMath(content) ? content : line.substring(openStart, j);
+        i = j;
+    }
+    return out;
+}
+
+// A code span counts as math-bearing only when it holds a complete $...$ pair
+// containing a multi-letter LaTeX command (\alpha, \to, \le, \rightarrow).
+// Single-letter backslashes are string/regex escapes (\t, \n, \w) and shell
+// control characters never occur in inline math, so code spans like
+// `awk '{print $1 "\t" $2}'`, `s.replaceAll("$d\w+", "$1")`, `cd $HOME\bin
+// && ls $TMP` and shell variables (`$HOME and $PATH`) stay untouched.
+function codeSpanHasMath(content) {
+    var pairRe = /\$([^$\n]*)\$/g;
+    var m;
+    while ((m = pairRe.exec(content)) !== null) {
+        var inner = m[1];
+        if (/[&;]/.test(inner)) continue;
+        if (/\\[A-Za-z]{2,}/.test(inner)) return true;
+    }
+    return false;
+}
+
 // Math is rendered via marked extensions so LaTeX ($...$ / $$...$$) is consumed
 // as a single token during parsing. This keeps the raw LaTeX intact: marked's
 // inline escape rule would otherwise strip backslashes (e.g. \_ -> _) before
@@ -921,7 +1011,7 @@ let lastParseFallbackWarnAt = 0;
 function safeMarkedParse(text, isFinal) {
     if (!text) return '';
     try {
-        const normalized = normalizeRawTextTags(normalizeHeadings(normalizeMathDelimiters(normalizeCodeFences(normalizeMidLineBlocks(text)))));
+        const normalized = normalizeRawTextTags(normalizeHeadings(normalizeMathDelimiters(normalizeMathInInlineCode(normalizeCodeFences(normalizeMidLineBlocks(text))))));
         const tokens = marked.lexer(normalized);
         // Assistant output is rendered without character escaping: model
         // output (including code and raw HTML) must be shown exactly as
