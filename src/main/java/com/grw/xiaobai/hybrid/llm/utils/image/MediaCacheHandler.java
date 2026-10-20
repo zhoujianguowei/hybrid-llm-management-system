@@ -26,9 +26,10 @@ public class MediaCacheHandler {
     private static final String RESOURCE_DIR = FilePathConstants.RESOURCE_DIR;
 
     // 图片最终(压缩/缩放后)发送 LLM 的大小上限，超过则自动降采样
-    private static final long MAX_SIZE_BYTES = 20L * 1024 * 1024;
+    private static final long MAX_SIZE_BYTES = 2L * 1024 * 1024;
 
-    private static final int MAX_DIMENSION = Integer.MAX_VALUE;
+    // 长边上限(像素)：2048 ≈ 2.8M 像素，服务端 max_pixels=2M 会兜底，通用识别画质甜点区
+    private static final int MAX_DIMENSION = 2048;
 
     private static final LoadingCache<String, String> MEDIA_CACHE = CacheBuilder.newBuilder()
             .expireAfterAccess(2, TimeUnit.HOURS)

@@ -63,7 +63,7 @@ public class ImageProcessor {
         byte[] imageBytes = Files.readAllBytes(imageFile.toPath());
         long currentSize = imageBytes.length;
 
-        if (currentSize > maxSizeBytes) {
+        if (currentSize > maxSizeBytes || maxDimension != Integer.MAX_VALUE) {
 
             BufferedImage image = ImageIO.read(imageFile);
             if (image == null) {
