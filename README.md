@@ -7,7 +7,7 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-Java%20Web-6DB33F?logo=spring&logoColor=white)](https://spring.io/projects/spring-boot)
 [![Inference](https://img.shields.io/badge/Inference-llama.cpp%20%7C%20OpenAI%20API-blue)](https://github.com/ggml-org/llama.cpp)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey)](#)
-[![Release](https://img.shields.io/badge/Release-v1.14-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
+[![Release](https://img.shields.io/badge/Release-v1.15-brightgreen)](https://github.com/zhoujianguowei/hybrid-llm-management-system/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 ![Demo](imgs/demo.gif)
@@ -319,15 +319,15 @@ Use `where nvidia-smi` (Windows) or `which nvidia-smi` (Linux/macOS) to find the
 ### Build from Source
 
 ```bash
-# Compile and produce the executable jar: build/libs/hybridLLM-v1.14_release_base.jar
+# Compile and produce the executable jar: build/libs/hybridLLM-v1.15_release_base.jar
 ./gradlew bootJar
 
 # Package release archives (jar + launcher scripts):
-# base-hybridLLM-v1.14-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
+# base-hybridLLM-v1.15-windows-amd64.zip / linux-amd64.tar.gz / darwin-arm64.tar.gz
 ./gradlew buildJar
 
 # Run
-java -jar build/libs/hybridLLM-v1.14_release_base.jar
+java -jar build/libs/hybridLLM-v1.15_release_base.jar
 ```
 
 Then open `http://localhost:8098/command/static/file/login.html` in your browser. Default credentials are `admin` / `admin` (**change them immediately after first login**).
@@ -342,7 +342,7 @@ Configuration lives in `src/main/resources/application.yml` (the `sit` profile i
 | `server.servlet.context-path` | `/command` | Context path |
 | `spring.servlet.multipart.max-file-size` | `200MB` | Max upload size per file |
 | `swagger.enable` | `true` | Swagger docs switch, **recommended `false` in production** |
-| `llm.version` | `v1.14_release_base` | Version identifier (fixed to `release_base` for the open-source edition) |
+| `llm.version` | `v1.15_release_base` | Version identifier (fixed to `release_base` for the open-source edition) |
 
 Running-time settings such as file storage directories, AI feature definitions, and attachment size limits are maintained in the system settings page after login (persisted to the data directory; no external database required).
 
