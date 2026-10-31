@@ -1887,6 +1887,20 @@ body.html-preview-resizing {
     font-size: 0.8125rem;
 }
 
+/* The global `* { padding: 0 }` reset removes the default 40px list padding.
+   Markers (list-style-position: outside) then paint outside the item's left
+   edge — flush against the .message-content / .thinking-content boundary —
+   and the wide two-digit ordered marker "10." spills past it and is clipped
+   by overflow: hidden (rendered as "0."). Reserve enough padding for the
+   widest two-digit marker ("10.") with room to spare for a three-digit
+   one ("100."). */
+.message-content ol,
+.message-content ul,
+.thinking-content ol,
+.thinking-content ul {
+    padding-left: 2.5em;
+}
+
 .input-area {
     background: var(--card-bg);
     border-top: 1px solid var(--border-color);

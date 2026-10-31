@@ -891,20 +891,27 @@ function registerEmphasisFallback() {
                 }
 
                 // Closing delimiter preceded by punctuation/symbol and followed
-                // by a letter/digit (pattern 1).
-                let match = /^\*{2}(?=\S)([\s\S]*?[\p{P}\p{S}])\*{2}(?=[^\s\p{P}\p{S}])/u.exec(src)
-                    || /^\*(?!\*)(?=\S)([\s\S]*?[\p{P}\p{S}])\*(?!\*)(?=[^\s\p{P}\p{S}])/u.exec(src)
-                    || /^_{2}(?=\S)([\s\S]*?[\p{P}\p{S}])_{2}(?!_)(?=[^\s\p{P}\p{S}])/u.exec(src)
-                    || /^_(?!_)(?=\S)([\s\S]*?[\p{P}\p{S}])_(?!_)(?=[^\s\p{P}\p{S}])/u.exec(src);
+                // by a letter/digit (pattern 1). The content must never cross a
+                // delimiter run: when a closer candidate is rejected by the
+                // trailing lookahead (`**”：**` — the first `**` is followed by
+                // punctuation), backtracking must FAIL the match, not skip the
+                // run and pair with a later one — that would bold a span
+                // containing a literal `**` (`**“a”**：**b。**` used to render
+                // “a”**： bolded and leave b。** literal).
+                let match = /^\*{2}(?=\S)((?:(?!\*{2})[\s\S])*?[\p{P}\p{S}])\*{2}(?=[^\s\p{P}\p{S}])/u.exec(src)
+                    || /^\*(?!\*)(?=\S)((?:(?!\*)[\s\S])*?[\p{P}\p{S}])\*(?!\*)(?=[^\s\p{P}\p{S}])/u.exec(src)
+                    || /^_{2}(?=\S)((?:(?!_{2})[\s\S])*?[\p{P}\p{S}])_{2}(?!_)(?=[^\s\p{P}\p{S}])/u.exec(src)
+                    || /^_(?!_)(?=\S)((?:(?!_)[\s\S])*?[\p{P}\p{S}])_(?!_)(?=[^\s\p{P}\p{S}])/u.exec(src);
 
                 // Opening delimiter preceded by a letter/digit and immediately
                 // followed by punctuation (pattern 2, e.g. 而是**“xxx”**：).
                 // The inner text must start with punctuation/symbol, which is
                 // exactly the condition that makes the opening run non-
-                // left-flanking in strict CommonMark.
+                // left-flanking in strict CommonMark. Same rule as pattern 1:
+                // the content must not cross a delimiter run.
                 if (!match && prevChar && prevChar.match(/[\p{L}\p{N}]/u)) {
-                    match = /^\*{2}([\p{P}\p{S}][\s\S]*?)\*{2}(?!\*)/u.exec(src)
-                        || /^\*(?!\*)([\p{P}\p{S}][\s\S]*?)\*(?!\*)/u.exec(src);
+                    match = /^\*{2}([\p{P}\p{S}](?:(?!\*{2})[\s\S])*?)\*{2}(?!\*)/u.exec(src)
+                        || /^\*(?!\*)([\p{P}\p{S}](?:(?!\*)[\s\S])*?)\*(?!\*)/u.exec(src);
                 }
 
                 if (match) {

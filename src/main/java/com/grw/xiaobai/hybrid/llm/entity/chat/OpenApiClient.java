@@ -211,14 +211,14 @@ public class OpenApiClient {
                     StringBuilder contentBuilder = new StringBuilder();
                     StringBuilder thinkingBuilder = new StringBuilder();
                     BiConsumer<Throwable, String> enhancedBiConsumer = (th, v) -> {
-                        if (th == null && StringUtils.isNotBlank(v)) {
+                        if (th == null && v != null) {
                             contentBuilder.append(v);
                             atomicStage.set(2);
                         }
                         biChunkConsumer.accept(th, v);
                     };
                     BiConsumer<Throwable, String> enhancedBiThinkingConsumer = (th, v) -> {
-                        if (th == null && StringUtils.isNotBlank(v)) {
+                        if (th == null && v != null) {
                             thinkingBuilder.append(v);
                         }
                         biThinkingConsumer.accept(th, v);
